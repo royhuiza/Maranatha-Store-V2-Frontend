@@ -130,7 +130,11 @@ import { ApiError } from '../models';
           <button type="submit" class="login-submit" [disabled]="cargando || loginForm.invalid">
             <span>{{ cargando ? 'Verificando acceso...' : 'Entrar al panel' }}</span><span aria-hidden="true">↗</span>
           </button>
+<<<<<<< Updated upstream
           <a class="forgot-password-link" routerLink="/recuperar-contrasena">¿Olvidaste tu contraseña? <span aria-hidden="true">↗</span></a>
+=======
+           <div class="login-secure"><span aria-hidden="true">◈</span> Olvidaste tu conntraseña · Maranatha Store V2</div>
+>>>>>>> Stashed changes
           <div class="login-secure"><span aria-hidden="true">◈</span> Acceso protegido · Maranatha Store V2</div>
         </form>
         <div class="login-panel-bottom">GESTIÓN COMERCIAL · INVENTARIO · VENTAS</div>
