@@ -9,6 +9,7 @@ import { VentasComponent } from "./pages/ventas.component";
 import { ReportesComponent } from "./pages/reportes.component";
 import { ProfileComponent } from "./pages/profile.component";
 import { ChangePasswordComponent } from "./pages/change-password.component";
+import { ChatbotLogsComponent } from "./pages/chatbot-logs.component";
 export const routes: Routes = [
   { path: "login", component: LoginComponent },
   {
@@ -21,6 +22,7 @@ export const routes: Routes = [
       { path: "clientes", component: ClientesComponent },
       { path: "ventas", component: VentasComponent },
       { path: "reportes", component: ReportesComponent },
+      { path: "chatbot-logs", component: ChatbotLogsComponent },
       { path: "perfil", component: ProfileComponent },
       { path: "cambiar-contrasena", component: ChangePasswordComponent },
     ],

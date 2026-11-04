@@ -2,10 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
+import { ChatWidgetComponent } from './shared/chat-widget/chat-widget.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ChatWidgetComponent],
   template: `
     <div class="layout">
       <aside>
@@ -16,6 +17,7 @@ import { AuthService } from './core/auth.service';
           <a routerLink="/clientes" routerLinkActive="active">👥 Clientes</a>
           <a routerLink="/ventas" routerLinkActive="active">🛒 Ventas y facturación</a>
           <a routerLink="/reportes" routerLinkActive="active">📊 Reportes Excel</a>
+          <a routerLink="/chatbot-logs" routerLinkActive="active">🤖 Logs Chatbot</a>
         </nav>
       </aside>
       <main>
@@ -35,6 +37,7 @@ import { AuthService } from './core/auth.service';
         <section class="content"><router-outlet/></section>
       </main>
     </div>
+    <app-chat-widget></app-chat-widget>
   `
 })
 export class ShellComponent {
