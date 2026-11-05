@@ -10,9 +10,16 @@ import { ApiService } from '../core/api.service';
 <label>Correo<input name="email" type="email" [(ngModel)]="nuevo.email" required email maxlength="120"></label>
 <label>Contraseña inicial<input name="password" type="password" [(ngModel)]="nuevo.password" required minlength="10" maxlength="72" autocomplete="new-password"></label>
 <label>Rol<select name="rol" [(ngModel)]="nuevo.rol"><option value="USER">Vendedor</option><option value="ADMIN">Administrador</option></select></label>
-<p>Vendedor: consulta inventario, administra clientes y registra ventas. Administrador: además mantiene inventario, anula ventas, consulta reportes y crea cuentas.</p>
-<button [disabled]="f.invalid || guardando">{{guardando ? 'Guardando...' : 'Crear usuario'}}</button></form></section>
-<section class="panel team-directory"><span class="module-kicker">DIRECTORIO</span><h3>Cuentas registradas <span class="team-count">{{lista.length}}</span></h3><div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th></tr></thead><tbody><tr *ngFor="let u of lista"><td>{{u.username}}</td><td>{{u.email}}</td><td><span class="team-role" [class.team-role-admin]="u.rol === 'ADMIN'">{{u.rol}}</span></td></tr></tbody></table></div></section>
+<button class="workspace-primary" [disabled]="f.invalid || guardando">{{guardando ? 'Guardando...' : 'Crear usuario'}}</button></form></section>
+<div class="team-information"><section class="panel team-directory"><span class="module-kicker">DIRECTORIO</span><h3>Cuentas registradas <span class="team-count">{{lista.length}}</span></h3><div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th></tr></thead><tbody><tr *ngFor="let u of lista"><td>{{u.username}}</td><td>{{u.email}}</td><td><span class="team-role" [class.team-role-admin]="u.rol === 'ADMIN'">{{u.rol}}</span></td></tr></tbody></table></div></section>
+<section class="panel role-guide" aria-labelledby="role-guide-title">
+  <span class="module-kicker">PERMISOS</span>
+  <h3 id="role-guide-title">Acceso por rol</h3>
+  <dl>
+    <div><dt>Vendedor</dt><dd>Consulta inventario, administra clientes y registra ventas.</dd></div>
+    <div><dt>Administrador</dt><dd>Además mantiene inventario, anula ventas, consulta reportes y crea cuentas.</dd></div>
+  </dl>
+</section></div>
 </div>`})
 export class UsuariosComponent implements OnInit {
  private api=inject(ApiService); lista: Array<{id:number;username:string;email:string;rol:string}>=[]; mensaje=''; guardando=false;

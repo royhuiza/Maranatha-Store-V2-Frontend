@@ -2,7 +2,7 @@
 /* Maranatha Store V2 / diseño editorial con movimiento.
    Cargado después de styles.css. Sin bibliotecas externas. */
 :root{--brand-ink:#163a3e;--brand-deep:#102f32;--brand-teal:#246263;--brand-gold:#d6a15d;--brand-sand:#f6f2e9;--brand-muted:#71817f;--brand-border:#e8e7df}
-body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#f7f8f5;color:var(--brand-ink);font-size:14px}
+body{background:#f7f8f5;color:var(--brand-ink);font-size:14px}
 button{background:var(--brand-ink);border-radius:12px;font-weight:650;transition:background .2s,transform .22s,box-shadow .22s}
 button:hover:not(:disabled){background:#255a5b;transform:translateY(-2px);box-shadow:0 8px 22px #153e3c1c}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #d4a05b;outline-offset:2px}
@@ -59,7 +59,7 @@ tbody tr:hover{background:#f8faf5}
 .stage-kicker{font-size:11px;letter-spacing:2.3px;font-weight:800;color:#f4d9ac;display:flex;align-items:center;gap:10px}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#f1c580;box-shadow:0 0 0 6px #f1c58022}
 .stage-copy h1{font-size:clamp(38px,4.3vw,72px);line-height:1.07;letter-spacing:-2.5px;margin:25px 0 24px;color:#fff;font-weight:780}
-.stage-copy h1 em{font-family:Georgia,serif;color:#f0be79;font-weight:400;letter-spacing:-2px}
+.stage-copy h1 em{color:#f0be79;font-weight:400;letter-spacing:-2px}
 .stage-copy p{line-height:1.75;max-width:390px;font-size:16px;color:#d6e9e3}
 .stage-art{position:relative;flex:1;min-height:270px;max-height:440px}
 .stage-art-glow{position:absolute;width:330px;height:330px;border-radius:50%;background:#deab6680;filter:blur(74px);bottom:0;left:38%;transform:translateX(-50%);opacity:.43;animation:glow-drift 7s ease-in-out infinite alternate}

@@ -15,8 +15,8 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
   template: `
     <div class="page-title no-print">
       <div><h2>Venta y facturación</h2><p>Boleta, factura o nota de pedido con control automático de stock</p><p class="peru-clock">Hora de Perú · {{horaActual | date:'dd/MM/yyyy HH:mm:ss':'-0500'}}</p></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="secondary" (click)="nuevoComprobante()">Nueva venta</button>
+      <div class="sale-heading-actions">
+        <button class="workspace-primary" (click)="nuevoComprobante()">Nueva venta</button>
         <button *ngIf="preferenciaImpresion" class="secondary" (click)="limpiarPreferenciaImpresion()">Cambiar formato impresión</button>
       </div>
     </div>
@@ -58,75 +58,83 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
     <dialog viewportModal (modalDismiss)="mostrarPago=false" class="modal no-print" *ngIf="mostrarPago" role="dialog" aria-modal="true" aria-label="Resumen de pago"><section class="dialog payment-dialog"><span class="product-dialog-eyebrow">VENTA REGISTRADA</span><h3>Tu venta está lista</h3><p class="payment-reference">{{ventaEmitida?.serie}}-{{ventaEmitida?.numero}}</p><div class="payment-summary-total"><span>Total registrado</span><strong>S/ {{ventaEmitida?.total | number:'1.2-2'}}</strong></div><div class="payment-summary-method"><span>Método previsto</span><b>{{ventaEmitida?.metodoPago || metodoPago || 'SIN ELEGIR'}}</b><span class="status danger">Pago pendiente</span></div><p>No se ha confirmado un ingreso bancario. Verifica el pago en la cuenta receptora.</p><ng-container *ngTemplateOutlet="datosCobro; context: {metodo: ventaEmitida?.metodoPago || metodoPago, importe: ventaEmitida?.total}"></ng-container><div class="payment-next"><b>¿Qué sigue?</b><p>Puedes descargar el comprobante interno o volver a la venta. Un comprobante no acredita el pago.</p></div><div class="actions"><button class="secondary" (click)="mostrarPago=false; ventaDescargas=ventaEmitida">Descargar comprobante</button><button (click)="mostrarPago=false">Volver a ventas</button></div></section></dialog>
     <dialog viewportModal (modalDismiss)="cerrarPdf()" class="modal no-print" *ngIf="pdfPreparado as pdf" aria-label="PDF preparado"><section class="dialog pdf-ready-dialog"><span class="product-dialog-eyebrow">DOCUMENTO GENERADO</span><h3>Tu PDF está listo</h3><p>{{pdf.nombre}}</p><p>Conserva el fondo blanco, el logo y el QR del registro.</p><div class="actions"><button class="secondary" (click)="cerrarPdf()">Cerrar</button><a class="save-pdf-link" [href]="pdf.url" [download]="pdf.nombre">Guardar PDF</a></div></section></dialog>
     <div class="sale-grid">
-      <section class="panel no-print">
-        <h3>Datos del comprobante</h3>
-        <div class="row">
-          <label>Tipo
-            <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
-              <option value="BOLETA">Boleta</option>
-              <option value="FACTURA">Factura</option>
-              <option value="NOTA_PEDIDO">Nota de pedido</option>
-            </select>
-          </label>
-          <label>Cliente
-            <select [(ngModel)]="clienteId" (ngModelChange)="onClienteSeleccionado()">
-              <option [ngValue]="undefined">{{ clienteConsultado ? ((clienteConsultado.nombre + ' ' + (clienteConsultado.apellido || '')).trim()) : 'Público general' }}</option>
-              <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }} · {{ c.numeroDocumento || 'sin documento' }}</option>
-            </select>
-          </label>
-          <p class="hint">Precios con IGV incluido automáticamente (18%).</p>
-        </div>
-        <div *ngIf="tipo==='BOLETA' || tipo==='FACTURA'" class="row">
-          <label>{{ tipo === 'BOLETA' ? 'DNI' : 'RUC' }}
-            <input type="text" [(ngModel)]="documento" name="documento" (ngModelChange)="onDocumentoChange()" [attr.maxlength]="tipo === 'BOLETA' ? 8 : 11" placeholder="{{ tipo === 'BOLETA' ? 'Ingrese DNI' : 'Ingrese RUC' }}">
-          </label>
-        </div>
-        <button class="secondary" (click)="buscarDocumento()" [disabled]="documentoBuscando || !documento">{{ documentoBuscando ? 'Consultando...' : 'Consultar documento' }}</button><p class="document-status" *ngIf="documentoValido">Datos recibidos de Decolecta. El cliente quedará asociado al registrar la venta.</p>
-        <aside class="identity-card" *ngIf="documentoDatos as d" aria-label="Resultado de consulta de documento" aria-live="polite">
-          <div class="identity-heading"><span class="identity-avatar">{{d.nombre.slice(0,1)}}</span><div><small>{{d.tipoDocumento === 'DNI' ? 'IDENTIDAD' : 'DATOS TRIBUTARIOS'}} · DECOLECTA</small><h3>{{d.nombre}}</h3></div><span class="identity-check" aria-label="Consulta recibida">✓</span></div>
-          <dl><div><dt>{{d.tipoDocumento}}</dt><dd>{{d.numeroDocumento}}</dd></div><ng-container *ngIf="d.tipoDocumento==='DNI'"><div *ngIf="d.nombres"><dt>Nombres</dt><dd>{{d.nombres}}</dd></div><div *ngIf="d.apellidoPaterno"><dt>Apellido paterno</dt><dd>{{d.apellidoPaterno}}</dd></div><div *ngIf="d.apellidoMaterno"><dt>Apellido materno</dt><dd>{{d.apellidoMaterno}}</dd></div><div><dt>Fecha de nacimiento</dt><dd>Decolecta no la proporciona</dd></div></ng-container><div *ngIf="d.estado"><dt>Estado</dt><dd>{{d.estado}}</dd></div><div *ngIf="d.condicion"><dt>Condición</dt><dd>{{d.condicion}}</dd></div><div *ngIf="d.direccion"><dt>Dirección</dt><dd>{{d.direccion}}</dd></div></dl>
-        </aside>
-        <small class="error" *ngIf="documentoError">{{ documentoError }}</small>
-        <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
+      <section class="panel sale-workspace no-print">
+        <section class="sale-step" aria-labelledby="sale-customer-title">
+          <h3 class="sale-step-title" id="sale-customer-title"><span aria-hidden="true">01</span> Datos del comprobante</h3>
+          <div class="row">
+            <label>Tipo
+              <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
+                <option value="BOLETA">Boleta</option>
+                <option value="FACTURA">Factura</option>
+                <option value="NOTA_PEDIDO">Nota de pedido</option>
+              </select>
+            </label>
+            <label>Cliente
+              <select [(ngModel)]="clienteId" (ngModelChange)="onClienteSeleccionado()">
+                <option [ngValue]="undefined">{{ clienteConsultado ? ((clienteConsultado.nombre + ' ' + (clienteConsultado.apellido || '')).trim()) : 'Público general' }}</option>
+                <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }} · {{ c.numeroDocumento || 'sin documento' }}</option>
+              </select>
+            </label>
+            <p class="hint">Precios con IGV incluido automáticamente (18%).</p>
+          </div>
+          <div *ngIf="tipo==='BOLETA' || tipo==='FACTURA'" class="row">
+            <label>{{ tipo === 'BOLETA' ? 'DNI' : 'RUC' }}
+              <input type="text" [(ngModel)]="documento" name="documento" (ngModelChange)="onDocumentoChange()" [attr.maxlength]="tipo === 'BOLETA' ? 8 : 11" placeholder="{{ tipo === 'BOLETA' ? 'Ingrese DNI' : 'Ingrese RUC' }}">
+            </label>
+          </div>
+          <button class="secondary" (click)="buscarDocumento()" [disabled]="documentoBuscando || !documento">{{ documentoBuscando ? 'Consultando...' : 'Consultar documento' }}</button><p class="document-status" *ngIf="documentoValido">Datos recibidos de Decolecta. El cliente quedará asociado al registrar la venta.</p>
+          <aside class="identity-card" *ngIf="documentoDatos as d" aria-label="Resultado de consulta de documento" aria-live="polite">
+            <div class="identity-heading"><span class="identity-avatar">{{d.nombre.slice(0,1)}}</span><div><small>{{d.tipoDocumento === 'DNI' ? 'IDENTIDAD' : 'DATOS TRIBUTARIOS'}} · DECOLECTA</small><h3>{{d.nombre}}</h3></div><span class="identity-check" aria-label="Consulta recibida">✓</span></div>
+            <dl><div><dt>{{d.tipoDocumento}}</dt><dd>{{d.numeroDocumento}}</dd></div><ng-container *ngIf="d.tipoDocumento==='DNI'"><div *ngIf="d.nombres"><dt>Nombres</dt><dd>{{d.nombres}}</dd></div><div *ngIf="d.apellidoPaterno"><dt>Apellido paterno</dt><dd>{{d.apellidoPaterno}}</dd></div><div *ngIf="d.apellidoMaterno"><dt>Apellido materno</dt><dd>{{d.apellidoMaterno}}</dd></div><div><dt>Fecha de nacimiento</dt><dd>Decolecta no la proporciona</dd></div></ng-container><div *ngIf="d.estado"><dt>Estado</dt><dd>{{d.estado}}</dd></div><div *ngIf="d.condicion"><dt>Condición</dt><dd>{{d.condicion}}</dd></div><div *ngIf="d.direccion"><dt>Dirección</dt><dd>{{d.direccion}}</dd></div></dl>
+          </aside>
+          <small class="error" *ngIf="documentoError">{{ documentoError }}</small>
+          <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
 
-        <div class="sale-help-banner no-print"><span aria-hidden="true">✦</span><div><b>Arma tu venta paso a paso</b><p>Busca el primer artículo, elige una cantidad y pulsa Agregar al carrito. Repite con otro producto; el total se actualizará solo.</p></div></div>
-        <div class="row product-row product-search-row">
-          <label class="sale-search-label">Producto
-            <div class="sale-search-control"><input type="text" [(ngModel)]="productoFiltro" (ngModelChange)="onProductoFiltroChange()" placeholder="Buscar por nombre o letra" autocomplete="off" (focus)="mostrarBuscador=!productoId" (blur)="cerrarBuscador()" (keydown.escape)="mostrarBuscador=false" aria-label="Buscar producto" aria-controls="selector-productos" [attr.aria-expanded]="mostrarBuscador"><button class="sale-search-button" type="button" (click)="mostrarBuscador=!mostrarBuscador" aria-label="Mostrar productos coincidentes"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg></button></div>
-            <div id="selector-productos" class="suggestions product-selector" *ngIf="mostrarBuscador && productoFiltro.trim()" aria-label="Hasta cinco productos coincidentes">
-              <div *ngFor="let p of productosFiltrados" class="suggestion" [class.selected]="productoId === p.id" [class.disabled]="p.stock<=5" (mousedown)="$event.preventDefault()" (click)="seleccionarProducto(p.id)" role="button" tabindex="0" (keydown.enter)="seleccionarProducto(p.id)">
-                {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — disponible {{ disponible(p) }} {{ p.stock <= 5 ? '· Stock bajo: no vendible' : '· Disponible para venta' }}
+        </section>
+        <section class="sale-step" aria-labelledby="sale-products-title">
+          <h3 class="sale-step-title" id="sale-products-title"><span aria-hidden="true">02</span> Productos</h3>
+          <div class="sale-help-banner no-print"><span aria-hidden="true">✦</span><div><b>Arma tu venta paso a paso</b><p>Busca el primer artículo, elige una cantidad y pulsa Agregar al carrito. Repite con otro producto; el total se actualizará solo.</p></div></div>
+          <div class="row product-row product-search-row">
+            <label class="sale-search-label">Producto
+              <div class="sale-search-control"><input type="text" [(ngModel)]="productoFiltro" (ngModelChange)="onProductoFiltroChange()" placeholder="Buscar por nombre o letra" autocomplete="off" (focus)="mostrarBuscador=!productoId" (blur)="cerrarBuscador()" (keydown.escape)="mostrarBuscador=false" aria-label="Buscar producto" aria-controls="selector-productos" [attr.aria-expanded]="mostrarBuscador"><button class="sale-search-button" type="button" (click)="mostrarBuscador=!mostrarBuscador" aria-label="Mostrar productos coincidentes"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg></button></div>
+              <div id="selector-productos" class="suggestions product-selector" *ngIf="mostrarBuscador && productoFiltro.trim()" aria-label="Hasta cinco productos coincidentes">
+                <div *ngFor="let p of productosFiltrados" class="suggestion" [class.selected]="productoId === p.id" [class.disabled]="p.stock<=5" (mousedown)="$event.preventDefault()" (click)="seleccionarProducto(p.id)" role="button" tabindex="0" (keydown.enter)="seleccionarProducto(p.id)">
+                  {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — disponible {{ disponible(p) }} {{ p.stock <= 5 ? '· Stock bajo: no vendible' : '· Disponible para venta' }}
+                </div>
+                <div *ngIf="!productosFiltrados.length" class="product-search-empty" role="status"><b>No encontramos productos</b><span>Prueba otro nombre o revisa el inventario.</span></div>
               </div>
-              <div *ngIf="!productosFiltrados.length" class="product-search-empty" role="status"><b>No encontramos productos</b><span>Prueba otro nombre o revisa el inventario.</span></div>
-            </div>
-          </label>
-        </div>
-        <div class="row product-row">
-          <label>Cantidad<input #cantidadInput type="number" min="1" step="1" [(ngModel)]="cantidad"></label>
-          <button (click)="agregar()" [disabled]="!productoId">Agregar al carrito</button>
-        </div>
+            </label>
+          </div>
+          <div class="row product-row">
+            <label>Cantidad<input #cantidadInput type="number" min="1" step="1" [(ngModel)]="cantidad"></label>
+            <button (click)="agregar()" [disabled]="!productoId">Agregar al carrito</button>
+          </div>
 
-        <div class="table-wrap mini">
-          <table>
-            <thead><tr><th>Producto</th><th>Cant.</th><th>P. unit.</th><th>Subtotal</th><th></th></tr></thead>
-            <tbody>
-              <tr *ngFor="let d of detalles; let i=index">
-                <td>{{ d.productoNombre }}</td>
-                <td><span class="cart-fixed-quantity" aria-label="Cantidad en carrito">{{d.cantidad}}</span></td>
-                <td>S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
-                <td>S/ {{ d.subtotal | number:'1.2-2' }}</td>
-                <td><button class="link danger-text" (click)="quitar(i)">Quitar</button></td>
-              </tr>
-              <tr *ngIf="!detalles.length"><td colspan="5" class="empty">Agregue productos para registrar la venta.</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="sale-count no-print" *ngIf="detalles.length" aria-live="polite">{{ detalles.length }} artículo(s) diferente(s) · {{ unidadesCarrito }} unidad(es) en el carrito</div>
-        <div class="total animated-sale-total"><span>Total calculado automáticamente</span><strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong></div>
-        <fieldset class="payment-picker"><legend>Método de pago previsto</legend><p>Elige cómo pagar. Comprueba el destinatario en tu aplicación bancaria antes de confirmar.</p><div class="payment-methods"><label *ngFor="let m of metodosPago" [class.payment-selected]="metodoPago===m.codigo"><input type="radio" name="metodoPago" [(ngModel)]="metodoPago" [value]="m.codigo" [disabled]="!m.activo"><img class="payment-brand-logo" [src]="m.logo" [alt]="m.nombre"><span>{{m.nombre}}</span><span class="payment-unavailable">{{m.codigo==='TARJETA' ? 'Pendiente de conexión' : 'Verificación manual'}}</span></label></div><small>La venta permanece pendiente hasta verificar el ingreso. Mostrar estos datos no realiza una transferencia.</small><ng-container *ngTemplateOutlet="datosCobro; context: {metodo: metodoPago, importe: totalBorrador}"></ng-container></fieldset>
-        <button class="primary-wide" [disabled]="!detalles.length || procesando" (click)="registrar()">
-          {{ procesando ? 'Registrando...' : 'Registrar y continuar' }}
-        </button>
+          <div class="table-wrap mini">
+            <table>
+              <thead><tr><th>Producto</th><th>Cant.</th><th>P. unit.</th><th>Subtotal</th><th></th></tr></thead>
+              <tbody>
+                <tr *ngFor="let d of detalles; let i=index">
+                  <td>{{ d.productoNombre }}</td>
+                  <td><span class="cart-fixed-quantity" aria-label="Cantidad en carrito">{{d.cantidad}}</span></td>
+                  <td>S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
+                  <td>S/ {{ d.subtotal | number:'1.2-2' }}</td>
+                  <td><button class="link danger-text" (click)="quitar(i)">Quitar</button></td>
+                </tr>
+                <tr *ngIf="!detalles.length"><td colspan="5" class="empty">Agregue productos para registrar la venta.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="sale-count no-print" *ngIf="detalles.length" aria-live="polite">{{ detalles.length }} artículo(s) diferente(s) · {{ unidadesCarrito }} unidad(es) en el carrito</div>
+        </section>
+        <section class="sale-step" aria-labelledby="sale-payment-title">
+          <h3 class="sale-step-title" id="sale-payment-title"><span aria-hidden="true">03</span> Pago</h3>
+          <div class="total animated-sale-total"><span>Total calculado automáticamente</span><strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong></div>
+          <fieldset class="payment-picker"><legend>Método de pago previsto</legend><p>Elige cómo pagar. Comprueba el destinatario en tu aplicación bancaria antes de confirmar.</p><div class="payment-methods"><label *ngFor="let m of metodosPago" [class.payment-selected]="metodoPago===m.codigo"><input type="radio" name="metodoPago" [(ngModel)]="metodoPago" [value]="m.codigo" [disabled]="!m.activo"><img class="payment-brand-logo" [src]="m.logo" [alt]="m.nombre"><span>{{m.nombre}}</span><span class="payment-unavailable">{{m.codigo==='TARJETA' ? 'Pendiente de conexión' : 'Verificación manual'}}</span></label></div><small>La venta permanece pendiente hasta verificar el ingreso. Mostrar estos datos no realiza una transferencia.</small><ng-container *ngTemplateOutlet="datosCobro; context: {metodo: metodoPago, importe: totalBorrador}"></ng-container></fieldset>
+          <button class="primary-wide workspace-primary" [disabled]="!detalles.length || procesando" (click)="registrar()">
+            {{ procesando ? 'Registrando...' : 'Registrar y continuar' }}
+          </button>
+        </section>
       </section>
 
       <section class="panel receipt" id="comprobante">

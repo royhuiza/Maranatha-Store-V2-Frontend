@@ -12,10 +12,10 @@ import { ApiError, Cliente } from '../models';
   template: `
     <div class="page-title">
       <div><h2>Clientes</h2><p>Personas y empresas</p></div>
-      <button (click)="nuevo()">+ Nuevo cliente</button>
+      <button class="workspace-primary" (click)="nuevo()">+ Nuevo cliente</button>
     </div>
     <div *ngIf="mensaje" class="notice" [class.error-notice]="esError">{{ mensaje }}</div>
-    <div class="toolbar"><input placeholder="Buscar por nombre o documento..." [(ngModel)]="q"></div>
+    <div class="toolbar"><input aria-label="Buscar clientes" placeholder="Buscar por nombre o documento..." [(ngModel)]="q"></div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Cliente</th><th>Documento</th><th>Contacto</th><th>Dirección</th><th></th></tr></thead>
@@ -53,7 +53,7 @@ import { ApiError, Cliente } from '../models';
         <small class="error" *ngIf="errorFormulario">{{ errorFormulario }}</small>
         <div class="actions">
           <button type="button" class="secondary" (click)="abierto=false" [disabled]="procesando">Cancelar</button>
-          <button [disabled]="procesando">{{ procesando ? 'Guardando...' : 'Guardar' }}</button>
+          <button class="workspace-primary" [disabled]="procesando">{{ procesando ? 'Guardando...' : 'Guardar' }}</button>
         </div>
       </form>
     </div>

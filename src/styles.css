@@ -1,6 +1,7 @@
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#f3f6f8;color:#203040;min-height:100vh}
-button,input,select{font:inherit}
+:root{--ui-font:"Segoe UI Variable","Segoe UI",system-ui,Arial,sans-serif}
+body{margin:0;font-family:var(--ui-font);background:#f3f6f8;color:#203040;min-height:100vh}
+button,input,select,textarea{font:inherit}
 button{background:#173b57;color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;transition:transform .2s,background .2s}
 button:hover{background:#244f6d}
 button:disabled{opacity:.5;cursor:not-allowed}

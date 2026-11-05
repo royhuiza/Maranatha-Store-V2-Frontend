@@ -14,28 +14,30 @@ import { AjusteInventario, ApiError, Producto } from '../models';
   template: `
     <div class="page-title">
       <div><h2>Productos e inventario</h2><p>Control de precios y stock en PostgreSQL</p></div>
-      <button *ngIf="auth.isAdmin" (click)="nuevo()">+ Nuevo producto</button>
+      <button class="workspace-primary" *ngIf="auth.isAdmin" (click)="nuevo()">+ Nuevo producto</button>
     </div>
     <div *ngIf="mensaje" class="notice inventory-notice" [class.error-notice]="esError" [attr.role]="esError ? 'alert' : 'status'">
       <span style="white-space:pre-line">{{ mensaje }}</span>
       <button *ngIf="esError" type="button" class="link" (click)="mensaje=''">Cerrar</button>
     </div>
-    <div class="stock-segments" role="group" aria-label="Filtro rápido de stock"><button type="button" [class.active]="filtroStock==='todos'" (click)="filtroStock='todos'">Todos</button><button type="button" [class.active]="filtroStock==='disponible'" (click)="filtroStock='disponible'">Disponibles · 6 o más</button><button type="button" [class.active]="filtroStock==='bajo'" (click)="filtroStock='bajo'">Stock bajo · 1 a 5</button><button type="button" [class.active]="filtroStock==='agotado'" (click)="filtroStock='agotado'">Sin stock</button></div>
-    <div class="toolbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción o ID..." [ngModel]="q" (ngModelChange)="cambiarBusqueda($event)">
-      <select aria-label="Filtrar por existencias" [(ngModel)]="filtroStock" class="stock-filter">
-        <option value="todos">Todos los artículos</option>
-        <option value="bajo">Stock bajo (1–5)</option>
-        <option value="agotado">Sin stock (0)</option>
-        <option value="disponible">Disponibles (6+)</option>
-      </select>
-      <form *ngIf="auth.isAdmin" [formGroup]="formImportacion">
-        <button class="secondary" type="button" (click)="archivoImportar.click()" [disabled]="importando">
-          {{ importando ? 'Importando Excel…' : 'Importar plantilla Excel' }}
-        </button>
-        <input #archivoImportar type="file" accept=".xlsx,.xls" hidden (change)="seleccionarExcel(archivoImportar)">
-      </form>
-      <button class="secondary" type="button" (click)="exportarVista()" [disabled]="cargandoCatalogo || !!errorCatalogo">Exportar inventario mostrado</button>
+    <div class="catalog-controls">
+      <div class="stock-segments" role="group" aria-label="Filtro rápido de stock"><button type="button" [class.active]="filtroStock==='todos'" (click)="filtroStock='todos'">Todos</button><button type="button" [class.active]="filtroStock==='disponible'" (click)="filtroStock='disponible'">Disponibles · 6 o más</button><button type="button" [class.active]="filtroStock==='bajo'" (click)="filtroStock='bajo'">Stock bajo · 1 a 5</button><button type="button" [class.active]="filtroStock==='agotado'" (click)="filtroStock='agotado'">Sin stock</button></div>
+      <div class="toolbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción o ID..." [ngModel]="q" (ngModelChange)="cambiarBusqueda($event)">
+        <select aria-label="Filtrar por existencias" [(ngModel)]="filtroStock" class="stock-filter">
+          <option value="todos">Todos los artículos</option>
+          <option value="bajo">Stock bajo (1–5)</option>
+          <option value="agotado">Sin stock (0)</option>
+          <option value="disponible">Disponibles (6+)</option>
+        </select>
+        <form *ngIf="auth.isAdmin" [formGroup]="formImportacion">
+          <button class="secondary" type="button" (click)="archivoImportar.click()" [disabled]="importando">
+            {{ importando ? 'Importando Excel…' : 'Importar plantilla Excel' }}
+          </button>
+          <input #archivoImportar type="file" accept=".xlsx,.xls" hidden (change)="seleccionarExcel(archivoImportar)">
+        </form>
+        <button class="secondary" type="button" (click)="exportarVista()" [disabled]="cargandoCatalogo || !!errorCatalogo">Exportar inventario mostrado</button>
+      </div>
     </div>
     <div *ngIf="errorCatalogo" class="notice inventory-notice error-notice" role="alert">
       {{ errorCatalogo }}
@@ -164,7 +166,7 @@ import { AjusteInventario, ApiError, Producto } from '../models';
         </div>
         <div class="actions product-dialog-actions">
           <button type="button" class="secondary" (click)="cerrarModal()" [disabled]="procesando">Cancelar</button>
-          <button type="submit" [disabled]="procesando">{{ procesando ? 'Guardando...' : (form.id ? 'Guardar cambios' : 'Registrar artículo') }}</button>
+          <button type="submit" class="workspace-primary" [disabled]="procesando">{{ procesando ? 'Guardando...' : (form.id ? 'Guardar cambios' : 'Registrar artículo') }}</button>
         </div>
       </form>
     </div>

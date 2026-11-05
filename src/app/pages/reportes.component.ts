@@ -6,7 +6,7 @@ import { forkJoin } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { Venta } from '../models';
 @Component({standalone:true,imports:[CommonModule,FormsModule],template:`
-<div class="page-title"><h2>Reportes estadísticos</h2><button (click)="cargar()">Actualizar datos</button></div>
+<div class="page-title"><h2>Reportes estadísticos</h2><button class="secondary" (click)="cargar()">Actualizar datos</button></div>
 <p class="error" role="alert">{{error}}</p><section class="panel report-workspace"><div class="report-section-title"><span class="module-kicker">ACTIVIDAD COMERCIAL</span><h3>Ventas del período</h3></div><div class="row report-filters">
 <label>Período<select [(ngModel)]="periodo"><option value="semana">Semanal</option><option value="mes">Mensual</option><option value="anual">Anual</option></select></label>
 <label>Fecha de referencia<input type="date" [(ngModel)]="fecha"></label></div><p>Se excluyen ventas anuladas. Las ventas registradas no equivalen a pagos confirmados.</p>
@@ -18,7 +18,7 @@ import { Venta } from '../models';
     <strong>S/ {{grupo.total | number:'1.2-2'}}</strong>
   </div>
 </div><p *ngIf="!filtradas.length">No hay ventas emitidas para este período.</p>
-<div class="report-actions"><button (click)="exportarVentas()">Exportar ventas del período</button><button class="secondary" (click)="integral()">Exportar informe integral</button></div></section>
+<div class="report-actions"><button class="workspace-primary" (click)="exportarVentas()">Exportar ventas del período</button><button class="secondary" (click)="integral()">Exportar informe integral</button></div></section>
 <section class="panel report-inventory"><div><span class="module-kicker">CATÁLOGO</span><h3>Inventario actual</h3></div><button (click)="inventario()">Descargar Excel actualizado</button></section>`})
 export class ReportesComponent implements OnInit {
  private api=inject(ApiService); ventas:Venta[]=[]; error=''; periodo='mes'; fecha=new Date().toLocaleDateString('en-CA');
