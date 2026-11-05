@@ -6,6 +6,7 @@ import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, View
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { AuthService } from './core/auth.service';
+import { ChatWidgetComponent } from './shared/chat-widget/chat-widget.component';
 
 type SectionId = 'inicio' | 'productos' | 'clientes' | 'ventas' | 'reportes' | 'cuenta';
 
@@ -24,13 +25,14 @@ const SECTIONS: Record<string, SectionVisual> = {
   reportes: { id: 'reportes', eyebrow: 'REPORTES / DATOS', title: 'Tus números, en perspectiva.', description: 'Consulta y exporta los datos de tu librería.' },
   usuarios: { hasRipple: true, id: 'cuenta', eyebrow: 'EQUIPO / PERMISOS', title: 'Usuarios y roles.', description: 'Administra las cuentas y permisos de tu equipo.' },
   perfil: { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu cuenta, tu espacio.', description: 'Actualiza tus datos de manera segura.' },
-  'cambiar-contrasena': { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu acceso, protegido.', description: 'Gestiona la seguridad de tu cuenta.' }
+  'cambiar-contrasena': { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu acceso, protegido.', description: 'Gestiona la seguridad de tu cuenta.' },
+  'chatbot-logs': { id: 'reportes', eyebrow: 'ASISTENCIA / ACTIVIDAD', title: 'Conversaciones del asistente.', description: 'Consulta la actividad reciente del chatbot.' }
 };
 const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARANATHA STORE', title: 'El pulso de tu librería.', description: 'Ventas, inventario y clientes en una sola vista.' };
 
 @Component({
   standalone: true,
-  imports: [OriginkitSceneComponent, AmbientSceneComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [OriginkitSceneComponent, AmbientSceneComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ChatWidgetComponent],
   template: `
     <div class="layout maranatha-app" [class.is-dark]="theme.dark()" [class.steep-home]="section.id === 'inicio'"
       [class.workspace-data]="section.id === 'productos' || section.id === 'clientes' || section.id === 'cuenta'"
@@ -44,6 +46,7 @@ const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARAN
           <a routerLink="/ventas" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">◇</span><span class="nav-label">Ventas y facturación</span></a>
           <a *ngIf="auth.isAdmin" routerLink="/usuarios" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-label">Usuarios y roles</span></a>
           <a *ngIf="auth.isAdmin" routerLink="/reportes" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-label">Reportes Excel</span></a>
+          <a *ngIf="auth.isAdmin" routerLink="/chatbot-logs" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">🤖</span><span class="nav-label">Logs Chatbot</span></a>
         </nav>
         <div class="sidebar-bottom"><span>MARANATHA STORE / V2</span>Gestión de tu librería, en un solo lugar.</div>
       </aside>
@@ -128,6 +131,7 @@ const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARAN
         </section>
       </main>
     </div>
+    <app-chat-widget></app-chat-widget>
   `
 })
 export class ShellComponent implements OnDestroy {
