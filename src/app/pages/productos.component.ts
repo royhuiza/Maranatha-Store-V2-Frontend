@@ -50,12 +50,13 @@ import { AjusteInventario, ApiError, Producto } from '../models';
     </div>
     <div class="table-wrap inventory-filter-results" [attr.data-stock-filter]="filtroStock">
       <table>
-        <thead><tr><th>Producto</th><th>Descripción</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Producto</th><th>Descripción</th><th>Precio</th><th>IGV</th><th>Stock</th><th>Estado</th><th></th></tr></thead>
         <tbody>
           <tr *ngFor="let p of filtrados; trackBy: trackById" [class.inventory-row-removing]="eliminandoAnimacionId === p.id">
             <td><b>{{ p.nombre }}</b><br><small>ID {{ p.id }}</small></td>
             <td>{{ p.descripcion || '-' }}</td>
             <td>S/ {{ p.precio | number:'1.2-2' }}</td>
+            <td>{{ p.afectacionIgv || 'Sin clasificar' }}</td>
             <td>{{ p.stock }}</td>
             <td><span [class.danger]="p.stock <= 5" class="status">{{ estadoStock(p.stock) }}</span></td>
             <td>
@@ -68,9 +69,9 @@ import { AjusteInventario, ApiError, Producto } from '../models';
               </button>
             </td>
           </tr>
-          <tr *ngIf="cargandoCatalogo"><td colspan="6" class="empty" role="status">Consultando catálogo…</td></tr>
+          <tr *ngIf="cargandoCatalogo"><td colspan="7" class="empty" role="status">Consultando catálogo…</td></tr>
           <tr *ngIf="!cargandoCatalogo && !errorCatalogo && !filtrados.length">
-            <td colspan="6" class="empty">{{ q.trim() || filtroStock !== 'todos' ? mensajeSinResultados : 'No hay productos registrados.' }}</td>
+            <td colspan="7" class="empty">{{ q.trim() || filtroStock !== 'todos' ? mensajeSinResultados : 'No hay productos registrados.' }}</td>
           </tr>
         </tbody>
       </table>
@@ -162,6 +163,15 @@ import { AjusteInventario, ApiError, Producto } from '../models';
             </label>
           </div>
           <p class="product-field-hint">El precio debe ser mayor que cero y el stock debe ser un número entero no negativo.</p>
+          <label>Tipo de afectación del IGV
+            <select [(ngModel)]="form.afectacionIgv" name="afectacionIgv">
+              <option [ngValue]="null">Sin clasificar</option>
+              <option value="GRAVADO">Gravado - Código SUNAT 10</option>
+              <option value="EXONERADO">Exonerado - Código SUNAT 20</option>
+              <option value="INAFECTO">Inafecto - Código SUNAT 30</option>
+            </select>
+          </label>
+          <small>Selecciona la clasificación tributaria correspondiente al producto.</small>
           <div class="product-form-error" *ngIf="errorFormulario" role="alert"><span aria-hidden="true">!</span>{{ errorFormulario }}</div>
         </div>
         <div class="actions product-dialog-actions">
@@ -214,6 +224,7 @@ export class ProductosComponent implements OnInit {
   esError = false;
   errorFormulario = '';
   form: Producto = this.vacio();
+  productoOriginal: Producto | null = null;
 
   get filtrados(): Producto[] {
     if (this.cargandoCatalogo || this.errorCatalogo) return [];
@@ -389,11 +400,13 @@ export class ProductosComponent implements OnInit {
 
   nuevo(): void {
     this.form = this.vacio();
+    this.productoOriginal = null;
     this.errorFormulario = '';
     this.abierto = true;
   }
 
   editar(producto: Producto): void {
+    this.productoOriginal = { ...producto };
     this.form = { ...producto };
     this.errorFormulario = '';
     this.abierto = true;
@@ -401,6 +414,7 @@ export class ProductosComponent implements OnInit {
 
   guardar(): void {
     this.errorFormulario = '';
+
     if (!this.form.nombre.trim()) {
       this.errorFormulario = 'Ingrese el nombre del producto.';
       return;
@@ -424,20 +438,84 @@ export class ProductosComponent implements OnInit {
 
     this.form.nombre = this.form.nombre.trim();
     this.form.descripcion = this.form.descripcion.trim();
+    const original = this.productoOriginal;
+
+    const cambioIgv =
+      !!original &&
+      (this.form.afectacionIgv ?? null) !== (original.afectacionIgv ?? null);
+
+    const cambioDatosGenerales =
+      !!original &&
+      (
+        this.form.nombre !== original.nombre ||
+        this.form.descripcion !== original.descripcion ||
+        this.form.precio !== original.precio ||
+        this.form.stock !== original.stock ||
+        this.form.activo !== original.activo
+      );
+
+    // Si únicamente cambió el IGV, usar PATCH.
+    if (original && cambioIgv && !cambioDatosGenerales) {
+      if (!original.id || !this.form.afectacionIgv) {
+        this.errorFormulario =
+          'Seleccione una clasificación tributaria válida.';
+        return;
+      }
+
+      this.procesando = true;
+
+      this.api.actualizarAfectacionIgv(
+        original.id,
+        this.form.afectacionIgv
+      ).subscribe({
+        next: () => {
+          this.procesando = false;
+          this.abierto = false;
+          this.productoOriginal = null;
+          this.mostrarMensaje(
+            'Clasificación IGV actualizada correctamente.'
+          );
+          this.cargar();
+        },
+        error: error => {
+          this.procesando = false;
+          this.errorFormulario = this.extraerMensaje(
+            error,
+            'No se pudo actualizar la clasificación IGV.'
+          );
+        }
+      });
+
+      return;
+    }
+
+    // Evitar guardar un formulario sin cambios.
+    if (original && !cambioIgv && !cambioDatosGenerales) {
+      this.abierto = false;
+      this.mostrarMensaje('No se realizaron cambios.');
+      return;
+    }
+
     this.procesando = true;
+
     const operacion = this.form.id
       ? this.api.actualizarProducto(this.form)
       : this.api.crearProducto(this.form);
+
     operacion.subscribe({
       next: () => {
         this.procesando = false;
         this.abierto = false;
+        this.productoOriginal = null;
         this.mostrarMensaje('Producto guardado correctamente.');
         this.cargar();
       },
       error: error => {
         this.procesando = false;
-        this.errorFormulario = this.extraerMensaje(error, 'No se pudo guardar el producto.');
+        this.errorFormulario = this.extraerMensaje(
+          error,
+          'No se pudo guardar el producto.'
+        );
       }
     });
   }
@@ -478,7 +556,7 @@ export class ProductosComponent implements OnInit {
 
   trackById(_: number, item: Producto): number | undefined { return item.id; }
 
-  private vacio(): Producto { return { nombre: '', descripcion: '', precio: 0, stock: 0, activo: true }; }
+  private vacio(): Producto { return { nombre: '', descripcion: '', precio: 0, stock: 0, activo: true, afectacionIgv: null }; }
   private mostrarMensaje(mensaje: string): void {
     this.mensaje = mensaje; this.esError = false; this.programarLimpiarMensaje();
   }

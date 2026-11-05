@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AjusteInventario, Cliente, CrearVentaRequest, Producto, ResultadoImportacion, Venta, DocumentoConsulta } from '../models';
+import { AjusteInventario, Cliente, ConsultaRucResponse, CrearVentaRequest, Producto, ResultadoImportacion, TipoAfectacionIgv, Venta } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -21,6 +21,19 @@ export class ApiService {
   actualizarProducto(producto: Producto): Observable<Producto> {
     return this.http.put<Producto>(`${this.base}/productos/${producto.id}`, producto);
   }
+
+
+  actualizarAfectacionIgv(
+    id: number,
+    afectacionIgv: TipoAfectacionIgv
+  ): Observable<Producto> {
+    return this.http.patch<Producto>(
+      `${this.base}/productos/${id}/afectacion-igv`,
+      { afectacionIgv }
+    );
+  }
+
+
 
   eliminarProducto(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/productos/${id}`);
@@ -76,8 +89,28 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/ventas/${id}`);
   }
 
-  buscarDni(dni: string): Observable<DocumentoConsulta> { return this.http.get<DocumentoConsulta>(this.base + '/clientes/documentos/dni/' + dni); }
-  buscarRuc(ruc: string): Observable<DocumentoConsulta> { return this.http.get<DocumentoConsulta>(this.base + '/clientes/documentos/ruc/' + ruc); }
+  buscarDni(dni: string): Observable<{
+    numeroDocumento: string;
+    nombres: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string;
+    estado?: string;
+  }> {
+    return this.http.get<{
+      numeroDocumento: string;
+      nombres: string;
+      apellidoPaterno: string;
+      apellidoMaterno: string;
+      estado?: string;
+    }>(`/external/dni?numero=${encodeURIComponent(dni)}`);
+  }
+
+  buscarRuc(ruc: string): Observable<ConsultaRucResponse> {
+    return this.http.get<ConsultaRucResponse>(
+      `${this.base}/facturacion/ruc/${encodeURIComponent(ruc)}`
+    );
+  }
+
   sesion() { return this.http.get<{ username: string; rol: string }>(this.base + '/auth/me'); }
 
   usuarios() { return this.http.get<Array<{id: number; username: string; email: string; rol: string}>>(this.base + '/auth/usuarios'); }
@@ -86,7 +119,7 @@ export class ApiService {
 
   login(username: string, password: string) {
     return this.http.post<{ token: string; username: string; rol: string }>(
-      `${this.base}/auth/login`,
+      `/auth/login`,
       { username, password }
     );
   }

@@ -1,3 +1,8 @@
+export type TipoAfectacionIgv =
+  | 'GRAVADO'
+  | 'EXONERADO'
+  | 'INAFECTO';
+
 export interface Producto {
   id?: number;
   nombre: string;
@@ -6,6 +11,7 @@ export interface Producto {
   stock: number;
   activo?: boolean;
   version?: number;
+  afectacionIgv?: TipoAfectacionIgv | null;
 }
 
 export interface AjusteInventario {
@@ -78,3 +84,13 @@ export interface ApiError {
 }
 
 export interface DocumentoConsulta { tipoDocumento: 'DNI' | 'RUC'; numeroDocumento: string; nombre: string; nombres?: string; apellidoPaterno?: string; apellidoMaterno?: string; direccion?: string; estado?: string; condicion?: string; proveedor: string; }
+
+export interface ConsultaRucResponse {
+  ruc: string;
+  razonSocial: string;
+  estado: string;
+  condicion: string;
+  direccionFiscal: string;
+  nombreComercial?: string;
+  nombre?: string;
+}

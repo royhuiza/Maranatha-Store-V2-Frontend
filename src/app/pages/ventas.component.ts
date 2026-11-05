@@ -58,39 +58,35 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
     <dialog viewportModal (modalDismiss)="mostrarPago=false" class="modal no-print" *ngIf="mostrarPago" role="dialog" aria-modal="true" aria-label="Resumen de pago"><section class="dialog payment-dialog"><span class="product-dialog-eyebrow">VENTA REGISTRADA</span><h3>Tu venta está lista</h3><p class="payment-reference">{{ventaEmitida?.serie}}-{{ventaEmitida?.numero}}</p><div class="payment-summary-total"><span>Total registrado</span><strong>S/ {{ventaEmitida?.total | number:'1.2-2'}}</strong></div><div class="payment-summary-method"><span>Método previsto</span><b>{{ventaEmitida?.metodoPago || metodoPago || 'SIN ELEGIR'}}</b><span class="status danger">Pago pendiente</span></div><p>No se ha confirmado un ingreso bancario. Verifica el pago en la cuenta receptora.</p><ng-container *ngTemplateOutlet="datosCobro; context: {metodo: ventaEmitida?.metodoPago || metodoPago, importe: ventaEmitida?.total}"></ng-container><div class="payment-next"><b>¿Qué sigue?</b><p>Puedes descargar el comprobante interno o volver a la venta. Un comprobante no acredita el pago.</p></div><div class="actions"><button class="secondary" (click)="mostrarPago=false; ventaDescargas=ventaEmitida">Descargar comprobante</button><button (click)="mostrarPago=false">Volver a ventas</button></div></section></dialog>
     <dialog viewportModal (modalDismiss)="cerrarPdf()" class="modal no-print" *ngIf="pdfPreparado as pdf" aria-label="PDF preparado"><section class="dialog pdf-ready-dialog"><span class="product-dialog-eyebrow">DOCUMENTO GENERADO</span><h3>Tu PDF está listo</h3><p>{{pdf.nombre}}</p><p>Conserva el fondo blanco, el logo y el QR del registro.</p><div class="actions"><button class="secondary" (click)="cerrarPdf()">Cerrar</button><a class="save-pdf-link" [href]="pdf.url" [download]="pdf.nombre">Guardar PDF</a></div></section></dialog>
     <div class="sale-grid">
-      <section class="panel sale-workspace no-print">
-        <section class="sale-step" aria-labelledby="sale-customer-title">
-          <h3 class="sale-step-title" id="sale-customer-title"><span aria-hidden="true">01</span> Datos del comprobante</h3>
-          <div class="row">
-            <label>Tipo
-              <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
-                <option value="BOLETA">Boleta</option>
-                <option value="FACTURA">Factura</option>
-                <option value="NOTA_PEDIDO">Nota de pedido</option>
-              </select>
-            </label>
-            <label>Cliente
-              <select [(ngModel)]="clienteId" (ngModelChange)="onClienteSeleccionado()">
-                <option [ngValue]="undefined">{{ clienteConsultado ? ((clienteConsultado.nombre + ' ' + (clienteConsultado.apellido || '')).trim()) : 'Público general' }}</option>
-                <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }} · {{ c.numeroDocumento || 'sin documento' }}</option>
-              </select>
-            </label>
-            <p class="hint">Precios con IGV incluido automáticamente (18%).</p>
-          </div>
-          <div *ngIf="tipo==='BOLETA' || tipo==='FACTURA'" class="row">
-            <label>{{ tipo === 'BOLETA' ? 'DNI' : 'RUC' }}
-              <input type="text" [(ngModel)]="documento" name="documento" (ngModelChange)="onDocumentoChange()" [attr.maxlength]="tipo === 'BOLETA' ? 8 : 11" placeholder="{{ tipo === 'BOLETA' ? 'Ingrese DNI' : 'Ingrese RUC' }}">
-            </label>
-          </div>
-          <button class="secondary" (click)="buscarDocumento()" [disabled]="documentoBuscando || !documento">{{ documentoBuscando ? 'Consultando...' : 'Consultar documento' }}</button><p class="document-status" *ngIf="documentoValido">Datos recibidos de Decolecta. El cliente quedará asociado al registrar la venta.</p>
-          <aside class="identity-card" *ngIf="documentoDatos as d" aria-label="Resultado de consulta de documento" aria-live="polite">
-            <div class="identity-heading"><span class="identity-avatar">{{d.nombre.slice(0,1)}}</span><div><small>{{d.tipoDocumento === 'DNI' ? 'IDENTIDAD' : 'DATOS TRIBUTARIOS'}} · DECOLECTA</small><h3>{{d.nombre}}</h3></div><span class="identity-check" aria-label="Consulta recibida">✓</span></div>
-            <dl><div><dt>{{d.tipoDocumento}}</dt><dd>{{d.numeroDocumento}}</dd></div><ng-container *ngIf="d.tipoDocumento==='DNI'"><div *ngIf="d.nombres"><dt>Nombres</dt><dd>{{d.nombres}}</dd></div><div *ngIf="d.apellidoPaterno"><dt>Apellido paterno</dt><dd>{{d.apellidoPaterno}}</dd></div><div *ngIf="d.apellidoMaterno"><dt>Apellido materno</dt><dd>{{d.apellidoMaterno}}</dd></div><div><dt>Fecha de nacimiento</dt><dd>Decolecta no la proporciona</dd></div></ng-container><div *ngIf="d.estado"><dt>Estado</dt><dd>{{d.estado}}</dd></div><div *ngIf="d.condicion"><dt>Condición</dt><dd>{{d.condicion}}</dd></div><div *ngIf="d.direccion"><dt>Dirección</dt><dd>{{d.direccion}}</dd></div></dl>
-          </aside>
-          <small class="error" *ngIf="documentoError">{{ documentoError }}</small>
-          <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
+      <section class="panel no-print">
+        <h3>Datos del comprobante</h3>
+        <div class="row">
+          <label>Tipo
+            <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
+              <option value="BOLETA">Boleta</option>
+              <option value="FACTURA">Factura</option>
+              <option value="NOTA_PEDIDO">Nota de pedido</option>
+            </select>
+          </label>
+          <label>Cliente
+            <select [(ngModel)]="clienteId" (ngModelChange)="ventaEmitida=undefined">
+              <option [ngValue]="undefined">Público general</option>
+              <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }} · {{ c.numeroDocumento || 'sin documento' }}</option>
+            </select>
+          </label>
+          <label style="align-self:center">
+            <input type="checkbox" [(ngModel)]="preciosIncluyenIgv"> Precios incluyen IGV ({{ (igvRate*100) | number:'1.0-0' }}%)
+          </label>
+        </div>
+        <div *ngIf="tipo==='BOLETA' || tipo==='FACTURA'" class="row">
+          <label>{{ tipo === 'BOLETA' ? 'DNI' : 'RUC' }}
+            <input type="text" [(ngModel)]="documento" name="documento" [attr.maxlength]="tipo === 'BOLETA' ? 8 : 11" placeholder="{{ tipo === 'BOLETA' ? 'Ingrese DNI' : 'Ingrese RUC' }}">
+          </label>
+        </div>
+        <small class="hint" *ngIf="documentoNombre">{{ documentoNombre }}</small>
+        <small class="error" *ngIf="documentoError">{{ documentoError }}</small>
+        <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
 
-        </section>
         <section class="sale-step" aria-labelledby="sale-products-title">
           <h3 class="sale-step-title" id="sale-products-title"><span aria-hidden="true">02</span> Productos</h3>
           <div class="sale-help-banner no-print"><span aria-hidden="true">✦</span><div><b>Arma tu venta paso a paso</b><p>Busca el primer artículo, elige una cantidad y pulsa Agregar al carrito. Repite con otro producto; el total se actualizará solo.</p></div></div>
@@ -315,6 +311,7 @@ export class VentasComponent implements OnInit, OnDestroy {
   mostrarBuscador = false;
   documentoDatos?: DocumentoConsulta;
   documentoNombre = '';
+  documentoDireccion = '';
   documentoError = '';
   documentoBuscando = false;
   documentoValido = false;
@@ -401,7 +398,7 @@ export class VentasComponent implements OnInit, OnDestroy {
     this.cargarCatalogos();
     this.cargarVentas();
     const pref = localStorage.getItem('maranatha.imprimir.formato');
-    if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET'|'A4';
+    if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET' | 'A4';
   }
 
   onTipoChange(): void {
@@ -410,22 +407,14 @@ export class VentasComponent implements OnInit, OnDestroy {
     this.documento = '';
     this.documentoNombre = '';
     this.documentoError = '';
-    this.documentoDatos = undefined; this.documentoValido = false;
+    this.documentoValido = false;
   }
 
   ngOnDestroy(): void { clearInterval(this.reloj); clearTimeout(this.documentoTimer); this.consultaDocumento?.unsubscribe(); this.cerrarPdf(); }
   onDocumentoChange(): void {
-    clearTimeout(this.documentoTimer); this.consultaDocumento?.unsubscribe();
-    this.documentoNombre = ''; this.documentoError = ''; this.documentoDatos = undefined; this.documentoValido = false; this.documentoBuscando = false;
-    this.clienteConsultado = undefined; this.clienteId = undefined; this.ventaEmitida = undefined;
-    const longitud = this.tipo === 'BOLETA' ? 8 : this.tipo === 'FACTURA' ? 11 : 0;
-    if (longitud && new RegExp('^[0-9]{' + longitud + '}$').test(this.documento.trim())) this.documentoTimer = setTimeout(() => this.buscarDocumento(), 600);
-  }
-  onClienteSeleccionado(): void {
-    clearTimeout(this.documentoTimer); this.consultaDocumento?.unsubscribe(); this.clienteConsultado = undefined;
-    this.ventaEmitida = undefined; this.documentoDatos = undefined; this.documentoValido = false; this.documentoBuscando = false; this.documentoError = '';
-    const cliente = this.clientes.find(c => c.id === this.clienteId);
-    this.documento = cliente?.numeroDocumento || ''; this.documentoNombre = cliente ? (cliente.nombre + ' ' + (cliente.apellido || '')).trim() : '';
+    this.documentoNombre = '';
+    this.documentoError = '';
+    this.documentoValido = false;
   }
 
   onProductoFiltroChange(): void {
@@ -444,22 +433,58 @@ export class VentasComponent implements OnInit, OnDestroy {
   }
 
   buscarDocumento(): void {
-    clearTimeout(this.documentoTimer);
-    if (this.documentoBuscando || this.documentoValido) return;
-    const numero = this.documento.trim(), tipo = this.tipo;
-    if (!new RegExp(tipo === 'BOLETA' ? '^[0-9]{8}$' : '^[0-9]{11}$').test(numero)) { this.documentoError = 'Ingrese un documento con la cantidad correcta de dígitos.'; return; }
-    this.documentoBuscando = true; this.documentoError = '';
-    const consulta = tipo === 'BOLETA' ? this.api.buscarDni(numero) : this.api.buscarRuc(numero);
-    this.consultaDocumento = consulta.subscribe({
-      next: data => {
-        if (this.documento.trim() !== numero || this.tipo !== tipo) return;
-        this.documentoDatos = data; this.documentoBuscando = false; this.documentoValido = true; this.documentoNombre = data.nombre;
-        const existente = this.clientes.find(c => c.numeroDocumento === numero && c.tipoDocumento === data.tipoDocumento);
-        if (existente) { this.clienteId = existente.id; this.clienteConsultado = undefined; }
-        else { this.clienteId = undefined; this.clienteConsultado = { nombre: data.tipoDocumento === 'DNI' ? data.nombres! : data.nombre, apellido: data.tipoDocumento === 'DNI' ? [data.apellidoPaterno, data.apellidoMaterno].filter(Boolean).join(' ') : null, tipoDocumento: data.tipoDocumento, numeroDocumento: numero, direccion: data.direccion || null, activo: true }; }
-      },
-      error: error => { if (this.documento.trim() !== numero || this.tipo !== tipo) return; this.documentoBuscando = false; this.documentoDatos = undefined; this.documentoValido = false; this.clienteConsultado = undefined; this.documentoError = error.error?.message || (error.status === 404 ? 'La consulta no está disponible. Verifique que el backend actualizado esté iniciado.' : 'No se pudo consultar el documento. Intente más tarde.'); }
-    });
+    this.documentoError = '';
+    this.documentoNombre = '';
+    this.documentoValido = false;
+
+    const numero = this.documento.trim();
+    if (this.tipo === 'BOLETA') {
+      if (!/^[0-9]{8}$/.test(numero)) {
+        this.documentoError = 'El DNI debe tener 8 dígitos válidos.';
+        return;
+      }
+      this.documentoBuscando = true;
+      this.api.buscarDni(numero).subscribe({
+        next: data => {
+          this.documentoBuscando = false;
+          this.documentoValido = true;
+          this.documentoNombre = `${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}`.trim();
+        },
+        error: err => {
+          this.documentoBuscando = false;
+          const status = err?.status ?? 0;
+          const message = err?.message ? ` ${err.message}` : '';
+          this.documentoError = status === 0
+            ? 'Error de conexión o proxy. Reinicie el servidor de desarrollo y verifique la configuración de proxy.'
+            : `No se encontró el DNI. Verifique el número e intente nuevamente. (HTTP ${status})${message}`;
+        }
+      });
+      return;
+    }
+
+    if (this.tipo === 'FACTURA') {
+      if (!/^[0-9]{11}$/.test(numero)) {
+        this.documentoError = 'El RUC debe tener 11 dígitos válidos.';
+        return;
+      }
+      this.documentoBuscando = true;
+      this.api.buscarRuc(numero).subscribe({
+        next: data => {
+          this.documentoBuscando = false;
+          this.documentoValido = true;
+          this.documentoNombre = data.nombreComercial?.trim() || data.nombre?.trim() || 'RUC válido';
+        },
+        error: err => {
+          this.documentoBuscando = false;
+          const status = err?.status ?? 0;
+          const message = err?.message ? ` ${err.message}` : '';
+          this.documentoError = status === 0
+            ? 'Error de conexión o proxy. Reinicie el servidor de desarrollo y verifique la configuración de proxy.'
+            : `No se encontró el RUC. Verifique el número e intente nuevamente. (HTTP ${status})${message}`;
+        }
+      });
+      return;
+    }
   }
 
   cargarCatalogos(): void {

@@ -41,10 +41,33 @@ import { ApiError, Cliente } from '../models';
         </div>
         <div class="row">
           <label>Tipo de documento
-            <select [(ngModel)]="form.tipoDocumento" name="tipo"><option>DNI</option><option>RUC</option><option>CE</option></select>
+            <select [(ngModel)]="form.tipoDocumento" name="tipo">
+            <option>DNI</option>
+            <option>RUC</option>
+            <option>CE</option>
+            </select>
           </label>
-          <label>Número<input [(ngModel)]="form.numeroDocumento" name="numeroDocumento" maxlength="20"></label>
+          <label>
+            Número
+            <input
+              [(ngModel)]="form.numeroDocumento"
+              name="numeroDocumento"
+              maxlength="20"
+              (ngModelChange)="errorFormulario = ''">
+          </label>
         </div>
+
+
+        <div *ngIf="form.tipoDocumento === 'RUC'">
+          <button
+            type="button"
+            class="secondary"
+            (click)="consultarRuc()"
+            [disabled]="consultandoRuc || procesando">
+            {{ consultandoRuc ? 'Consultando...' : 'Consultar SUNAT' }}
+          </button>
+        </div>
+
         <div class="row">
           <label>Teléfono<input [(ngModel)]="form.telefono" name="telefono" maxlength="30"></label>
           <label>Email<input type="email" [(ngModel)]="form.email" name="email" maxlength="120"></label>
@@ -66,6 +89,7 @@ export class ClientesComponent implements OnInit {
   q = '';
   abierto = false;
   procesando = false;
+  consultandoRuc = false;
   mensaje = '';
   esError = false;
   errorFormulario = '';
@@ -87,6 +111,49 @@ export class ClientesComponent implements OnInit {
 
   nuevo(): void { this.form = this.vacio(); this.errorFormulario = ''; this.abierto = true; }
   editar(cliente: Cliente): void { this.form = { ...cliente }; this.errorFormulario = ''; this.abierto = true; }
+
+  consultarRuc(): void {
+    this.errorFormulario = '';
+
+    const ruc = (this.form.numeroDocumento || '').trim();
+
+    if (!/^\d{11}$/.test(ruc)) {
+      this.errorFormulario = 'Ingrese un RUC de 11 dígitos.';
+      return;
+    }
+
+    this.consultandoRuc = true;
+
+    this.api.buscarRuc(ruc).subscribe({
+      next: datos => {
+        this.consultandoRuc = false;
+
+        if (this.form.numeroDocumento !== ruc) {
+          return;
+        }
+
+        this.form.nombre = datos.razonSocial;
+        this.form.apellido = '';
+        this.form.direccion = datos.direccionFiscal || '';
+
+        this.errorFormulario = '';
+      },
+      error: (error: HttpErrorResponse) => {
+        this.consultandoRuc = false;
+
+        if (error.status === 503) {
+          this.errorFormulario =
+            'La consulta RUC oficial todavía no está disponible. Puede ingresar los datos manualmente.';
+        } else if (error.status === 401) {
+          this.errorFormulario =
+            'Su sesión no es válida. Inicie sesión nuevamente.';
+        } else {
+          this.errorFormulario =
+            'No se pudo consultar el RUC. Verifique el número o la conexión.';
+        }
+      }
+    });
+  }
 
   guardar(): void {
     this.errorFormulario = '';
