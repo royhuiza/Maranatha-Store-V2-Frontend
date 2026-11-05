@@ -177,32 +177,17 @@ tbody tr:hover{background:#f8faf5}
 .section-hero{position:relative;display:flex;justify-content:space-between;align-items:center;overflow:hidden;gap:20px;padding:clamp(22px,3vw,37px) clamp(22px,3vw,42px);min-height:207px;border-radius:22px;background:linear-gradient(112deg,#153a3d 15%,#2c6965 100%);margin-bottom:30px;color:#fff;box-shadow:0 17px 46px #133f3c19;isolation:isolate}
 .section-hero::before{position:absolute;content:"";inset:0;opacity:.24;background-image:radial-gradient(circle at 7px 7px,#c4dcd3 1px,transparent 1.4px);background-size:27px 27px;pointer-events:none}
 .section-hero::after{position:absolute;content:"";width:360px;height:360px;right:-110px;top:-190px;border:1px solid #ffffff25;border-radius:50%;pointer-events:none}
-.hero-text{position:relative;z-index:2;max-width:660px;animation:maranatha-hero-enter .68s both}
+.hero-text{position:relative;z-index:2;max-width:660px;animation:maranatha-hero-enter .34s ease-out backwards}
 .hero-eyebrow{display:flex;align-items:center;gap:10px;color:#f4d7a8;font-size:10px;letter-spacing:2.5px;font-weight:800}
 .hero-signal{height:7px;width:7px;border-radius:50%;background:#f0bb77;box-shadow:0 0 0 5px #f0bb7722}
 .section-hero h2{color:white;font-size:clamp(23px,2.7vw,39px);margin:17px 0 8px;line-height:1.16;letter-spacing:-1.3px}
 .section-hero p{font-size:13px;line-height:1.65;margin:0;color:#dcece5}
-.hero-art{width:clamp(190px,26%,335px);flex-shrink:0;align-self:stretch;display:grid;place-items:center;animation:maranatha-art-enter .78s .06s both}
-.hero-art svg{width:100%;height:auto;max-height:170px;filter:drop-shadow(0 15px 9px #0a28283b);animation:maranatha-art-float 5s ease-in-out infinite alternate}
+.hero-art{width:clamp(190px,26%,335px);flex-shrink:0;align-self:stretch;display:grid;place-items:center}
+.hero-art svg{width:100%;height:auto;max-height:170px}
 .route-stage{position:relative;isolation:isolate}
-.route-stage>.page-title,.route-stage>.cards,.route-stage>.panel{animation:maranatha-stage-enter .45s ease both}
-.route-stage>.page-title{animation-delay:.05s}
-.route-stage>.cards{animation-delay:.12s}
-.route-stage>.panel{animation-delay:.16s}
-.route-stage .page-title,.route-stage .cards,.route-stage .table-wrap,.route-stage .sale-grid,.route-stage .toolbar,.route-stage .report-cards{animation:maranatha-stage-enter .55s ease both}
-.route-stage .cards article{animation:maranatha-card-pop .56s ease both}
-.route-stage .cards article:nth-child(1){animation-delay:.08s}
-.route-stage .cards article:nth-child(2){animation-delay:.15s}
-.route-stage .cards article:nth-child(3){animation-delay:.22s}
-.route-stage .cards article:nth-child(4){animation-delay:.29s}
-.route-wipe{position:absolute;z-index:15;inset:0;background:linear-gradient(108deg,#19474a,#dfad69);pointer-events:none;border-radius:20px;transform-origin:left;animation:maranatha-route-wipe .7s ease-in-out both}
 .maranatha-app nav a.active{box-shadow:inset 3px 0 0 #f8dfb3}
 @keyframes maranatha-hero-enter{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-@keyframes maranatha-art-enter{from{opacity:0;transform:translateX(40px) scale(.91)}to{opacity:1;transform:translateX(0) scale(1)}}
-@keyframes maranatha-art-float{to{transform:translateY(-9px)}}
 @keyframes maranatha-stage-enter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes maranatha-card-pop{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes maranatha-route-wipe{0%{opacity:0;transform:scaleX(0)}22%{opacity:.94;transform:scaleX(1)}56%{opacity:.92;transform:scaleX(1);transform-origin:right}100%{opacity:0;transform:scaleX(0);transform-origin:right}}
 /* Tema oscuro acotado a la aplicación, no modifica la impresión de comprobantes. */
 .maranatha-app.is-dark{background:#0c2023;color:#e8f3ed}
 .maranatha-app.is-dark main header{background:#102a2e;border-color:#295254;color:#e8f3ed}
@@ -225,8 +210,8 @@ tbody tr:hover{background:#f8faf5}
 .maranatha-app.is-dark .section-hero{background:linear-gradient(110deg,#1a4446,#325653)}
 @media(max-width:760px){.section-hero{padding:24px;min-height:160px}.hero-art{width:130px}.section-hero h2{font-size:24px}.section-hero p{font-size:12px}.topbar-actions{gap:6px}.maranatha-app .theme-toggle{min-width:44px;padding:10px}.maranatha-app .theme-toggle span{display:none}}
 @media(max-width:500px){.hero-art{display:none}.section-hero{min-height:145px}.section-hero h2{font-size:23px}}
-@media(prefers-reduced-motion:reduce){.maranatha-app,.hero-text,.hero-art,.hero-art svg,.route-stage *,.route-wipe{animation:none!important;transition:none!important}}
-@media print{.section-hero,.route-wipe,.theme-toggle{display:none!important}.maranatha-app.is-dark{background:#fff!important;color:#000!important}.maranatha-app.is-dark .panel{background:#fff!important;color:#000!important;box-shadow:none!important}}
+@media(prefers-reduced-motion:reduce){.maranatha-app,.hero-text,.hero-art,.hero-art svg,.route-stage *{animation:none!important;transition:none!important}}
+@media print{.section-hero,.theme-toggle{display:none!important}.maranatha-app.is-dark{background:#fff!important;color:#000!important}.maranatha-app.is-dark .panel{background:#fff!important;color:#000!important;box-shadow:none!important}}
 
 
 /* Login — tema claro/oscuro y continuidad visual con el panel de gestión */

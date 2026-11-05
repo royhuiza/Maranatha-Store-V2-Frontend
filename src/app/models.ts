@@ -8,6 +8,22 @@ export interface Producto {
   version?: number;
 }
 
+export interface AjusteInventario {
+  id: number;
+  tipo: 'REPONER' | 'DESCONTAR';
+  cantidad: number;
+  stockAnterior: number;
+  stockNuevo: number;
+  motivo: string;
+  fecha: string;
+}
+
+export interface ResultadoImportacion {
+  nuevos: number;
+  actualizados: number;
+  sinCambios: number;
+}
+
 export interface Cliente {
   id?: number;
   nombre: string;

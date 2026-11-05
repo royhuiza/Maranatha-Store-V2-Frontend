@@ -1,50 +1,61 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { catchError, EMPTY, Subject, switchMap, timer } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { lastValueFrom } from 'rxjs';
-import * as XLSX from 'xlsx';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { ApiError, Producto } from '../models';
+import { AjusteInventario, ApiError, Producto } from '../models';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, ReactiveFormsModule, CommonModule],
   template: `
     <div class="page-title">
       <div><h2>Productos e inventario</h2><p>Control de precios y stock en PostgreSQL</p></div>
       <button *ngIf="auth.isAdmin" (click)="nuevo()">+ Nuevo producto</button>
     </div>
-    <div *ngIf="mensaje" class="notice inventory-notice" [class.error-notice]="esError" role="status">{{ mensaje }}</div>
+    <div *ngIf="mensaje" class="notice inventory-notice" [class.error-notice]="esError" [attr.role]="esError ? 'alert' : 'status'">
+      <span style="white-space:pre-line">{{ mensaje }}</span>
+      <button *ngIf="esError" type="button" class="link" (click)="mensaje=''">Cerrar</button>
+    </div>
     <div class="stock-segments" role="group" aria-label="Filtro rápido de stock"><button type="button" [class.active]="filtroStock==='todos'" (click)="filtroStock='todos'">Todos</button><button type="button" [class.active]="filtroStock==='disponible'" (click)="filtroStock='disponible'">Disponibles · 6 o más</button><button type="button" [class.active]="filtroStock==='bajo'" (click)="filtroStock='bajo'">Stock bajo · 1 a 5</button><button type="button" [class.active]="filtroStock==='agotado'" (click)="filtroStock='agotado'">Sin stock</button></div>
     <div class="toolbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción o ID..." [(ngModel)]="q">
+      <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción o ID..." [ngModel]="q" (ngModelChange)="cambiarBusqueda($event)">
       <select aria-label="Filtrar por existencias" [(ngModel)]="filtroStock" class="stock-filter">
         <option value="todos">Todos los artículos</option>
         <option value="bajo">Stock bajo (1–5)</option>
         <option value="agotado">Sin stock (0)</option>
         <option value="disponible">Disponibles (6+)</option>
       </select>
-      <button class="secondary" type="button" *ngIf="auth.isAdmin" (click)="archivoImportar.click()" [disabled]="importando">Importar plantilla Excel</button>
-      <button class="secondary" type="button" (click)="exportarVista()">Exportar inventario mostrado</button>
-      <input #archivoImportar type="file" accept=".xlsx,.xls" hidden (change)="importarExcel($event)">
+      <form *ngIf="auth.isAdmin" [formGroup]="formImportacion">
+        <button class="secondary" type="button" (click)="archivoImportar.click()" [disabled]="importando">
+          {{ importando ? 'Importando Excel…' : 'Importar plantilla Excel' }}
+        </button>
+        <input #archivoImportar type="file" accept=".xlsx,.xls" hidden (change)="seleccionarExcel(archivoImportar)">
+      </form>
+      <button class="secondary" type="button" (click)="exportarVista()" [disabled]="cargandoCatalogo || !!errorCatalogo">Exportar inventario mostrado</button>
     </div>
-    <div class="search-result-feedback" *ngIf="q.trim() || filtroStock !== 'todos'" aria-live="polite">
+    <div *ngIf="errorCatalogo" class="notice inventory-notice error-notice" role="alert">
+      {{ errorCatalogo }}
+      <button type="button" class="link" (click)="cargar()">Reintentar</button>
+    </div>
+    <div class="search-result-feedback" *ngIf="!cargandoCatalogo && !errorCatalogo && (q.trim() || filtroStock !== 'todos')" aria-live="polite">
       <span aria-hidden="true">{{ filtrados.length ? '✦' : '⌕' }}</span>
-      {{ filtrados.length ? (filtrados.length + ' artículo(s) encontrado(s)') : 'No encontramos artículos con estos filtros. Prueba otro nombre, ID o estado.' }}
-      <button type="button" class="link" (click)="q=''; filtroStock='todos'">Limpiar filtros</button>
+      {{ filtrados.length ? (filtrados.length + ' artículo(s) encontrado(s)') : mensajeSinResultados }}
+      <button type="button" class="link" (click)="filtroStock='todos'; cambiarBusqueda('')">Limpiar filtros</button>
     </div>
     <div class="table-wrap inventory-filter-results" [attr.data-stock-filter]="filtroStock">
       <table>
         <thead><tr><th>Producto</th><th>Descripción</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead>
         <tbody>
           <tr *ngFor="let p of filtrados; trackBy: trackById" [class.inventory-row-removing]="eliminandoAnimacionId === p.id">
-            <td><b>{{ p.nombre }}</b></td>
+            <td><b>{{ p.nombre }}</b><br><small>ID {{ p.id }}</small></td>
             <td>{{ p.descripcion || '-' }}</td>
             <td>S/ {{ p.precio | number:'1.2-2' }}</td>
             <td>{{ p.stock }}</td>
-            <td><span [class.danger]="p.stock <= 5" class="status">{{ p.stock <= 5 ? 'Stock bajo' : 'Disponible' }}</span></td>
+            <td><span [class.danger]="p.stock <= 5" class="status">{{ estadoStock(p.stock) }}</span></td>
             <td>
               <button type="button" class="link" (click)="verDetalle(p)">Ver</button>
               <button type="button" class="link" *ngIf="auth.isAdmin" (click)="editar(p)">Editar</button>
@@ -55,7 +66,10 @@ import { ApiError, Producto } from '../models';
               </button>
             </td>
           </tr>
-          <tr *ngIf="!filtrados.length"><td colspan="6" class="empty">{{ lista.length ? 'No se encontraron productos. Prueba otro filtro.' : 'No hay productos registrados.' }}</td></tr>
+          <tr *ngIf="cargandoCatalogo"><td colspan="6" class="empty" role="status">Consultando catálogo…</td></tr>
+          <tr *ngIf="!cargandoCatalogo && !errorCatalogo && !filtrados.length">
+            <td colspan="6" class="empty">{{ q.trim() || filtroStock !== 'todos' ? mensajeSinResultados : 'No hay productos registrados.' }}</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -66,12 +80,27 @@ import { ApiError, Producto } from '../models';
         <h3>{{ detalle.nombre }}</h3>
         <p>{{ detalle.descripcion || 'Sin descripción' }}</p>
         <dl class="inventory-details">
-          <div><dt>ID interno</dt><dd>{{ detalle.id }}</dd></div>
+          <div><dt>ID del producto</dt><dd>{{ detalle.id }}</dd></div>
           <div><dt>Precio</dt><dd>S/ {{ detalle.precio | number:'1.2-2' }}</dd></div>
           <div><dt>Stock</dt><dd>{{ detalle.stock }}</dd></div>
-          <div><dt>Estado</dt><dd>{{ detalle.stock <= 5 ? 'Stock bajo' : 'Disponible' }}</dd></div>
+          <div><dt>Estado</dt><dd>{{ estadoStock(detalle.stock) }}</dd></div>
         </dl>
-        <p class="inventory-hint">El ID interno no sustituye el código comercial único pendiente del backend.</p>
+        <section *ngIf="auth.isAdmin" aria-label="Historial de ajustes">
+          <h4>Historial de ajustes</h4>
+          <p *ngIf="cargandoHistorial" role="status">Cargando historial…</p>
+          <p *ngIf="errorHistorial" class="product-form-error" role="alert">{{ errorHistorial }}</p>
+          <ng-container *ngIf="!cargandoHistorial && !errorHistorial">
+            <p *ngIf="!historial.length">Todavía no hay ajustes registrados.</p>
+            <ol *ngIf="historial.length" style="max-height: 12rem; overflow: auto;">
+              <li *ngFor="let ajuste of historial">
+                <strong>{{ ajuste.tipo === 'REPONER' ? '+' : '−' }}{{ ajuste.cantidad }}</strong>
+                · {{ ajuste.stockAnterior }} → {{ ajuste.stockNuevo }}
+                · {{ ajuste.fecha | date:'dd/MM/yyyy HH:mm':'-0500' }}<br>
+                {{ ajuste.motivo }}
+              </li>
+            </ol>
+          </ng-container>
+        </section>
         <div class="actions"><button type="button" (click)="detalle=null">Cerrar</button></div>
       </section>
     </div>
@@ -88,7 +117,10 @@ import { ApiError, Producto } from '../models';
           <input name="cantidadAjuste" type="number" min="1" step="1" [(ngModel)]="cantidadAjuste" required>
         </label>
         <div class="inventory-preview">Stock estimado: <strong>{{ stockEstimado }}</strong></div>
-        <p class="inventory-hint">El backend actual no permite registrar motivo ni consultar historial de ajustes. Esta operación solo modifica existencias.</p>
+        <label>Motivo del ajuste <span class="required-star">*</span>
+          <textarea name="motivoAjuste" [(ngModel)]="motivoAjuste" maxlength="250" rows="2"
+            placeholder="Ej. Conteo físico o producto dañado" required></textarea>
+        </label>
         <div *ngIf="errorAjuste" role="alert" class="product-form-error">{{ errorAjuste }}</div>
         <div class="actions"><button type="button" class="secondary" (click)="ajusteProducto=null" [disabled]="procesandoAjuste">Cancelar</button><button type="submit" [disabled]="procesandoAjuste">{{ procesandoAjuste ? 'Aplicando...' : 'Confirmar ajuste' }}</button></div>
       </form>
@@ -96,7 +128,9 @@ import { ApiError, Producto } from '../models';
     <div class="modal product-modal" *ngIf="productoEliminar" role="presentation">
       <section class="dialog inventory-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
         <span class="product-dialog-eyebrow">CONFIRMAR ACCIÓN</span><h3 id="delete-title">¿Eliminar artículo?</h3>
-        <p>Eliminarás <strong>{{ productoEliminar.nombre }}</strong>. Esta acción no se puede deshacer.</p>
+        <p>Confirma si deseas eliminar <strong>{{ productoEliminar.nombre }}</strong> del catálogo.</p>
+        <p>Solo se pueden eliminar productos sin stock ni ventas asociadas.</p>
+        <p *ngIf="errorEliminar" class="product-form-error" role="alert">{{ errorEliminar }}</p>
         <div class="actions"><button type="button" class="secondary" (click)="productoEliminar=null" [disabled]="procesandoEliminar">Cancelar</button><button type="button" class="danger-button" (click)="confirmarEliminar()" [disabled]="procesandoEliminar">{{ procesandoEliminar ? 'Eliminando...' : 'Sí, eliminar' }}</button></div>
       </section>
     </div>
@@ -139,13 +173,32 @@ import { ApiError, Producto } from '../models';
 export class ProductosComponent implements OnInit {
   readonly auth=inject(AuthService);
   private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly consultas = new Subject<number>();
+  cargandoCatalogo = true;
+  errorCatalogo = '';
+  readonly formImportacion = new FormGroup({
+    archivo: new FormControl<File | null>(null, control => {
+      const archivo: File | null = control.value;
+      if (!archivo) return { required: true };
+      if (!/\.(xlsx|xls)$/i.test(archivo.name)) return { formato: true };
+      if (!archivo.size) return { vacio: true };
+      if (archivo.size > 5 * 1024 * 1024) return { tamano: true };
+      return null;
+    })
+  });
   lista: Producto[] = [];
   q = '';
   filtroStock: 'todos' | 'bajo' | 'agotado' | 'disponible' = 'todos';
   detalle: Producto | null = null;
+  historial: AjusteInventario[] = [];
+  cargandoHistorial = false;
+  errorHistorial = '';
+  errorEliminar = '';
   ajusteProducto: Producto | null = null;
   productoEliminar: Producto | null = null;
   cantidadAjuste = 1;
+  motivoAjuste = '';
   tipoAjuste: 'reponer' | 'descontar' = 'reponer';
   procesandoAjuste = false;
   procesandoEliminar = false;
@@ -161,30 +214,85 @@ export class ProductosComponent implements OnInit {
   form: Producto = this.vacio();
 
   get filtrados(): Producto[] {
-    const texto = this.q.toLowerCase().trim();
-    return this.lista.filter(p => {
-      const coincideTexto = `${p.id ?? ''} ${p.nombre} ${p.descripcion || ''}`.toLowerCase().includes(texto);
-      const coincideStock = this.filtroStock === 'todos'
-        || (this.filtroStock === 'bajo' && p.stock >= 1 && p.stock <= 5)
-        || (this.filtroStock === 'agotado' && p.stock === 0)
-        || (this.filtroStock === 'disponible' && p.stock > 5);
-      return coincideTexto && coincideStock;
-    });
+    if (this.cargandoCatalogo || this.errorCatalogo) return [];
+    return this.lista.filter(p => this.filtroStock === 'todos'
+      || (this.filtroStock === 'bajo' && p.stock >= 1 && p.stock <= 5)
+      || (this.filtroStock === 'agotado' && p.stock === 0)
+      || (this.filtroStock === 'disponible' && p.stock > 5));
   }
 
-  ngOnInit(): void { this.cargar(); }
+  get mensajeSinResultados(): string {
+    const busqueda = this.q.trim();
+    if (/^\d+$/.test(busqueda) && !this.lista.length) {
+      return `No se encontró un producto con el ID ${busqueda}.`;
+    }
+    return 'No encontramos artículos con estos filtros. Prueba otro nombre, ID o estado.';
+  }
+
+  estadoStock(stock: number): string {
+    if (stock === 0) return 'Sin stock';
+    return stock <= 5 ? 'Stock bajo' : 'Disponible';
+  }
+
+  ngOnInit(): void {
+    this.consultas.pipe(
+      switchMap(espera => {
+        const consulta = this.q.trim();
+        this.cargandoCatalogo = true;
+        this.errorCatalogo = '';
+        return timer(espera).pipe(
+          switchMap(() => this.api.productos(consulta)),
+          catchError(error => {
+            this.cargandoCatalogo = false;
+            this.errorCatalogo = this.extraerMensaje(error, 'No se pudieron cargar los productos.');
+            return EMPTY;
+          })
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(productos => {
+      this.lista = productos;
+      this.cargandoCatalogo = false;
+    });
+    this.cargar();
+  }
+
+  cambiarBusqueda(consulta: string): void {
+    this.q = consulta;
+    this.consultas.next(250);
+  }
 
   get stockEstimado(): number {
     if (!this.ajusteProducto) return 0;
     return this.ajusteProducto.stock + (this.tipoAjuste === 'reponer' ? 1 : -1) * (Number(this.cantidadAjuste) || 0);
   }
 
-  verDetalle(p: Producto): void { this.detalle = p; }
+  verDetalle(p: Producto): void {
+    this.detalle = p;
+    this.historial = [];
+    this.errorHistorial = '';
+    this.cargandoHistorial = false;
+    if (!p.id || !this.auth.isAdmin) return;
+    this.cargandoHistorial = true;
+    this.api.historialAjustes(p.id).subscribe({
+      next: historial => {
+        if (this.detalle !== p) return;
+        this.historial = historial;
+        this.cargandoHistorial = false;
+      },
+      error: error => {
+        if (this.detalle !== p) return;
+        this.errorHistorial = this.extraerMensaje(error, 'No se pudo cargar el historial de ajustes.');
+        this.cargandoHistorial = false;
+      }
+    });
+  }
 
   abrirAjuste(p: Producto): void {
     this.ajusteProducto = p;
     this.cantidadAjuste = 1;
     this.tipoAjuste = 'reponer';
+    this.motivoAjuste = '';
     this.errorAjuste = '';
   }
 
@@ -198,23 +306,33 @@ export class ProductosComponent implements OnInit {
     if (this.tipoAjuste === 'descontar' && cantidad > p.stock) {
       this.errorAjuste = 'La cantidad supera el stock disponible.'; return;
     }
+    const motivo = this.motivoAjuste.trim();
+    if (!motivo) {
+      this.errorAjuste = 'Ingresa el motivo del ajuste.';
+      return;
+    }
     this.procesandoAjuste = true;
-    this.api.ajustarStock(p.id, this.tipoAjuste, cantidad).subscribe({
+    const tipo = this.tipoAjuste === 'reponer' ? 'REPONER' : 'DESCONTAR';
+    this.api.ajustarStock(p.id, tipo, cantidad, motivo).subscribe({
       next: () => {
         this.procesandoAjuste = false;
         this.ajusteProducto = null;
-        this.mostrarMensaje('Stock actualizado correctamente.');
+        this.mostrarMensaje('Ajuste guardado. Puedes consultarlo en Ver → Historial de ajustes.');
         this.cargar();
       },
       error: e => { this.procesandoAjuste = false; this.errorAjuste = this.extraerMensaje(e, 'No se pudo actualizar el stock.'); }
     });
   }
 
-  solicitarEliminar(p: Producto): void { this.productoEliminar = p; }
+  solicitarEliminar(p: Producto): void {
+    this.errorEliminar = '';
+    this.productoEliminar = p;
+  }
 
   confirmarEliminar(): void {
     const p = this.productoEliminar;
     if (!p?.id || this.procesandoEliminar) return;
+    this.errorEliminar = '';
     this.procesandoEliminar = true;
     this.api.eliminarProducto(p.id).subscribe({
       next: () => {
@@ -227,16 +345,21 @@ export class ProductosComponent implements OnInit {
           this.cargar();
         }, 700);
       },
-      error: e => { this.procesandoEliminar = false; this.productoEliminar = null; this.mostrarError(e, 'No se pudo eliminar el producto.'); }
+      error: e => {
+        this.procesandoEliminar = false;
+        this.errorEliminar = this.extraerMensaje(e, 'No se pudo eliminar el producto.');
+      }
     });
   }
 
-  exportarVista(): void {
+  async exportarVista(): Promise<void> {
+    const XLSX = await import('xlsx');
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(this.filtrados.map(p => ({ ID: p.id, Producto: p.nombre, Descripcion: p.descripcion, Precio: p.precio, Stock: p.stock, Estado: p.activo === false ? 'INACTIVO' : 'ACTIVO' }))), 'Inventario');
     XLSX.writeFile(libro, 'inventario-mostrado.xlsx');
   }
-  descargarPlantilla(): void {
+  async descargarPlantilla(): Promise<void> {
+    const XLSX = await import('xlsx');
     const hoja = XLSX.utils.json_to_sheet([
       { Nombre: 'Ejemplo cuaderno', Descripcion: 'Cuaderno de prueba', Precio: 4.5, Stock: 10, Activo: 'SI' },
       { Nombre: 'Ejemplo lápiz', Descripcion: 'Lápiz de prueba', Precio: 1.5, Stock: 12, Activo: 'SI' }
@@ -247,10 +370,7 @@ export class ProductosComponent implements OnInit {
   }
 
   cargar(): void {
-    this.api.productos().subscribe({
-      next: productos => this.lista = productos,
-      error: error => this.mostrarError(error, 'No se pudieron cargar los productos.')
-    });
+    this.consultas.next(0);
   }
 
   cerrarModal(): void {
@@ -291,6 +411,10 @@ export class ProductosComponent implements OnInit {
       this.errorFormulario = 'El precio debe ser mayor que cero.';
       return;
     }
+    if (Number(this.form.precio.toFixed(2)) !== this.form.precio) {
+      this.errorFormulario = 'El precio admite hasta dos decimales.';
+      return;
+    }
     if (!this.esStockValido()) {
       this.errorFormulario = 'El stock debe ser un número entero no negativo.';
       return;
@@ -317,141 +441,37 @@ export class ProductosComponent implements OnInit {
   }
 
 
-  async importarExcel(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
+  seleccionarExcel(input: HTMLInputElement): void {
     const archivo = input.files?.[0];
     input.value = '';
-    if (!archivo) return;
+    if (!archivo || this.importando) return;
+
+    const control = this.formImportacion.controls.archivo;
+    control.setValue(archivo);
+    if (this.formImportacion.invalid) {
+      const mensaje = control.hasError('tamano') ? 'El archivo Excel no puede superar 5 MB.'
+        : control.hasError('vacio') ? 'El archivo Excel está vacío.'
+        : 'Selecciona un archivo Excel (.xlsx o .xls).';
+      this.mostrarErrorSimple(mensaje);
+      this.formImportacion.reset();
+      return;
+    }
+
     this.importando = true;
-    if (!/\.(xlsx|xls)$/i.test(archivo.name)) {
-      this.importando = false;
-      this.mostrarErrorSimple('Seleccione un archivo Excel (.xlsx o .xls).');
-      return;
-    }
-
-    try {
-      const contenido = await this.leerArchivo(archivo);
-      const filas = this.extraerFilasExcel(contenido);
-      if (!filas.length) {
-        this.mostrarErrorSimple('El archivo no contiene filas válidas.');
-        return;
+    this.mensaje = '';
+    this.api.importarProductos(archivo).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: resultado => {
+        this.importando = false;
+        this.formImportacion.reset();
+        this.mostrarMensaje(`Importación completada: ${resultado.nuevos} nuevos, ${resultado.actualizados} actualizados y ${resultado.sinCambios} sin cambios.`);
+        if (resultado.nuevos || resultado.actualizados) this.cargar();
+      },
+      error: error => {
+        this.importando = false;
+        this.formImportacion.reset();
+        this.mostrarErrorSimple(this.extraerMensaje(error, 'No se pudo importar el archivo Excel.'));
       }
-      await this.procesarImportacion(filas);
-    } catch (error) {
-      console.error(error);
-      this.mostrarErrorSimple('No se pudo leer el archivo Excel.');
-    } finally { this.importando = false; }
-  }
-
-  private leerArchivo(archivo: File): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as ArrayBuffer);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsArrayBuffer(archivo);
     });
-  }
-
-  private extraerFilasExcel(data: ArrayBuffer): any[] {
-    const libro = XLSX.read(data, { type: 'array' });
-    const hoja = libro.Sheets[libro.SheetNames[0]];
-    return hoja ? XLSX.utils.sheet_to_json<any>(hoja, { defval: null }) : [];
-  }
-
-  private async procesarImportacion(filas: any[]): Promise<void> {
-    const existentesPorId = new Map<number, Producto>(this.lista.filter(p => p.id).map(p => [p.id!, p]));
-    const existentesPorNombre = new Map<string, Producto>(this.lista.map(p => [p.nombre.trim().toLowerCase(), p]));
-    const resultados: Promise<void>[] = [];
-    const resumen = { nuevos: 0, actualizados: 0, omitidos: 0, errores: 0 };
-
-    for (const fila of filas) {
-      const productoImportado = this.productoDesdeFila(fila);
-      if (!productoImportado
-          || !productoImportado.nombre.trim()
-          || !productoImportado.descripcion?.trim()
-          || productoImportado.precio == null
-          || !Number.isFinite(Number(productoImportado.precio))
-          || Number(productoImportado.precio) <= 0
-          || productoImportado.stock == null
-          || !Number.isInteger(Number(productoImportado.stock))
-          || Number(productoImportado.stock) < 0) {
-        resumen.omitidos++;
-        continue;
-      }
-
-      const claveNombre = productoImportado.nombre.trim().toLowerCase();
-      const existente = productoImportado.id ? existentesPorId.get(productoImportado.id) : existentesPorNombre.get(claveNombre);
-      if (existente) {
-        const actualizado: Producto = {
-          ...existente,
-          ...productoImportado,
-          id: existente.id,
-          precio: productoImportado.precio ?? existente.precio,
-          stock: productoImportado.stock ?? existente.stock,
-          activo: productoImportado.activo ?? existente.activo
-        };
-        resultados.push(lastValueFrom(this.api.actualizarProducto(actualizado)).then(() => { resumen.actualizados++; }).catch(error => { console.error(error); resumen.errores++; }));
-      } else {
-        const nuevo: Producto = {
-          nombre: productoImportado.nombre,
-          descripcion: productoImportado.descripcion,
-          precio: productoImportado.precio ?? 0,
-          stock: productoImportado.stock ?? 0,
-          activo: productoImportado.activo ?? true
-        };
-        resultados.push(lastValueFrom(this.api.crearProducto(nuevo)).then(() => { resumen.nuevos++; }).catch(error => { console.error(error); resumen.errores++; }));
-      }
-    }
-
-    if (!resultados.length) {
-      this.mostrarErrorSimple(`Importación revisada: 0 nuevos, 0 actualizados, ${resumen.omitidos} omitidos, 0 con error. No se encontraron filas válidas.`);
-      return;
-    }
-
-    await Promise.all(resultados);
-    const texto = `Importación completada: ${resumen.nuevos} nuevos, ${resumen.actualizados} actualizados, ${resumen.omitidos} omitidos, ${resumen.errores} con error.`;
-    if (resumen.errores) this.mostrarErrorSimple(texto);
-    else this.mostrarMensaje(texto);
-    this.cargar();
-  }
-
-  private productoDesdeFila(fila: any): Partial<Producto> & { nombre: string } | null {
-    const nombre = this.obtenerCampo(fila, ['Nombre', 'Producto', 'producto', 'product', 'Product']);
-    if (!nombre) return null;
-
-    return {
-      id: this.parseNumber(this.obtenerCampo(fila, ['ID', 'Id', 'id'])),
-      nombre: String(nombre).trim(),
-      descripcion: this.obtenerCampo(fila, ['Descripción', 'Descripcion', 'descripcion', 'Desc', 'desc'])?.toString().trim() || undefined,
-      precio: this.parseNumber(this.obtenerCampo(fila, ['Precio', 'precio', 'Price', 'price'])),
-      stock: this.parseNumber(this.obtenerCampo(fila, ['Stock', 'stock', 'Cantidad', 'cantidad', 'Qty', 'qty'])),
-      activo: this.parseBoolean(this.obtenerCampo(fila, ['Activo', 'activo', 'Estado', 'estado', 'Enabled', 'enabled']))
-    };
-  }
-
-  private obtenerCampo(fila: any, nombres: string[]): any {
-    for (const nombre of nombres) {
-      if (fila[nombre] != null && fila[nombre] !== '') return fila[nombre];
-    }
-    const key = Object.keys(fila).find(k => nombres.some(nombre => nombre.toLowerCase() === k.toLowerCase()));
-    return key ? fila[key] : null;
-  }
-
-  private parseNumber(valor: any): number | undefined {
-    if (valor == null || valor === '') return undefined;
-    if (typeof valor === 'number') return Number.isFinite(valor) ? valor : undefined;
-    const texto = String(valor).replace(/[^0-9\-.,]/g, '').replace(',', '.');
-    const numero = Number(texto);
-    return Number.isFinite(numero) ? numero : undefined;
-  }
-
-  private parseBoolean(valor: any): boolean | undefined {
-    if (valor == null || valor === '') return undefined;
-    if (typeof valor === 'boolean') return valor;
-    const texto = String(valor).trim().toLowerCase();
-    if (['si', 'sí', 'yes', 'true', '1', 'activo', 'enabled'].includes(texto)) return true;
-    if (['no', 'false', '0', 'inactivo', 'disabled'].includes(texto)) return false;
-    return undefined;
   }
 
   trackById(_: number, item: Producto): number | undefined { return item.id; }
@@ -461,14 +481,13 @@ export class ProductosComponent implements OnInit {
     this.mensaje = mensaje; this.esError = false; this.programarLimpiarMensaje();
   }
   private mostrarErrorSimple(mensaje: string): void {
-    this.mensaje = mensaje; this.esError = true; this.programarLimpiarMensaje();
+    clearTimeout(this.mensajeTimer);
+    this.mensaje = mensaje;
+    this.esError = true;
   }
   private programarLimpiarMensaje(): void {
     if (this.mensajeTimer) clearTimeout(this.mensajeTimer);
     this.mensajeTimer = setTimeout(() => this.mensaje = '', 5500);
-  }
-  private mostrarError(error: HttpErrorResponse, fallback: string): void {
-    this.mensaje = this.extraerMensaje(error, fallback); this.esError = true; this.programarLimpiarMensaje();
   }
   private extraerMensaje(error: HttpErrorResponse, fallback: string): string {
     return (error.error as ApiError)?.message || (error.status === 0 ? 'No hay conexión con el backend.' : fallback);

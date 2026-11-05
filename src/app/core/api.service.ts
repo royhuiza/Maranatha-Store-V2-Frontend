@@ -1,15 +1,17 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Cliente, CrearVentaRequest, Producto, Venta, DocumentoConsulta } from '../models';
+import { AjusteInventario, Cliente, CrearVentaRequest, Producto, ResultadoImportacion, Venta, DocumentoConsulta } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly base = '/api';
 
-  productos(): Observable<Producto[]> {
-    return this.http.get<Producto[]>(`${this.base}/productos`);
+  productos(consulta = ''): Observable<Producto[]> {
+    return this.http.get<Producto[]>(`${this.base}/productos`, {
+      params: consulta ? { q: consulta } : {}
+    });
   }
 
   crearProducto(producto: Producto): Observable<Producto> {
@@ -24,8 +26,18 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/productos/${id}`);
   }
 
-  ajustarStock(id: number, tipo: 'reponer' | 'descontar', cantidad: number): Observable<Producto> {
-    return this.http.post<Producto>(`${this.base}/productos/${id}/stock/${tipo}`, { cantidad });
+  ajustarStock(id: number, tipo: AjusteInventario['tipo'], cantidad: number, motivo: string): Observable<Producto> {
+    return this.http.post<Producto>(`${this.base}/productos/${id}/ajustes`, { tipo, cantidad, motivo });
+  }
+
+  historialAjustes(id: number): Observable<AjusteInventario[]> {
+    return this.http.get<AjusteInventario[]>(`${this.base}/productos/${id}/ajustes`);
+  }
+
+  importarProductos(archivo: File): Observable<ResultadoImportacion> {
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    return this.http.post<ResultadoImportacion>(`${this.base}/productos/importar`, datos);
   }
 
   clientes(): Observable<Cliente[]> {

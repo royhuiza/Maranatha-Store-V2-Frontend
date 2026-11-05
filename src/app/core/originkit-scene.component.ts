@@ -1,6 +1,14 @@
 import { AfterViewInit, Component, ElementRef, Input, NgZone, OnDestroy, ViewChild, inject } from '@angular/core';
 import { createMeadow } from './originkit-meadow';
+import { createLineRipple, createReactiveLines } from './originkit-lines';
 import { createRibbons } from './originkit-ribbons';
+
+const scenes = {
+  meadow: createMeadow,
+  ribbons: createRibbons,
+  ripple: createLineRipple,
+  reactive: createReactiveLines
+};
 
 @Component({
   selector: 'app-originkit-scene',
@@ -10,17 +18,23 @@ import { createRibbons } from './originkit-ribbons';
     canvas { display:block; width:100%; height:100% }`]
 })
 export class OriginkitSceneComponent implements AfterViewInit, OnDestroy {
-  @Input({ required: true }) effect!: 'meadow' | 'ribbons';
+  @Input({ required: true }) effect!: keyof typeof scenes;
   @ViewChild('canvas', { static: true }) private canvas!: ElementRef<HTMLCanvasElement>;
   private readonly zone = inject(NgZone);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private startFrame = 0;
   private cleanup?: () => void;
 
   ngAfterViewInit(): void {
-    this.zone.runOutsideAngular(() => this.start());
+    this.zone.runOutsideAngular(() => {
+      this.startFrame = requestAnimationFrame(() => {
+        this.startFrame = requestAnimationFrame(() => this.start());
+      });
+    });
   }
 
   ngOnDestroy(): void {
+    cancelAnimationFrame(this.startFrame);
     this.cleanup?.();
   }
 
@@ -28,13 +42,14 @@ export class OriginkitSceneComponent implements AfterViewInit, OnDestroy {
     const canvas = this.canvas.nativeElement;
     const surface = this.host.nativeElement.parentElement;
     if (!surface) return;
-    const scene = this.effect === 'meadow' ? createMeadow(canvas) : createRibbons(canvas);
+    const scene = scenes[this.effect](canvas);
     if (!scene) {
       canvas.hidden = true;
       return;
     }
     const preference = matchMedia('(prefers-reduced-motion: reduce)');
-    let inView = true;
+    const frameInterval = this.effect === 'reactive' ? 48 : 32;
+    let inView = false;
     let lost = false;
     let frameId = 0;
     let previous = 0;
@@ -43,8 +58,8 @@ export class OriginkitSceneComponent implements AfterViewInit, OnDestroy {
     let y = .5;
     let over = 0;
     const animate = (now: number) => {
-      if (now - previous >= 32) {
-        elapsed += previous ? Math.min((now - previous) / 1000, .05) : 0;
+      if (now - previous >= frameInterval) {
+        elapsed += previous ? Math.min((now - previous) / 1000, .08) : 0;
         previous = now;
         scene.draw(elapsed, x, y, over);
       }
@@ -60,9 +75,14 @@ export class OriginkitSceneComponent implements AfterViewInit, OnDestroy {
     const resize = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       if (!width || !height) return;
-      const scale = Math.min(devicePixelRatio, 1.3, 1200 / width, 900 / height);
-      canvas.width = Math.max(1, Math.round(width * scale));
-      canvas.height = Math.max(1, Math.round(height * scale));
+      const meadow = this.effect === 'meadow';
+      const tall = meadow || this.effect === 'reactive';
+      const scale = Math.min(devicePixelRatio, 1, (meadow ? 1120 : 940) / width, (tall ? 820 : 420) / height);
+      const pixelWidth = Math.max(1, Math.round(width * scale));
+      const pixelHeight = Math.max(1, Math.round(height * scale));
+      if (canvas.width === pixelWidth && canvas.height === pixelHeight) return;
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
       refresh();
     });
     const intersection = new IntersectionObserver(([entry]) => {
@@ -71,8 +91,8 @@ export class OriginkitSceneComponent implements AfterViewInit, OnDestroy {
     });
     const move = (event: PointerEvent) => {
       const rect = surface.getBoundingClientRect();
-      x = (event.clientX - rect.left) / rect.width;
-      y = (event.clientY - rect.top) / rect.height;
+      x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+      y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
       over = 1;
     };
     const leave = () => { x = y = .5; over = 0; };

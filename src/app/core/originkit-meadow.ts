@@ -36,43 +36,72 @@ export function createMeadow(canvas: HTMLCanvasElement) {
     seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const scatter = Array.from({ length: 4600 }, () => ({
-    column: Math.floor(random() * columns),
-    offset: random() ** 2.2,
-    size: .4 + random() * 1.7,
-    phase: random() * Math.PI * 2,
-    warm: random() > .55
-  }));
-  const foreground = Array.from({ length: 40 }, () => ({
+  const scatter = Array.from({ length: 3200 }, () => {
+    const column = Math.floor(random() * columns);
+    const offset = random() ** 2.2;
+    const size = .4 + random() * 1.7;
+    const phase = random() * Math.PI * 2;
+    return {
+      column, offset, size, phase,
+      jitter: Math.sin(phase) * 5,
+      opacity: (1 - offset) ** 2,
+      color: random() > .55 ? '#f6cd8c' : '#9fd9bf'
+    };
+  });
+  const foreground = Array.from({ length: 32 }, () => ({
     x: random(),
     y: .65 + .36 * random(),
     radius: .007 + random() * .028,
     warm: random() > .46
   }));
+  const glows = ['#9ed5a87a', '#f4c48d82'].map(color => {
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 64;
+    const paint = sprite.getContext('2d')!;
+    const glow = paint.createRadialGradient(32, 32, 0, 32, 32, 32);
+    glow.addColorStop(0, color);
+    glow.addColorStop(1, '#b5dec000');
+    paint.fillStyle = glow;
+    paint.fillRect(0, 0, 64, 64);
+    return sprite;
+  });
+  const crests = profiles.map(() => new Float32Array(columns + 1));
+  let gradientHeight = 0;
+  let sky: CanvasGradient;
+  let grounds: CanvasGradient[];
 
   return {
     draw(time: number, pointerX: number, pointerY: number) {
       const width = canvas.width;
       const height = canvas.height;
-      const sky = context.createLinearGradient(0, 0, 0, height);
-      sky.addColorStop(0, '#0b2329');
-      sky.addColorStop(.43, '#34645a');
-      sky.addColorStop(1, '#0a1d20');
+      if (gradientHeight !== height) {
+        gradientHeight = height;
+        sky = context.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, '#0b2329');
+        sky.addColorStop(.43, '#34645a');
+        sky.addColorStop(1, '#0a1d20');
+        grounds = ['#3b6858', '#254b43'].map(color => {
+          const ground = context.createLinearGradient(0, height * .53, 0, height);
+          ground.addColorStop(0, color);
+          ground.addColorStop(1, '#0b2024');
+          return ground;
+        });
+      }
       context.fillStyle = sky;
       context.fillRect(0, 0, width, height);
 
       profiles.forEach((profile, layer) => {
-        const crest = (column: number) =>
-          (.34 + profile[column] * .64 + .018 * Math.sin(column * .048 - time * .52 + layer)) * height;
+        const crest = crests[layer];
         const offset = (pointerX - .5) * width * .021 * (layer + 1);
-        const ground = context.createLinearGradient(0, height * .53, 0, height);
-        ground.addColorStop(0, layer ? '#254b43' : '#3b6858');
-        ground.addColorStop(1, '#0b2024');
-        context.fillStyle = ground;
+        const wavePhase = layer - time * .78;
+        for (let column = 0; column <= columns; column++) {
+          crest[column] = (.34 + profile[column] * .64 + .018 * Math.sin(column * .048 + wavePhase)) * height;
+        }
+        context.fillStyle = grounds[layer];
         context.beginPath();
         context.moveTo(-32, height);
         for (let column = 0; column <= columns; column++) {
-          context.lineTo((column / columns) * (width + 64) - 32 + offset, crest(column));
+          context.lineTo((column / columns) * (width + 64) - 32 + offset, crest[column]);
         }
         context.lineTo(width + 32 + offset, height);
         context.fill();
@@ -80,10 +109,10 @@ export function createMeadow(canvas: HTMLCanvasElement) {
         for (let i = layer; i < scatter.length; i += 2) {
           const dot = scatter[i];
           const flicker = .68 + .32 * Math.sin(dot.phase + time * .75);
-          context.globalAlpha = (1 - dot.offset) ** 2 * flicker * (layer ? .88 : .62);
-          context.fillStyle = dot.warm ? '#f6cd8c' : '#9fd9bf';
-          const x = dot.column / columns * (width + 64) - 32 + offset + Math.sin(dot.phase) * 5;
-          const y = crest(dot.column) + dot.offset * height * .48;
+          context.globalAlpha = dot.opacity * flicker * (layer ? .88 : .62);
+          context.fillStyle = dot.color;
+          const x = dot.column / columns * (width + 64) - 32 + offset + dot.jitter;
+          const y = crest[dot.column] + dot.offset * height * .48;
           context.fillRect(x, y, dot.size, dot.size);
         }
         context.globalAlpha = 1;
@@ -93,11 +122,8 @@ export function createMeadow(canvas: HTMLCanvasElement) {
         const x = (light.x + (pointerX - .5) * .025) * width;
         const y = (light.y + (pointerY - .5) * .015) * height;
         const radius = light.radius * Math.min(width, height);
-        const glow = context.createRadialGradient(x, y, 0, x, y, radius);
-        glow.addColorStop(0, light.warm ? '#f4c48d82' : '#9ed5a87a');
-        glow.addColorStop(1, '#b5dec000');
-        context.fillStyle = glow;
-        context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        const sprite = glows[light.warm ? 1 : 0];
+        context.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2);
       }
     },
     destroy() {}

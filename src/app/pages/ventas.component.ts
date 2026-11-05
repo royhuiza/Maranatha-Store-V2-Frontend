@@ -84,8 +84,7 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
         <button class="secondary" (click)="buscarDocumento()" [disabled]="documentoBuscando || !documento">{{ documentoBuscando ? 'Consultando...' : 'Consultar documento' }}</button><p class="document-status" *ngIf="documentoValido">Datos recibidos de Decolecta. El cliente quedará asociado al registrar la venta.</p>
         <aside class="identity-card" *ngIf="documentoDatos as d" aria-label="Resultado de consulta de documento" aria-live="polite">
           <div class="identity-heading"><span class="identity-avatar">{{d.nombre.slice(0,1)}}</span><div><small>{{d.tipoDocumento === 'DNI' ? 'IDENTIDAD' : 'DATOS TRIBUTARIOS'}} · DECOLECTA</small><h3>{{d.nombre}}</h3></div><span class="identity-check" aria-label="Consulta recibida">✓</span></div>
-          <dl><div><dt>{{d.tipoDocumento}}</dt><dd>{{d.numeroDocumento}}</dd></div><ng-container *ngIf="d.tipoDocumento==='DNI'"><div *ngIf="d.nombres"><dt>Nombres</dt><dd>{{d.nombres}}</dd></div><div *ngIf="d.apellidoPaterno"><dt>Apellido paterno</dt><dd>{{d.apellidoPaterno}}</dd></div><div *ngIf="d.apellidoMaterno"><dt>Apellido materno</dt><dd>{{d.apellidoMaterno}}</dd></div></ng-container><div *ngIf="d.estado"><dt>Estado</dt><dd>{{d.estado}}</dd></div><div *ngIf="d.condicion"><dt>Condición</dt><dd>{{d.condicion}}</dd></div><div *ngIf="d.direccion"><dt>Dirección</dt><dd>{{d.direccion}}</dd></div></dl>
-          <p *ngIf="d.tipoDocumento==='DNI'">La consulta disponible no incluye fecha de nacimiento.</p>
+          <dl><div><dt>{{d.tipoDocumento}}</dt><dd>{{d.numeroDocumento}}</dd></div><ng-container *ngIf="d.tipoDocumento==='DNI'"><div *ngIf="d.nombres"><dt>Nombres</dt><dd>{{d.nombres}}</dd></div><div *ngIf="d.apellidoPaterno"><dt>Apellido paterno</dt><dd>{{d.apellidoPaterno}}</dd></div><div *ngIf="d.apellidoMaterno"><dt>Apellido materno</dt><dd>{{d.apellidoMaterno}}</dd></div><div><dt>Fecha de nacimiento</dt><dd>Decolecta no la proporciona</dd></div></ng-container><div *ngIf="d.estado"><dt>Estado</dt><dd>{{d.estado}}</dd></div><div *ngIf="d.condicion"><dt>Condición</dt><dd>{{d.condicion}}</dd></div><div *ngIf="d.direccion"><dt>Dirección</dt><dd>{{d.direccion}}</dd></div></dl>
         </aside>
         <small class="error" *ngIf="documentoError">{{ documentoError }}</small>
         <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
@@ -328,7 +327,7 @@ export class VentasComponent implements OnInit, OnDestroy {
   }
 
   get totalBorrador(): number {
-    return this.detalles.reduce((suma, detalle) => suma + (detalle.subtotal || 0), 0);
+    return this.detalles.reduce((centavos, detalle) => centavos + Math.round((detalle.subtotal ?? 0) * 100), 0) / 100;
   }
 
   get clienteSeleccionado(): string {
@@ -493,14 +492,14 @@ export class VentasComponent implements OnInit, OnDestroy {
 
     if (existente) {
       existente.cantidad = cantidadTotal;
-      existente.subtotal = cantidadTotal * (existente.precioUnitario || 0);
+      existente.subtotal = cantidadTotal * Math.round((existente.precioUnitario ?? 0) * 100) / 100;
     } else {
       this.detalles.push({
         productoId: producto.id!,
         productoNombre: producto.nombre,
         cantidad,
         precioUnitario: producto.precio,
-        subtotal: producto.precio * cantidad
+        subtotal: Math.round(producto.precio * 100) * cantidad / 100
       });
     }
     this.cantidad = 1;

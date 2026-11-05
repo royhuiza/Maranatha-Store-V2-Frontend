@@ -21,8 +21,11 @@
 .maranatha-app .section-hero p{max-width:520px;color:#d0e0d6;font-size:14px;line-height:1.6}
 .maranatha-app .hero-eyebrow{font:10px ui-monospace,monospace;letter-spacing:2px;color:#eac494}
 .maranatha-app .hero-art{filter:drop-shadow(0 14px 14px #082a3060);perspective:900px;transform:rotate(-5deg)}
-.maranatha-app .hero-art svg{animation:atelier-float 9s ease-in-out infinite;transform-origin:center}
-.maranatha-app .route-stage{animation:atelier-enter .45s var(--atelier-ease) both}
+.maranatha-app .route-stage > router-outlet + * {
+  display: block;
+  animation: workspace-enter .24s ease-out backwards;
+}
+@keyframes workspace-enter { from { opacity: .35; } to { opacity: 1; } }
 .maranatha-app .page-title h2{font-size:30px;font-weight:550;letter-spacing:-1px;color:var(--atelier-text)}
 .maranatha-app .page-title p{color:var(--atelier-muted);font-size:13px;line-height:1.5}
 .maranatha-app :is(.panel,.table-wrap,.overview-glass,.overview-metric){border:1px solid var(--atelier-line);background:var(--atelier-panel);box-shadow:0 10px 32px #082b3010;border-radius:16px;color:var(--atelier-text)}
@@ -73,8 +76,7 @@
 .login-stage app-ambient-scene{z-index:-1}.login-stage-pattern{opacity:.18!important}.login-experience .stage-top{position:relative}.login-experience .stage-copy h1{font-size:clamp(44px,4.6vw,76px);font-weight:500;letter-spacing:-3px;line-height:1.04}.login-experience .stage-copy h1 em{font-family:Georgia,serif;font-weight:400;color:#edc88e}.login-experience .stage-copy p{font-size:15px;line-height:1.8;max-width:340px;color:#d1e2d6}
 .login-experience .stage-art{perspective:1000px;isolation:isolate}.login-experience .stacked-book{box-shadow:12px 24px 32px #031d3440;transform-style:preserve-3d}.login-experience .book-front{transform:rotateY(-18deg) rotateZ(-5deg);border-right:12px solid #d6c5a2;border-bottom:8px solid #d3c8b2;border-radius:10px 18px 18px 10px;animation:atelier-book 10s ease-in-out infinite}.orbital-ring{position:absolute;left:7%;top:2%;width:90%;height:90%;border:1px solid #d6a15d60;border-radius:50%;transform:rotateX(65deg) rotateZ(-20deg);z-index:-1;animation:atelier-orbit 22s linear infinite}.ring-b{transform:rotateY(68deg) rotateZ(35deg);border-color:#9fcebc55;animation-direction:reverse}.orbital-ring:before{content:'';position:absolute;width:8px;height:8px;border-radius:50%;background:#efc887;box-shadow:0 0 20px #efc887;left:16%;top:10%}
 .login-experience .login-card{border-radius:24px;border:1px solid #6a9b8e25;box-shadow:0 32px 100px #123b3b0d}.login-experience .login-card h2{font-weight:550;letter-spacing:-1.5px;font-size:36px}.login-experience .login-card input{padding:15px;border-radius:10px}.login-experience .login-card button[type=submit]{min-height:50px;box-shadow:0 8px 24px #174a3820}
-@keyframes atelier-enter{from{opacity:0;transform:translateY(12px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
-@keyframes atelier-float{0%,100%{transform:perspective(900px) rotateY(-8deg) translateY(0)}50%{transform:perspective(900px) rotateY(8deg) translateY(-8px)}}
+@keyframes atelier-enter{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none}}
 @keyframes atelier-book{0%,100%{transform:rotateY(-18deg) rotateZ(-5deg) translateY(0)}50%{transform:rotateY(6deg) rotateZ(-2deg) translateY(-12px)}}
 @keyframes atelier-orbit{to{rotate:360deg}}
 @media(max-width:1200px){.maranatha-app .payment-methods{grid-template-columns:repeat(2,minmax(0,1fr))}.maranatha-app .recipient-payment{grid-template-columns:1fr}.maranatha-app .recipient-qr{grid-column:1;grid-row:auto;width:170px;margin:10px auto}.maranatha-app .section-hero h2{font-size:32px}}
@@ -248,13 +250,18 @@
   color: #fff9ef;
 }
 
-/* Blur Reveal, adapted as an entrance for interactive forms. */
-.authkit-login .login-panel .login-card.auth-reveal {
-  animation: auth-blur-reveal .78s cubic-bezier(.22,.74,.24,1) .09s both;
+/* Shared entrance for sign-in, password recovery and the local inbox. */
+.authkit-login.login-experience .login-panel { animation: none; }
+.authkit-login .login-panel .login-card.auth-reveal,
+.mailbox-page .mailbox-shell {
+  animation: auth-enter .36s var(--atelier-ease) .04s backwards;
 }
-@keyframes auth-blur-reveal {
-  from { opacity: 0; filter: blur(9px); transform: translateY(22px) scale(.975); }
-  to { opacity: 1; filter: blur(0); transform: none; }
+.authkit-recovery .auth-step-reveal {
+  animation: auth-enter .29s var(--atelier-ease) .08s backwards;
+}
+@keyframes auth-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
 }
 .authkit-recovery .recovery-top { justify-content: space-between; flex-wrap: wrap; gap: 10px; }
 .authkit-recovery .recovery-top a { text-decoration: none; }
@@ -303,6 +310,12 @@
   background: radial-gradient(ellipse at 80% 72%, #40675b, #18383b 48%, #10272e 78%);
 }
 .workspace-data .section-hero h2 { font-size: clamp(29px, 3.6vw, 52px); }
+.workspace-data .section-ripple {
+  z-index: -1;
+  opacity: .74;
+  mask-image: linear-gradient(90deg, #0003 0%, #0008 44%, #000 75%);
+}
+.workspace-data .section-hero:has(.section-ripple)::before { opacity: .08; }
 .workspace-data .route-stage .page-title { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--module-edge); }
 .workspace-data .route-stage .toolbar {
   display: flex;
@@ -375,3 +388,166 @@
 .report-inventory h3 { margin: 6px 0 0; }
 @media (max-width: 960px) { .team-workspace { grid-template-columns: 1fr; } }
 @media (max-width: 580px) { .report-metrics.cards { grid-template-columns: 1fr; } }
+
+/* Theme snapshot animates once, with its origin at the toggle. */
+html.theme-reveal::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.theme-reveal::view-transition-new(root) {
+  animation: theme-circular-reveal .42s var(--atelier-ease) both;
+  mix-blend-mode: normal;
+}
+html.theme-reveal .theme-switch { view-transition-name: maranatha-theme-switch; }
+html.theme-reveal::view-transition-old(maranatha-theme-switch) { display: none; }
+html.theme-reveal::view-transition-new(maranatha-theme-switch) {
+  animation: theme-portal-pulse .42s var(--atelier-ease) both;
+  border-radius: 999px;
+}
+html.theme-reveal :is(.maranatha-app, .login-panel, .app-topbar) { transition: none; }
+@keyframes theme-circular-reveal {
+  from { clip-path: circle(0 at var(--theme-reveal-origin)); }
+  to { clip-path: circle(var(--theme-reveal-radius) at var(--theme-reveal-origin)); }
+}
+@keyframes theme-portal-pulse {
+  0% { transform: scale(.96); box-shadow: 0 0 0 2px #e2b573b0; }
+  40% { transform: scale(1.04); box-shadow: 0 0 14px 4px #e2b57370; }
+  100% { transform: none; box-shadow: 0 0 0 9px #e2b57300; }
+}
+button.theme-switch:is(.login-theme-toggle, .theme-toggle) { border-radius: 999px; }
+button.theme-switch:focus-visible { outline: 2px solid #c08a45; outline-offset: 3px; }
+
+/* The recovery side panel and mailbox share the same curved line artwork. */
+.authkit-recovery .login-stage {
+  background: radial-gradient(ellipse at 86% 62%, #20584f, #0a272d 54%, #071e25 82%);
+}
+.authkit-recovery .login-stage app-originkit-scene {
+  opacity: .88;
+  mask-image: linear-gradient(125deg, #0002 18%, #000 78%);
+}
+.authkit-recovery .stage-copy p { max-width: 28ch; }
+.authkit-recovery .login-panel .login-card {
+  border-top-color: #c7a375a0;
+  backdrop-filter: none;
+}
+.authkit-recovery.login-dark .login-panel .login-card input {
+  color-scheme: dark;
+  background: #112d32;
+  border-color: #9ec5b46b;
+  color: #f4f5ec;
+}
+.authkit-recovery .login-panel .login-card h2 {
+  font-family: Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -.045em;
+}
+.recovery-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 10px ui-monospace, monospace;
+  letter-spacing: .14em;
+}
+.recovery-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #be8a43;
+  box-shadow: 0 0 0 3px #c3915040;
+}
+
+.mailbox-page {
+  --mail-bg: #f2f2e9;
+  --mail-text: #173d3d;
+  --mail-muted: #4e6b61;
+  --mail-panel: #fcfdf8;
+  --mail-item: #e8f0ea;
+  --mail-border: #365e4840;
+  --mail-active: #f1dcb3;
+  --mail-active-text: #243c33;
+  color: var(--mail-text);
+  padding: clamp(20px, 4vw, 60px);
+  background: radial-gradient(ellipse at 85% 10%, #d9a66430, transparent 40%),
+    radial-gradient(ellipse at 18% 30%, #74a99b33, transparent 52%), var(--mail-bg);
+}
+.mailbox-page.mailbox-dark {
+  --mail-bg: #0d2226;
+  --mail-text: #edf5ed;
+  --mail-muted: #b9d1c6;
+  --mail-panel: #19363a;
+  --mail-item: #234649;
+  --mail-border: #a4cdb944;
+  --mail-active: #e5b778;
+  --mail-active-text: #193436;
+}
+.mailbox-page app-originkit-scene {
+  opacity: .4;
+  mask-image: linear-gradient(110deg, transparent 8%, #000 62%);
+}
+.mailbox-dark app-originkit-scene { opacity: .65; }
+.mailbox-page .recovery-header { padding: 0 0 14px; }
+.mailbox-page .recovery-header img {
+  width: 118px;
+  height: auto;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #f3ebd7;
+}
+.mailbox-page .mailbox-intro {
+  border: 1px solid var(--mail-border);
+  border-radius: 22px;
+  padding: clamp(18px, 3vw, 36px);
+  background: linear-gradient(120deg, var(--mail-panel), color-mix(in srgb, var(--mail-item) 85%, transparent));
+  box-shadow: inset 0 1px #d6dcd238, 0 12px 28px #102f2410;
+}
+.mailbox-page .mailbox-intro h1 {
+  font: 500 clamp(28px, 4vw, 50px)/1.1 Georgia, serif;
+  margin: 10px 0;
+  color: var(--mail-text);
+}
+.mailbox-page .recovery-eyebrow { color: #775424; }
+.mailbox-dark .recovery-eyebrow { color: #f2ce98; }
+.mailbox-page :is(.mailbox-intro p, .mailbox-message p, .mailbox-toolbar, .mailbox-list p) {
+  color: var(--mail-muted);
+}
+.mailbox-page .mailbox-toolbar { align-items: center; justify-content: space-between; }
+.mailbox-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.mailbox-page :is(.mailbox-list, .mailbox-message) {
+  background: var(--mail-panel);
+  border-color: var(--mail-border);
+  box-shadow: 0 12px 28px #102f2410;
+}
+.mailbox-page .mailbox-message h2 { color: var(--mail-text); }
+.mailbox-page .mailbox-list button {
+  background: var(--mail-item);
+  color: var(--mail-text);
+  border: 1px solid var(--mail-border);
+  transition: background-color .16s, border-color .16s;
+}
+.mailbox-page .mailbox-list button:hover { border-color: #bd925e; }
+.mailbox-page .mailbox-list button.active {
+  background: var(--mail-active);
+  color: var(--mail-active-text);
+}
+.mailbox-page .recovery-header .login-theme-toggle {
+  text-decoration: none;
+  color: var(--mail-text);
+  background: var(--mail-item);
+  border-color: var(--mail-border);
+}
+.mailbox-page .mailbox-toolbar .secondary {
+  color: var(--mail-text);
+  background: var(--mail-item);
+  border-color: var(--mail-border);
+}
+.mailbox-page .mailbox-message .save-pdf-link {
+  display: inline-flex;
+  padding: 10px 15px;
+  border-radius: 9px;
+  background: #245d54;
+  color: #fff;
+  font-weight: 650;
+  text-decoration: none;
+}
+.mailbox-page .mailbox-message .save-pdf-link:hover { background: #1a4943; }

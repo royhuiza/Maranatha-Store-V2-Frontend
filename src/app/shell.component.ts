@@ -1,7 +1,8 @@
+import { ThemePreference } from './core/theme-preference';
 import { OriginkitSceneComponent } from './core/originkit-scene.component';
 import { AmbientSceneComponent } from './core/ambient-scene.component';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { AuthService } from './core/auth.service';
@@ -13,13 +14,25 @@ interface SectionVisual {
   eyebrow: string;
   title: string;
   description: string;
+  hasRipple?: boolean;
 }
+
+const SECTIONS: Record<string, SectionVisual> = {
+  productos: { hasRipple: true, id: 'productos', eyebrow: 'CATÁLOGO / INVENTARIO', title: 'Cada artículo, bajo control.', description: 'Gestiona productos, precios y existencias desde una sola pantalla.' },
+  clientes: { hasRipple: true, id: 'clientes', eyebrow: 'PERSONAS / EMPRESAS', title: 'Clientes más cerca.', description: 'La información de cada cliente, clara y siempre a mano.' },
+  ventas: { id: 'ventas', eyebrow: 'VENTAS / COMPROBANTES', title: 'Ventas sin complicaciones.', description: 'Registra artículos, revisa importes y organiza comprobantes.' },
+  reportes: { id: 'reportes', eyebrow: 'REPORTES / DATOS', title: 'Tus números, en perspectiva.', description: 'Consulta y exporta los datos de tu librería.' },
+  usuarios: { hasRipple: true, id: 'cuenta', eyebrow: 'EQUIPO / PERMISOS', title: 'Usuarios y roles.', description: 'Administra las cuentas y permisos de tu equipo.' },
+  perfil: { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu cuenta, tu espacio.', description: 'Actualiza tus datos de manera segura.' },
+  'cambiar-contrasena': { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu acceso, protegido.', description: 'Gestiona la seguridad de tu cuenta.' }
+};
+const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARANATHA STORE', title: 'El pulso de tu librería.', description: 'Ventas, inventario y clientes en una sola vista.' };
 
 @Component({
   standalone: true,
   imports: [OriginkitSceneComponent, AmbientSceneComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="layout maranatha-app" [class.is-dark]="darkMode" [class.steep-home]="section.id === 'inicio'"
+    <div class="layout maranatha-app" [class.is-dark]="theme.dark()" [class.steep-home]="section.id === 'inicio'"
       [class.workspace-data]="section.id === 'productos' || section.id === 'clientes' || section.id === 'cuenta'"
       [class.workspace-analytics]="section.id === 'ventas' || section.id === 'reportes'">
       <aside>
@@ -38,12 +51,12 @@ interface SectionVisual {
         <header class="app-topbar">
           <div><h1>{{auth.isAdmin ? 'Panel de administración' : 'Mi espacio de ventas'}}</h1><p>{{auth.isAdmin ? 'Inventario, clientes, ventas y usuarios' : 'Consulta productos y registra tus ventas'}}</p></div>
           <div class="topbar-actions">
-            <button type="button" class="theme-toggle" (click)="toggleTheme()"
-              [attr.aria-label]="darkMode ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
-              [attr.aria-pressed]="darkMode" [title]="darkMode ? 'Tema claro' : 'Tema oscuro'">
-              <svg *ngIf="!darkMode" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20.4 15.5A8 8 0 0 1 8.5 3.6a8.2 8.2 0 1 0 11.9 11.9Z"/></svg>
-              <svg *ngIf="darkMode" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
-              <span>{{ darkMode ? 'Claro' : 'Oscuro' }}</span>
+            <button type="button" class="theme-toggle theme-switch" (click)="theme.toggle($event, view)"
+              [attr.aria-label]="theme.dark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
+              [attr.aria-pressed]="theme.dark()" [title]="theme.dark() ? 'Tema claro' : 'Tema oscuro'">
+              <svg *ngIf="!theme.dark()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20.4 15.5A8 8 0 0 1 8.5 3.6a8.2 8.2 0 1 0 11.9 11.9Z"/></svg>
+              <svg *ngIf="theme.dark()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+              <span>{{ theme.dark() ? 'Claro' : 'Oscuro' }}</span>
             </button>
             <div class="user-menu" #userMenu>
               <button type="button" class="user-menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="showMenu">
@@ -60,11 +73,14 @@ interface SectionVisual {
         <section class="content maranatha-content">
           <section class="section-hero" [attr.data-section]="section.id" aria-label="Sección actual">
             <app-originkit-scene *ngIf="showRibbons; else sectionAmbient" effect="ribbons" />
-            <ng-template #sectionAmbient><app-ambient-scene /></ng-template>
-            <div class="hero-text">
-              <span class="hero-eyebrow"><span class="hero-signal"></span>{{ section.eyebrow }}</span>
-              <h2>{{ section.title }}</h2>
-              <p>{{ section.description }}</p>
+            <ng-template #sectionAmbient>
+              <app-originkit-scene *ngIf="section.hasRipple; else accountAmbient" class="section-ripple" effect="ripple" />
+              <ng-template #accountAmbient><app-ambient-scene /></ng-template>
+            </ng-template>
+            <div class="hero-text" *ngFor="let visual of [section]">
+              <span class="hero-eyebrow"><span class="hero-signal"></span>{{ visual.eyebrow }}</span>
+              <h2>{{ visual.title }}</h2>
+              <p>{{ visual.description }}</p>
             </div>
             <div class="hero-art" *ngIf="section.id !== 'inicio'" aria-hidden="true">
               <svg viewBox="0 0 320 168" role="presentation" xmlns="http://www.w3.org/2000/svg">
@@ -107,7 +123,6 @@ interface SectionVisual {
             </div>
           </section>
           <div class="route-stage">
-            <div class="route-wipe" *ngIf="showWipe" aria-hidden="true"></div>
             <router-outlet/>
           </div>
         </section>
@@ -119,10 +134,10 @@ export class ShellComponent implements OnDestroy {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly rol = localStorage.getItem('rol') || 'ADMIN';
-  darkMode = localStorage.getItem('maranatha-ui-mode') === 'dark';
+  readonly theme = inject(ThemePreference);
+  readonly view = inject(ChangeDetectorRef);
   showMenu = false;
-  showWipe = false;
-  private wipeTimer?: ReturnType<typeof setTimeout>;
+  section = this.sectionForRoute();
   private readonly navigationSubscription: Subscription;
 
   @ViewChild('userMenu', { read: ElementRef }) userMenu?: ElementRef<HTMLElement>;
@@ -131,13 +146,7 @@ export class ShellComponent implements OnDestroy {
     this.auth.refrescarSesion();
     this.navigationSubscription = this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
       this.closeMenu();
-      this.showWipe = false;
-      if (this.wipeTimer) clearTimeout(this.wipeTimer);
-      // Programar una nueva capa permite reiniciar la animación en cada navegación.
-      this.wipeTimer = setTimeout(() => {
-        this.showWipe = true;
-        this.wipeTimer = setTimeout(() => this.showWipe = false, 720);
-      }, 0);
+      this.section = this.sectionForRoute();
     });
   }
 
@@ -145,28 +154,15 @@ export class ShellComponent implements OnDestroy {
     return ['inicio', 'ventas', 'reportes'].includes(this.section.id);
   }
 
-  get section(): SectionVisual {
+  private sectionForRoute(): SectionVisual {
     const path = this.router.url.split('?')[0].split('/')[1] || '';
-    const sections: Record<string, SectionVisual> = {
-      productos: { id: 'productos', eyebrow: 'CATÁLOGO / INVENTARIO', title: 'Cada artículo, bajo control.', description: 'Gestiona productos, precios y existencias desde una sola pantalla.' },
-      clientes: { id: 'clientes', eyebrow: 'PERSONAS / EMPRESAS', title: 'Clientes más cerca.', description: 'La información de cada cliente, clara y siempre a mano.' },
-      ventas: { id: 'ventas', eyebrow: 'VENTAS / COMPROBANTES', title: 'Ventas sin complicaciones.', description: 'Registra artículos, revisa importes y organiza comprobantes.' },
-      reportes: { id: 'reportes', eyebrow: 'REPORTES / DATOS', title: 'Tus números, en perspectiva.', description: 'Consulta y exporta los datos de tu librería.' },
-      usuarios: { id: 'cuenta', eyebrow: 'EQUIPO / PERMISOS', title: 'Usuarios y roles.', description: 'Administra las cuentas y permisos de tu equipo.' },
-      perfil: { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu cuenta, tu espacio.', description: 'Actualiza tus datos de manera segura.' },
-      'cambiar-contrasena': { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu acceso, protegido.', description: 'Gestiona la seguridad de tu cuenta.' }
-    };
-    return sections[path] || { id: 'inicio', eyebrow: 'BIENVENIDO / MARANATHA STORE', title: 'El pulso de tu librería.', description: 'Ventas, inventario y clientes en una sola vista.' };
+    return SECTIONS[path] ?? HOME_SECTION;
   }
 
   onLogoError(event: Event): void {
     (event.target as HTMLImageElement).style.display = 'none';
   }
 
-  toggleTheme(): void {
-    this.darkMode = !this.darkMode;
-    localStorage.setItem('maranatha-ui-mode', this.darkMode ? 'dark' : 'light');
-  }
 
   toggleMenu(): void { this.showMenu = !this.showMenu; }
   closeMenu(): void { this.showMenu = false; }
@@ -179,7 +175,6 @@ export class ShellComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.wipeTimer) clearTimeout(this.wipeTimer);
     this.navigationSubscription.unsubscribe();
   }
 }

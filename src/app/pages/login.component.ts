@@ -1,5 +1,6 @@
+import { ThemePreference } from '../core/theme-preference';
 import { OriginkitSceneComponent } from '../core/originkit-scene.component';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -11,7 +12,7 @@ import { ApiError } from '../models';
   standalone: true,
   imports: [OriginkitSceneComponent, CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="login-page login-experience authkit-login" [class.login-dark]="darkMode">
+    <div class="login-page login-experience authkit-login" [class.login-dark]="theme.dark()">
       <section class="login-stage" aria-label="Bienvenida a Maranatha Store">
         <app-originkit-scene effect="meadow" />
         <div class="login-stage-pattern" aria-hidden="true"></div>
@@ -30,12 +31,12 @@ import { ApiError } from '../models';
       <section class="login-panel">
         <div class="login-panel-top">
           <div class="login-panel-brand"><img class="maranatha-brand-image panel-brand-image" src="/maranatha-logo.png" alt="Librería Maranatha" (error)="onLogoError($event)"><span class="brand-fallback">MARANATHA STORE</span></div>
-          <button type="button" class="login-theme-toggle" (click)="toggleTheme()"
-            [attr.aria-pressed]="darkMode"
-            [attr.aria-label]="darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-            [attr.title]="darkMode ? 'Tema claro' : 'Tema oscuro'">
-            <span class="login-theme-symbol" aria-hidden="true">{{ darkMode ? '☀' : '☾' }}</span>
-            <span>{{ darkMode ? 'Claro' : 'Oscuro' }}</span>
+          <button type="button" class="login-theme-toggle theme-switch" (click)="theme.toggle($event, view)"
+            [attr.aria-pressed]="theme.dark()"
+            [attr.aria-label]="theme.dark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+            [attr.title]="theme.dark() ? 'Tema claro' : 'Tema oscuro'">
+            <span class="login-theme-symbol" aria-hidden="true">{{ theme.dark() ? '☀' : '☾' }}</span>
+            <span>{{ theme.dark() ? 'Claro' : 'Oscuro' }}</span>
           </button>
         </div>
         <form class="login-card auth-reveal" (ngSubmit)="entrar()" #loginForm="ngForm">
@@ -81,12 +82,9 @@ export class LoginComponent {
   error = '';
   cargando = false;
   mostrarClave = false;
-  darkMode = localStorage.getItem('maranatha-ui-mode') === 'dark';
+  readonly theme = inject(ThemePreference);
+  readonly view = inject(ChangeDetectorRef);
 
-  toggleTheme(): void {
-    this.darkMode = !this.darkMode;
-    localStorage.setItem('maranatha-ui-mode', this.darkMode ? 'dark' : 'light');
-  }
   onLogoError(event: Event): void {
     (event.target as HTMLImageElement).style.display = 'none';
   }
