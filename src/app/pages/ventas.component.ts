@@ -35,32 +35,84 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
     <div class="sale-grid">
       <section class="panel no-print">
         <h3>Datos del comprobante</h3>
-        <div class="row">
-          <label>Tipo
-            <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
-              <option value="BOLETA">Boleta</option>
-              <option value="FACTURA">Factura</option>
-              <option value="NOTA_PEDIDO">Nota de pedido</option>
-            </select>
-          </label>
-          <label>Cliente
-            <select [(ngModel)]="clienteId" (ngModelChange)="ventaEmitida=undefined">
-              <option [ngValue]="undefined">Público general</option>
-              <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }} · {{ c.numeroDocumento || 'sin documento' }}</option>
-            </select>
-          </label>
-          <label style="align-self:center">
-            <input type="checkbox" [(ngModel)]="preciosIncluyenIgv"> Precios incluyen IGV ({{ (igvRate*100) | number:'1.0-0' }}%)
+        
+<div class="row">
+  <label>Tipo de comprobante
+    <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
+      <option value="BOLETA">Boleta</option>
+      <option value="FACTURA">Factura</option>
+      <option value="NOTA_PEDIDO">Nota de pedido</option>
+    </select>
+  </label>
+</div>
+
+<div *ngIf="tipo === 'FACTURA'">
+
+    <!-- 1. RUC -->
+    <div class="row">
+      <label>RUC
+        <input
+          type="text"
+          [(ngModel)]="documento"
+          (ngModelChange)="onDocumentoChange()"
+          maxlength="11"
+          inputmode="numeric"
+          placeholder="Ingrese RUC de 11 dígitos">
+      </label>
+
+      <button
+        type="button"
+        class="secondary"
+        (click)="buscarDocumento()"
+        [disabled]="documentoBuscando || documento.length !== 11">
+        {{ documentoBuscando ? 'Consultando...' : 'Consultar SUNAT' }}
+      </button>
+    </div>
+
+    <!-- 2. RAZÓN SOCIAL -->
+    <div class="row">
+      <label>Razón social
+        <input
+          type="text"
+          [(ngModel)]="documentoNombre"
+          placeholder="Razón social del cliente">
+      </label>
+    </div>
+
+    <!-- 3. DIRECCIÓN FISCAL -->
+    <div class="row">
+      <label>Dirección fiscal
+        <input
+          type="text"
+          [(ngModel)]="documentoDireccion"
+          placeholder="Dirección fiscal del cliente">
+      </label>
+    </div>
+
+    <small class="hint">
+      La consulta automática oficial estará disponible
+      cuando se habilite el servicio correspondiente.
+    </small>
+
+  </div>
+
+
+        <div *ngIf="tipo === 'BOLETA'" class="row">
+          <label>DNI del comprador
+            <input
+              type="text"
+              [(ngModel)]="documento"
+              (ngModelChange)="onDocumentoChange()"
+              maxlength="8"
+              inputmode="numeric"
+              placeholder="Ingrese DNI cuando corresponda">
           </label>
         </div>
-        <div *ngIf="tipo==='BOLETA' || tipo==='FACTURA'" class="row">
-          <label>{{ tipo === 'BOLETA' ? 'DNI' : 'RUC' }}
-            <input type="text" [(ngModel)]="documento" name="documento" [attr.maxlength]="tipo === 'BOLETA' ? 8 : 11" placeholder="{{ tipo === 'BOLETA' ? 'Ingrese DNI' : 'Ingrese RUC' }}">
-          </label>
-        </div>
-        <small class="hint" *ngIf="documentoNombre">{{ documentoNombre }}</small>
-        <small class="error" *ngIf="documentoError">{{ documentoError }}</small>
-        <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
+
+        <small class="error" *ngIf="documentoError">
+          {{ documentoError }}
+        </small>
+
 
         <div class="row product-row product-search-row">
           <label>Producto
@@ -217,6 +269,7 @@ export class VentasComponent implements OnInit {
   cantidad = 1;
   documento = '';
   documentoNombre = '';
+  documentoDireccion = '';
   documentoError = '';
   documentoBuscando = false;
   documentoValido = false;
@@ -298,7 +351,7 @@ export class VentasComponent implements OnInit {
     this.cargarCatalogos();
     this.cargarVentas();
     const pref = localStorage.getItem('maranatha.imprimir.formato');
-    if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET'|'A4';
+    if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET' | 'A4';
   }
 
   onTipoChange(): void {
@@ -307,12 +360,14 @@ export class VentasComponent implements OnInit {
     this.documentoNombre = '';
     this.documentoError = '';
     this.documentoValido = false;
+    this.documentoDireccion = '';
   }
 
   onDocumentoChange(): void {
     this.documentoNombre = '';
     this.documentoError = '';
     this.documentoValido = false;
+    this.documentoDireccion = '';
   }
 
   onProductoFiltroChange(): void {
@@ -338,11 +393,14 @@ export class VentasComponent implements OnInit {
       }
       this.documentoBuscando = true;
       this.api.buscarDni(numero).subscribe({
+
         next: data => {
           this.documentoBuscando = false;
           this.documentoValido = true;
-          this.documentoNombre = `${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}`.trim();
+          this.documentoNombre =
+            `${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}`.trim();
         },
+
         error: err => {
           this.documentoBuscando = false;
           const status = err?.status ?? 0;
@@ -362,19 +420,36 @@ export class VentasComponent implements OnInit {
       }
       this.documentoBuscando = true;
       this.api.buscarRuc(numero).subscribe({
+
         next: data => {
           this.documentoBuscando = false;
           this.documentoValido = true;
-          this.documentoNombre = data.nombreComercial?.trim() || data.nombre?.trim() || 'RUC válido';
+          this.documentoNombre = data.razonSocial?.trim() || '';
+          this.documentoDireccion = data.direccionFiscal?.trim() || '';
         },
+
+        
         error: err => {
           this.documentoBuscando = false;
+          this.documentoValido = false;
           const status = err?.status ?? 0;
-          const message = err?.message ? ` ${err.message}` : '';
-          this.documentoError = status === 0
-            ? 'Error de conexión o proxy. Reinicie el servidor de desarrollo y verifique la configuración de proxy.'
-            : `No se encontró el RUC. Verifique el número e intente nuevamente. (HTTP ${status})${message}`;
+
+          if (status === 503) {
+            this.documentoError =
+              'La consulta RUC oficial todavía no está habilitada. ' +
+              'Ingrese la razón social y dirección fiscal manualmente.';
+          } else if (status === 401) {
+            this.documentoError =
+              'Su sesión ha expirado. Inicie sesión nuevamente.';
+          } else if (status === 404) {
+            this.documentoError =
+              'No se encontró el servicio de consulta RUC.';
+          } else {
+            this.documentoError =
+              'No fue posible consultar el RUC. Intente nuevamente.';
+          }
         }
+
       });
       return;
     }

@@ -1,3 +1,8 @@
+export type TipoAfectacionIgv =
+  | 'GRAVADO'
+  | 'EXONERADO'
+  | 'INAFECTO';
+
 export interface Producto {
   id?: number;
   nombre: string;
@@ -6,7 +11,9 @@ export interface Producto {
   stock: number;
   activo?: boolean;
   version?: number;
+  afectacionIgv?: TipoAfectacionIgv | null;
 }
+
 
 export interface Cliente {
   id?: number;

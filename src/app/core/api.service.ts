@@ -20,6 +20,20 @@ export class ApiService {
     return this.http.put<Producto>(`${this.base}/productos/${producto.id}`, producto);
   }
 
+  
+ 
+  actualizarAfectacionIgv(
+    id: number,
+    afectacionIgv: 'GRAVADO' | 'EXONERADO' | 'INAFECTO'
+  ): Observable<Producto> {
+    return this.http.patch<Producto>(
+      `${this.base}/productos/${id}/afectacion-igv`,
+      { afectacionIgv }
+    );
+  }
+
+
+
   eliminarProducto(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/productos/${id}`);
   }
@@ -62,15 +76,27 @@ export class ApiService {
     );
   }
 
-  buscarRuc(ruc: string): Observable<{ numeroDocumento: string; tipoDocumento: string; nombre: string; nombreComercial?: string; condicion?: string; estado?: string }> {
-    return this.http.get<{ numeroDocumento: string; tipoDocumento: string; nombre: string; nombreComercial?: string; condicion?: string; estado?: string }>(
-      `/external/ruc?numero=${ruc}`
+  buscarRuc(ruc: string): Observable<{
+    ruc: string;
+    razonSocial: string;
+    estado: string;
+    condicion: string;
+    direccionFiscal: string;
+  }> {
+    return this.http.get<{
+      ruc: string;
+      razonSocial: string;
+      estado: string;
+      condicion: string;
+      direccionFiscal: string;
+    }>(
+      `${this.base}/facturacion/ruc/${encodeURIComponent(ruc)}`
     );
   }
 
   login(username: string, password: string) {
     return this.http.post<{ token: string; username: string; rol: string }>(
-      `${this.base}/auth/login`,
+      `/auth/login`,
       { username, password }
     );
   }

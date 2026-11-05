@@ -1,4 +1,10 @@
 {
+  "/api/facturacion": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
   "/api": {
     "target": "http://localhost:8080",
     "secure": false,
@@ -7,6 +13,12 @@
     "pathRewrite": {
       "^/api": ""
     }
+  },
+  "/auth": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
   },
   "/external/dni": {
     "target": "https://api.apis.net.pe/v1",
