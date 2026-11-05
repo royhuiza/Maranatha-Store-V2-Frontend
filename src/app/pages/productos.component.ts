@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { ApiService } from '../core/api.service';
+import { AuthService } from '../core/auth.service';
 import { ApiError, Producto } from '../models';
 
 @Component({
@@ -13,9 +14,10 @@ import { ApiError, Producto } from '../models';
   template: `
     <div class="page-title">
       <div><h2>Productos e inventario</h2><p>Control de precios y stock en PostgreSQL</p></div>
-      <button (click)="nuevo()">+ Nuevo producto</button>
+      <button *ngIf="auth.isAdmin" (click)="nuevo()">+ Nuevo producto</button>
     </div>
     <div *ngIf="mensaje" class="notice inventory-notice" [class.error-notice]="esError" role="status">{{ mensaje }}</div>
+    <div class="stock-segments" role="group" aria-label="Filtro rápido de stock"><button type="button" [class.active]="filtroStock==='todos'" (click)="filtroStock='todos'">Todos</button><button type="button" [class.active]="filtroStock==='disponible'" (click)="filtroStock='disponible'">Disponibles · 6 o más</button><button type="button" [class.active]="filtroStock==='bajo'" (click)="filtroStock='bajo'">Stock bajo · 1 a 5</button><button type="button" [class.active]="filtroStock==='agotado'" (click)="filtroStock='agotado'">Sin stock</button></div>
     <div class="toolbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción o ID..." [(ngModel)]="q">
       <select aria-label="Filtrar por existencias" [(ngModel)]="filtroStock" class="stock-filter">
@@ -24,8 +26,8 @@ import { ApiError, Producto } from '../models';
         <option value="agotado">Sin stock (0)</option>
         <option value="disponible">Disponibles (6+)</option>
       </select>
-      <button class="secondary" type="button" (click)="archivoImportar.click()" [disabled]="importando">Importar Excel</button>
-      <button class="secondary" type="button" (click)="descargarPlantilla()">Descargar plantilla</button>
+      <button class="secondary" type="button" *ngIf="auth.isAdmin" (click)="archivoImportar.click()" [disabled]="importando">Importar plantilla Excel</button>
+      <button class="secondary" type="button" (click)="exportarVista()">Exportar inventario mostrado</button>
       <input #archivoImportar type="file" accept=".xlsx,.xls" hidden (change)="importarExcel($event)">
     </div>
     <div class="search-result-feedback" *ngIf="q.trim() || filtroStock !== 'todos'" aria-live="polite">
@@ -33,7 +35,7 @@ import { ApiError, Producto } from '../models';
       {{ filtrados.length ? (filtrados.length + ' artículo(s) encontrado(s)') : 'No encontramos artículos con estos filtros. Prueba otro nombre, ID o estado.' }}
       <button type="button" class="link" (click)="q=''; filtroStock='todos'">Limpiar filtros</button>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap inventory-filter-results" [attr.data-stock-filter]="filtroStock">
       <table>
         <thead><tr><th>Producto</th><th>Descripción</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead>
         <tbody>
@@ -45,9 +47,9 @@ import { ApiError, Producto } from '../models';
             <td><span [class.danger]="p.stock <= 5" class="status">{{ p.stock <= 5 ? 'Stock bajo' : 'Disponible' }}</span></td>
             <td>
               <button type="button" class="link" (click)="verDetalle(p)">Ver</button>
-              <button type="button" class="link" (click)="editar(p)">Editar</button>
-              <button type="button" class="link" (click)="abrirAjuste(p)">Ajustar</button>
-              <button type="button" class="link danger-text trash-eat-button" [class.trash-eating]="eliminandoAnimacionId === p.id" [disabled]="procesandoEliminar || eliminandoAnimacionId === p.id" (click)="solicitarEliminar(p)" aria-label="Eliminar artículo">
+              <button type="button" class="link" *ngIf="auth.isAdmin" (click)="editar(p)">Editar</button>
+              <button type="button" class="link" *ngIf="auth.isAdmin" (click)="abrirAjuste(p)">Ajustar</button>
+              <button type="button" class="link danger-text trash-eat-button" [class.trash-eating]="eliminandoAnimacionId === p.id" [disabled]="procesandoEliminar || eliminandoAnimacionId === p.id" *ngIf="auth.isAdmin" (click)="solicitarEliminar(p)" aria-label="Eliminar artículo">
                 <span class="trash-bin" aria-hidden="true"><span class="trash-bin-lid"></span><span class="trash-bin-body"></span></span>
                 <span class="trash-word" aria-hidden="true"><span>E</span><span>l</span><span>i</span><span>m</span><span>i</span><span>n</span><span>a</span><span>r</span></span>
               </button>
@@ -135,6 +137,7 @@ import { ApiError, Producto } from '../models';
   `
 })
 export class ProductosComponent implements OnInit {
+  readonly auth=inject(AuthService);
   private readonly api = inject(ApiService);
   lista: Producto[] = [];
   q = '';
@@ -228,6 +231,11 @@ export class ProductosComponent implements OnInit {
     });
   }
 
+  exportarVista(): void {
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(this.filtrados.map(p => ({ ID: p.id, Producto: p.nombre, Descripcion: p.descripcion, Precio: p.precio, Stock: p.stock, Estado: p.activo === false ? 'INACTIVO' : 'ACTIVO' }))), 'Inventario');
+    XLSX.writeFile(libro, 'inventario-mostrado.xlsx');
+  }
   descargarPlantilla(): void {
     const hoja = XLSX.utils.json_to_sheet([
       { Nombre: 'Ejemplo cuaderno', Descripcion: 'Cuaderno de prueba', Precio: 4.5, Stock: 10, Activo: 'SI' },

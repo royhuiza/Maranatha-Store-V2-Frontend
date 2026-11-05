@@ -35,10 +35,14 @@ export type TipoComprobante = 'BOLETA' | 'FACTURA' | 'NOTA_PEDIDO';
 export interface CrearVentaRequest {
   clienteId?: number;
   tipoComprobante: TipoComprobante;
+  metodoPago?: string;
   detalles: Array<Pick<DetalleVenta, 'productoId' | 'cantidad'>>;
 }
 
 export interface Venta {
+  metodoPago?: string;
+  validadoSunat?: boolean;
+  estadoPago?: string;
   id: number;
   clienteId?: number;
   clienteNombre: string;
@@ -56,3 +60,5 @@ export interface ApiError {
   status?: number;
   message?: string;
 }
+
+export interface DocumentoConsulta { tipoDocumento: 'DNI' | 'RUC'; numeroDocumento: string; nombre: string; nombres?: string; apellidoPaterno?: string; apellidoMaterno?: string; direccion?: string; estado?: string; condicion?: string; proveedor: string; }

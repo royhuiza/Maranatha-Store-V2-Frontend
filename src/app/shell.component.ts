@@ -1,3 +1,5 @@
+import { OriginkitSceneComponent } from './core/originkit-scene.component';
+import { AmbientSceneComponent } from './core/ambient-scene.component';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -15,9 +17,11 @@ interface SectionVisual {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [OriginkitSceneComponent, AmbientSceneComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="layout maranatha-app" [class.is-dark]="darkMode">
+    <div class="layout maranatha-app" [class.is-dark]="darkMode" [class.steep-home]="section.id === 'inicio'"
+      [class.workspace-data]="section.id === 'productos' || section.id === 'clientes' || section.id === 'cuenta'"
+      [class.workspace-analytics]="section.id === 'ventas' || section.id === 'reportes'">
       <aside>
         <div class="brand brand-official"><img class="maranatha-brand-image sidebar-brand-image" src="/maranatha-logo.png" alt="Librería Maranatha" (error)="onLogoError($event)"><div class="brand-fallback"><b>Maranatha</b><small>Store</small></div></div>
         <nav aria-label="Navegación principal">
@@ -25,13 +29,14 @@ interface SectionVisual {
           <a routerLink="/productos" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Productos y stock</span></a>
           <a routerLink="/clientes" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-label">Clientes</span></a>
           <a routerLink="/ventas" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">◇</span><span class="nav-label">Ventas y facturación</span></a>
-          <a routerLink="/reportes" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-label">Reportes Excel</span></a>
+          <a *ngIf="auth.isAdmin" routerLink="/usuarios" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-label">Usuarios y roles</span></a>
+          <a *ngIf="auth.isAdmin" routerLink="/reportes" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-label">Reportes Excel</span></a>
         </nav>
         <div class="sidebar-bottom"><span>MARANATHA STORE / V2</span>Gestión de tu librería, en un solo lugar.</div>
       </aside>
       <main class="app-main">
         <header class="app-topbar">
-          <div><h1>Panel de gestión</h1><p>Inventario, clientes y ventas</p></div>
+          <div><h1>{{auth.isAdmin ? 'Panel de administración' : 'Mi espacio de ventas'}}</h1><p>{{auth.isAdmin ? 'Inventario, clientes, ventas y usuarios' : 'Consulta productos y registra tus ventas'}}</p></div>
           <div class="topbar-actions">
             <button type="button" class="theme-toggle" (click)="toggleTheme()"
               [attr.aria-label]="darkMode ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
@@ -54,22 +59,17 @@ interface SectionVisual {
         </header>
         <section class="content maranatha-content">
           <section class="section-hero" [attr.data-section]="section.id" aria-label="Sección actual">
+            <app-originkit-scene *ngIf="showRibbons; else sectionAmbient" effect="ribbons" />
+            <ng-template #sectionAmbient><app-ambient-scene /></ng-template>
             <div class="hero-text">
               <span class="hero-eyebrow"><span class="hero-signal"></span>{{ section.eyebrow }}</span>
               <h2>{{ section.title }}</h2>
               <p>{{ section.description }}</p>
             </div>
-            <div class="hero-art" aria-hidden="true">
+            <div class="hero-art" *ngIf="section.id !== 'inicio'" aria-hidden="true">
               <svg viewBox="0 0 320 168" role="presentation" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="225" cy="72" r="72" fill="#ffffff" opacity=".085"/>
                 <circle cx="276" cy="120" r="25" fill="#F3C281" opacity=".2"/>
-                <g *ngIf="section.id === 'inicio'">
-                  <rect x="98" y="48" width="132" height="97" rx="12" fill="#F9EEDB" transform="rotate(-8 98 48)"/>
-                  <rect x="120" y="37" width="132" height="97" rx="12" fill="#E2AE71" transform="rotate(6 120 37)"/>
-                  <rect x="145" y="48" width="124" height="89" rx="10" fill="#FCF6EA"/>
-                  <path d="M161 77h92M161 89h68M161 101h82" stroke="#9DC6B8" stroke-width="5" stroke-linecap="round"/>
-                  <circle cx="221" cy="36" r="11" fill="#F3C281"/><path d="M221 17v8M221 47v8M202 36h8M232 36h8" stroke="#F3C281" stroke-width="3" stroke-linecap="round"/>
-                </g>
                 <g *ngIf="section.id === 'productos'">
                   <rect x="116" y="27" width="116" height="132" rx="11" fill="#F3C281" transform="rotate(-9 116 27)"/>
                   <rect x="147" y="20" width="110" height="133" rx="10" fill="#FAF6EC" transform="rotate(7 147 20)"/>
@@ -128,6 +128,7 @@ export class ShellComponent implements OnDestroy {
   @ViewChild('userMenu', { read: ElementRef }) userMenu?: ElementRef<HTMLElement>;
 
   constructor() {
+    this.auth.refrescarSesion();
     this.navigationSubscription = this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
       this.closeMenu();
       this.showWipe = false;
@@ -140,6 +141,10 @@ export class ShellComponent implements OnDestroy {
     });
   }
 
+  get showRibbons(): boolean {
+    return ['inicio', 'ventas', 'reportes'].includes(this.section.id);
+  }
+
   get section(): SectionVisual {
     const path = this.router.url.split('?')[0].split('/')[1] || '';
     const sections: Record<string, SectionVisual> = {
@@ -147,10 +152,11 @@ export class ShellComponent implements OnDestroy {
       clientes: { id: 'clientes', eyebrow: 'PERSONAS / EMPRESAS', title: 'Clientes más cerca.', description: 'La información de cada cliente, clara y siempre a mano.' },
       ventas: { id: 'ventas', eyebrow: 'VENTAS / COMPROBANTES', title: 'Ventas sin complicaciones.', description: 'Registra artículos, revisa importes y organiza comprobantes.' },
       reportes: { id: 'reportes', eyebrow: 'REPORTES / DATOS', title: 'Tus números, en perspectiva.', description: 'Consulta y exporta los datos de tu librería.' },
+      usuarios: { id: 'cuenta', eyebrow: 'EQUIPO / PERMISOS', title: 'Usuarios y roles.', description: 'Administra las cuentas y permisos de tu equipo.' },
       perfil: { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu cuenta, tu espacio.', description: 'Actualiza tus datos de manera segura.' },
       'cambiar-contrasena': { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu acceso, protegido.', description: 'Gestiona la seguridad de tu cuenta.' }
     };
-    return sections[path] || { id: 'inicio', eyebrow: 'BIENVENIDO / MARANATHA STORE', title: 'Así va tu negocio hoy.', description: 'Un vistazo a lo que importa: productos, clientes y ventas.' };
+    return sections[path] || { id: 'inicio', eyebrow: 'BIENVENIDO / MARANATHA STORE', title: 'El pulso de tu librería.', description: 'Ventas, inventario y clientes en una sola vista.' };
   }
 
   onLogoError(event: Event): void {

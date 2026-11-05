@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Cliente, CrearVentaRequest, Producto, Venta } from '../models';
+import { Cliente, CrearVentaRequest, Producto, Venta, DocumentoConsulta } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -60,17 +60,17 @@ export class ApiService {
     return this.http.put<Venta>(`${this.base}/ventas/${id}/anular`, {});
   }
 
-  buscarDni(dni: string): Observable<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }> {
-    return this.http.get<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }>(
-      `/external/dni?numero=${dni}`
-    );
+  eliminarVenta(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/ventas/${id}`);
   }
 
-  buscarRuc(ruc: string): Observable<{ numeroDocumento: string; tipoDocumento: string; nombre: string; nombreComercial?: string; condicion?: string; estado?: string }> {
-    return this.http.get<{ numeroDocumento: string; tipoDocumento: string; nombre: string; nombreComercial?: string; condicion?: string; estado?: string }>(
-      `/external/ruc?numero=${ruc}`
-    );
-  }
+  buscarDni(dni: string): Observable<DocumentoConsulta> { return this.http.get<DocumentoConsulta>(this.base + '/clientes/documentos/dni/' + dni); }
+  buscarRuc(ruc: string): Observable<DocumentoConsulta> { return this.http.get<DocumentoConsulta>(this.base + '/clientes/documentos/ruc/' + ruc); }
+  sesion() { return this.http.get<{ username: string; rol: string }>(this.base + '/auth/me'); }
+
+  usuarios() { return this.http.get<Array<{id: number; username: string; email: string; rol: string}>>(this.base + '/auth/usuarios'); }
+  crearUsuario(usuario: {username: string; email: string; password: string; rol: string}) { return this.http.post(this.base + '/auth/usuarios', usuario); }
+  cambiarPassword(currentPassword: string, newPassword: string) { return this.http.post(this.base + '/auth/password', { currentPassword, newPassword }); }
 
   login(username: string, password: string) {
     return this.http.post<{ token: string; username: string; rol: string }>(

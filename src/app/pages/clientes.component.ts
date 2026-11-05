@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../core/api.service';
+import { AuthService } from '../core/auth.service';
 import { ApiError, Cliente } from '../models';
 
 @Component({
@@ -24,7 +25,7 @@ import { ApiError, Cliente } from '../models';
             <td>{{ c.tipoDocumento || 'DNI' }} {{ c.numeroDocumento || '-' }}</td>
             <td>{{ c.telefono || '-' }}<br><small>{{ c.email || '-' }}</small></td>
             <td>{{ c.direccion || '-' }}</td>
-            <td><button class="link" (click)="editar(c)">Editar</button><button class="link danger-text" (click)="eliminar(c)">Eliminar</button></td>
+            <td><button class="link" (click)="editar(c)">Editar</button><button class="link danger-text" *ngIf="auth.isAdmin" (click)="eliminar(c)">Eliminar</button></td>
           </tr>
           <tr *ngIf="!filtrados.length"><td colspan="5" class="empty">No hay clientes registrados.</td></tr>
         </tbody>
@@ -59,6 +60,7 @@ import { ApiError, Cliente } from '../models';
   `
 })
 export class ClientesComponent implements OnInit {
+  readonly auth=inject(AuthService);
   private readonly api = inject(ApiService);
   lista: Cliente[] = [];
   q = '';
