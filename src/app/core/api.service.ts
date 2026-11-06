@@ -119,7 +119,7 @@ export class ApiService {
 
   login(username: string, password: string) {
     return this.http.post<{ token: string; username: string; rol: string }>(
-      `/auth/login`,
+      `${this.base}/auth/login`,
       { username, password }
     );
   }

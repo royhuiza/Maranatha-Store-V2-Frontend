@@ -22,7 +22,5 @@ module.exports = {
     target: 'https://api.apis.net.pe/v1', secure: true, changeOrigin: true,
     pathRewrite: {'^/external/ruc': '/ruc'}
   },
-  '/auth': {target:'http://127.0.0.1:8080',secure:false,changeOrigin:true},
-  '/api/facturacion': {target:'http://127.0.0.1:8080',secure:false,changeOrigin:true},
-  '/api': {target:'http://127.0.0.1:8080',secure:false,changeOrigin:true,pathRewrite:{'^/api':''}}
+  '/api': {target:'http://127.0.0.1:8080',secure:false,changeOrigin:true}
 };
