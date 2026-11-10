@@ -11,10 +11,13 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
   imports: [CommonModule, FormsModule],
   template: `
     <div class="page-title no-print">
-      <div><h2>Venta y facturación</h2><p>Boleta, factura o nota de pedido con control automático de stock</p></div>
+      <div>
+        <h2>Ventas y Facturación</h2>
+        <p>Consulta y administración de comprobantes emitidos</p>
+      </div>
+
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="secondary" (click)="nuevoComprobante()">Nueva venta</button>
-        <button *ngIf="preferenciaImpresion" class="secondary" (click)="limpiarPreferenciaImpresion()">Cambiar formato impresión</button>
+        <button class="primary-wide" (click)="nuevoComprobante()">+ Nueva venta</button>
       </div>
     </div>
     <div *ngIf="mensaje" class="notice no-print" [class.error-notice]="esError">{{ mensaje }}</div>
@@ -32,126 +35,117 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
       </div>
     </div>
 
-    <div class="sale-grid">
-      <section class="panel no-print">
-        <h3>Datos del comprobante</h3>
-        
-<div class="row">
-  <label>Tipo de comprobante
-    <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
-      <option value="BOLETA">Boleta</option>
-      <option value="FACTURA">Factura</option>
-      <option value="NOTA_PEDIDO">Nota de pedido</option>
-    </select>
-  </label>
-</div>
+    <div class="modal venta-modal" *ngIf="mostrarFormularioVenta">
+      <div class="dialog venta-dialog">
+        <header class="venta-header no-print">
+          <div>
+            <h3>{{ ventaEmitida ? 'Comprobante ' + ventaEmitida.serie + '-' + ventaEmitida.numero : 'Nueva venta' }}</h3>
+            <p>Completa los datos del comprobante y luego agrega los productos.</p>
+          </div>
+          <button type="button" class="secondary" (click)="cerrarFormularioVenta()">✕ Cerrar</button>
+        </header>
 
-<div *ngIf="tipo === 'FACTURA'">
-
-    <!-- 1. RUC -->
-    <div class="row">
-      <label>RUC
-        <input
-          type="text"
-          [(ngModel)]="documento"
-          (ngModelChange)="onDocumentoChange()"
-          maxlength="11"
-          inputmode="numeric"
-          placeholder="Ingrese RUC de 11 dígitos">
-      </label>
-
-      <button
-        type="button"
-        class="secondary"
-        (click)="buscarDocumento()"
-        [disabled]="documentoBuscando || documento.length !== 11">
-        {{ documentoBuscando ? 'Consultando...' : 'Consultar SUNAT' }}
-      </button>
-    </div>
-
-    <!-- 2. RAZÓN SOCIAL -->
-    <div class="row">
-      <label>Razón social
-        <input
-          type="text"
-          [(ngModel)]="documentoNombre"
-          placeholder="Razón social del cliente">
-      </label>
-    </div>
-
-    <!-- 3. DIRECCIÓN FISCAL -->
-    <div class="row">
-      <label>Dirección fiscal
-        <input
-          type="text"
-          [(ngModel)]="documentoDireccion"
-          placeholder="Dirección fiscal del cliente">
-      </label>
-    </div>
-
-    <small class="hint">
-      La consulta automática oficial estará disponible
-      cuando se habilite el servicio correspondiente.
-    </small>
-
-  </div>
-
-
-        <div *ngIf="tipo === 'BOLETA'" class="row">
-          <label>DNI del comprador
-            <input
-              type="text"
-              [(ngModel)]="documento"
-              (ngModelChange)="onDocumentoChange()"
-              maxlength="8"
-              inputmode="numeric"
-              placeholder="Ingrese DNI cuando corresponda">
-          </label>
+        <div class="venta-steps no-print" *ngIf="!ventaEmitida">
+          <div [class.active]="pasoVenta === 'cliente'">1 · Datos del comprobante</div>
+          <div [class.active]="pasoVenta === 'carrito'">2 · Carrito de compras</div>
+          <div [class.active]="pasoVenta === 'pago'">3 · Pago</div>
         </div>
 
-        <small class="error" *ngIf="documentoError">
-          {{ documentoError }}
-        </small>
+        <section class="venta-card no-print" *ngIf="pasoVenta === 'cliente' && !ventaEmitida">
+          <h3>Datos del comprobante</h3>
+          <p class="venta-help">Selecciona el documento y completa los datos del comprador.</p>
+          <div class="venta-fields">
+            <label class="venta-field">Tipo de comprobante
+              <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
+                <option value="BOLETA">Boleta</option>
+                <option value="FACTURA">Factura</option>
+                <option value="NOTA_PEDIDO">Nota de pedido</option>
+              </select>
+            </label>
 
-
-        <div class="row product-row product-search-row">
-          <label>Producto
-            <input type="text" [(ngModel)]="productoFiltro" (ngModelChange)="onProductoFiltroChange()" placeholder="Ingrese las primeras letras del producto" autocomplete="off">
-            <div class="suggestions" *ngIf="productoFiltro">
-              <div *ngFor="let p of productosFiltrados" class="suggestion" [class.selected]="productoId === p.id" [class.disabled]="p.stock===0" (click)="p.stock > 0 && seleccionarProducto(p.id)">
-                {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — stock {{ p.stock }}
+            <div class="venta-field" *ngIf="tipo !== 'NOTA_PEDIDO'">
+              <label>{{ tipo === 'FACTURA' ? 'RUC de la empresa' : 'DNI del comprador' }}</label>
+              <div class="venta-lookup venta-lookup-carrito">
+                <input type="text" [(ngModel)]="documento" (ngModelChange)="onDocumentoChange()"
+                  [attr.maxlength]="tipo === 'FACTURA' ? 11 : 8" inputmode="numeric"
+                  [placeholder]="tipo === 'FACTURA' ? 'Ingresa 11 dígitos' : 'Ingresa 8 dígitos'">
+                <button type="button" class="primary-wide" (click)="buscarDocumento()"
+                  [disabled]="documentoBuscando || documento.length !== (tipo === 'FACTURA' ? 11 : 8)">
+                  {{ documentoBuscando ? 'Buscando...' : 'Buscar' }}
+                </button>
               </div>
-              <div *ngIf="!productosFiltrados.length" class="hint">No se encontró producto.</div>
             </div>
-          </label>
-        </div>
-        <div class="row product-row">
-          <label>Cantidad<input type="number" min="1" step="1" [(ngModel)]="cantidad"></label>
-          <button (click)="agregar()" [disabled]="!productoId">Agregar al carrito</button>
-        </div>
 
-        <div class="table-wrap mini">
-          <table>
-            <thead><tr><th>Producto</th><th>Cant.</th><th>P. unit.</th><th>Subtotal</th><th></th></tr></thead>
-            <tbody>
-              <tr *ngFor="let d of detalles; let i=index">
-                <td>{{ d.productoNombre }}</td>
-                <td>{{ d.cantidad }}</td>
-                <td>S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
-                <td>S/ {{ d.subtotal | number:'1.2-2' }}</td>
-                <td><button class="link danger-text" (click)="quitar(i)">Quitar</button></td>
-              </tr>
-              <tr *ngIf="!detalles.length"><td colspan="5" class="empty">Agregue productos para registrar la venta.</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="total"><span>Total</span><strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong></div>
-        <button class="primary-wide" [disabled]="!detalles.length || procesando" (click)="registrar()">
-          {{ procesando ? 'Registrando...' : 'Registrar e imprimir' }}
-        </button>
-      </section>
+            <div class="venta-field" *ngIf="tipo !== 'NOTA_PEDIDO' && mostrarDatosCliente">
+              <label>{{ tipo === 'FACTURA' ? 'Razón social' : 'Nombre completo del cliente' }}</label>
+              <textarea rows="3" class="venta-nombre" [class.combo-razon-social]="tipo === 'FACTURA'" [(ngModel)]="documentoNombre"
+                [placeholder]="tipo === 'FACTURA' ? 'Razón social de la empresa' : 'Nombres y apellidos del comprador'"></textarea>
+              <small class="venta-help">Puedes revisar y corregir el nombre antes de continuar.</small>
+            </div>
 
-      <section class="panel receipt" id="comprobante">
+            <label class="venta-field" *ngIf="tipo === 'FACTURA' && mostrarDatosCliente">Dirección fiscal
+              <input type="text" [(ngModel)]="documentoDireccion" placeholder="Dirección fiscal de la empresa">
+            </label>
+            <p *ngIf="documentoError" class="venta-error">{{ documentoError }}</p>
+            <p *ngIf="tipo === 'FACTURA'" class="venta-help">Si la consulta RUC no está disponible, completa los datos manualmente. La validación oficial SUNAT aún está pendiente.</p>
+            <p *ngIf="tipo === 'NOTA_PEDIDO'" class="venta-help">La nota de pedido no requiere DNI ni RUC en esta pantalla.</p>
+          </div>
+          <div class="venta-actions">
+            <button type="button" class="secondary" (click)="cerrarFormularioVenta()">Cancelar</button>
+            <button type="button" class="primary-wide" (click)="continuarAlCarrito()"
+              [disabled]="!datosComprobanteCompletos || documentoBuscando">Continuar al carrito →</button>
+          </div>
+        </section>
+
+        <div class="venta-carrito" *ngIf="pasoVenta === 'carrito' || !!ventaEmitida">
+          <section class="venta-card no-print" *ngIf="!ventaEmitida">
+            <div class="venta-carrito-header">
+              <div><h3>Carrito de compras</h3><p class="venta-help">Busca los productos y confirma las cantidades.</p></div>
+              <button type="button" class="secondary" (click)="pasoVenta='cliente'">← Volver a datos</button>
+            </div>
+            <div class="venta-fields">
+              <div class="venta-field product-search-row">
+                <label>Producto</label>
+                <input type="text" [(ngModel)]="productoFiltro" (ngModelChange)="onProductoFiltroChange()"
+                  placeholder="Buscar producto por nombre" autocomplete="off">
+                <div class="suggestions suggestions-carrito" *ngIf="productoFiltro">
+                  <div *ngFor="let p of productosFiltrados" class="suggestion"
+                    [class.selected]="productoId === p.id" [class.disabled]="stockDisponibleCarrito(p) <= 0"
+                    (click)="stockDisponibleCarrito(p) > 0 && seleccionarProducto(p.id)">
+                    {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — stock {{ stockDisponibleCarrito(p) }}
+                  </div>
+                  <div *ngIf="!productosFiltrados.length" class="hint">No se encontró producto.</div>
+                </div>
+              </div>
+              <div class="venta-lookup venta-lookup-carrito">
+                <label class="venta-field">Cantidad
+                  <input type="number" min="1" step="1" [(ngModel)]="cantidad">
+                </label>
+                <button type="button" (click)="agregar()" [disabled]="!productoId">Agregar al carrito</button>
+              </div>
+            </div>
+            <div class="table-wrap mini">
+              <table>
+                <thead><tr><th>Producto</th><th>Cant.</th><th>P. unit.</th><th>Subtotal</th><th></th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let d of detalles; let i=index">
+                    <td>{{ d.productoNombre }}</td><td>{{ d.cantidad }}</td>
+                    <td>S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
+                    <td>S/ {{ d.subtotal | number:'1.2-2' }}</td>
+                    <td><button class="link danger-text" (click)="quitar(i)">Quitar</button></td>
+                  </tr>
+                  <tr *ngIf="!detalles.length"><td colspan="5" class="empty">Agrega productos para registrar la venta.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="total"><span>Total</span><strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong></div>
+            <div class="venta-actions carrito-actions">
+              <button type="button" class="primary-wide" [disabled]="!detalles.length || procesando" (click)="irAPago()">
+                Pagar →
+              </button>
+            </div>
+          </section>
+      <section class="panel receipt" id="comprobante" *ngIf="ventaEmitida">
         <div class="comprobante-a4">
           <div class="receipt-head receipt-head-grid">
             <div class="company">
@@ -231,15 +225,78 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
           </div>
         </div>
       </section>
+        </div>
+
+        <section class="venta-card pago-card no-print" *ngIf="pasoVenta === 'pago' && !ventaEmitida">
+          <div class="venta-carrito-header">
+            <div>
+              <h3>Método de pago</h3>
+              <p class="venta-help">Selecciona cómo pagará el cliente y confirma el cobro.</p>
+            </div>
+          </div>
+
+          <div class="pago-resumen">
+            <span>Total a pagar</span>
+            <strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong>
+          </div>
+
+          <div class="pago-metodos">
+            <button type="button" class="pago-metodo" *ngFor="let metodo of metodosPago"
+              [class.seleccionado]="metodoPago === metodo"
+              (click)="seleccionarMetodoPago(metodo)">
+              {{ metodo === 'TARJETA' ? 'Tarjeta' : (metodo | titlecase) }}
+            </button>
+          </div>
+
+          <div *ngIf="metodoPago === 'EFECTIVO'" class="pago-efectivo">
+            <p class="venta-help">Confirma que recibiste el dinero antes de registrar la compra.</p>
+            <label class="pago-check">
+              <input type="checkbox" [(ngModel)]="pagoConfirmado">
+              Confirmo que recibí el pago en efectivo
+            </label>
+          </div>
+          <div *ngIf="metodoPago !== 'EFECTIVO'" class="pago-pendiente">
+            La integración de {{ metodoPago }} está pendiente. No se puede registrar este método como pagado todavía.
+          </div>
+
+          <div class="venta-actions pago-actions">
+            <button type="button" class="secondary" [disabled]="procesando" (click)="pasoVenta = 'carrito'">← Volver al carrito</button>
+            <button type="button" class="primary-wide" [disabled]="procesando || !pagoConfirmado || metodoPago !== 'EFECTIVO' || !detalles.length" (click)="registrar()">
+              {{ procesando ? 'Registrando...' : 'Registrar compra e imprimir' }}
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
 
     <section class="panel history no-print">
       <div class="history-title"><div><h3>Comprobantes emitidos</h3><p>Las ventas anuladas conservan el historial y reponen el stock.</p></div></div>
+        <div class="row" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px">
+
+        <label style="flex:2;min-width:220px">
+          Buscar comprobante
+          <input
+            type="text"
+            [(ngModel)]="busquedaComprobante"
+            placeholder="Buscar por número o cliente...">
+        </label>
+
+        <label style="flex:1;min-width:180px">
+          Tipo de comprobante
+          <select [(ngModel)]="filtroTipoComprobante">
+            <option value="TODOS">Todos</option>
+            <option value="FACTURA">Facturas</option>
+            <option value="BOLETA">Boletas</option>
+            <option value="NOTA_PEDIDO">Notas de pedido</option>
+          </select>
+        </label>
+
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Comprobante</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Estado</th><th></th></tr></thead>
           <tbody>
-            <tr *ngFor="let v of ventas">
+            <tr *ngFor="let v of ventasFiltradas">
               <td><b>{{ v.serie }}-{{ v.numero }}</b><br><small>{{ textoTipo(v.tipoComprobante) }}</small></td>
               <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
               <td>{{ v.clienteNombre }}</td>
@@ -251,18 +308,82 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
                 <button *ngIf="v.estado==='EMITIDA'" class="link danger-text" (click)="anular(v)">Anular</button>
               </td>
             </tr>
-            <tr *ngIf="!ventas.length"><td colspan="6" class="empty">Todavía no hay ventas registradas.</td></tr>
+            <tr *ngIf="!ventasFiltradas.length"><td colspan="6" class="empty">{{ ventas.length ? 'No hay comprobantes que coincidan con los filtros.' : 'Todavía no hay ventas registradas.' }}</td></tr>
           </tbody>
         </table>
       </div>
     </section>
-  `
+  `,
+  styleUrl: './ventas.component.css'
 })
 export class VentasComponent implements OnInit {
   private readonly api = inject(ApiService);
   productos: Producto[] = [];
   clientes: Cliente[] = [];
   ventas: Venta[] = [];
+  // Controla la vista de Ventas y Facturación
+    mostrarFormularioVenta = false;
+    pasoVenta: 'cliente' | 'carrito' | 'pago' = 'cliente';
+
+    readonly metodosPago = ['EFECTIVO', 'YAPE', 'PLIN', 'TARJETA', 'PAYPAL', 'IZIPAY'] as const;
+    metodoPago: typeof this.metodosPago[number] = 'EFECTIVO';
+
+    pagoConfirmado = false;
+
+    seleccionarMetodoPago(metodo: typeof this.metodosPago[number]): void {
+      this.metodoPago = metodo;
+      this.pagoConfirmado = false;
+    }
+
+    irAPago(): void {
+      if (!this.detalles.length || this.procesando) return;
+
+      this.metodoPago = 'EFECTIVO';
+      this.pagoConfirmado = false;
+      this.pasoVenta = 'pago';
+    }
+  mostrarDatosCliente = false;
+    
+  // Filtros para el historial de comprobantes
+    busquedaComprobante = '';
+    filtroTipoComprobante = 'TODOS';
+
+    get ventasFiltradas(): Venta[] {
+      const busqueda = this.busquedaComprobante.trim().toLowerCase();
+
+      return this.ventas.filter(venta => {
+        const coincideTipo =
+          this.filtroTipoComprobante === 'TODOS' ||
+          venta.tipoComprobante === this.filtroTipoComprobante;
+
+        const textoBusqueda = [
+          venta.serie,
+          venta.numero,
+          `${venta.serie}-${venta.numero}`,
+          venta.clienteNombre,
+          this.textoTipo(venta.tipoComprobante)
+        ].join(' ').toLowerCase();
+
+        return coincideTipo && textoBusqueda.includes(busqueda);
+      });
+    }
+  get datosComprobanteCompletos(): boolean {
+    if (this.tipo === 'NOTA_PEDIDO') return true;
+    const longitud = this.tipo === 'FACTURA' ? 11 : 8;
+    return this.mostrarDatosCliente && new RegExp('^[0-9]{' + longitud + '}$').test(this.documento.trim()) &&
+      !!this.documentoNombre.trim() &&
+      (this.tipo !== 'FACTURA' || !!this.documentoDireccion.trim());
+  }
+
+  continuarAlCarrito(): void {
+    if (!this.datosComprobanteCompletos) {
+      this.documentoError = 'Completa el documento y los datos del cliente para continuar.';
+      return;
+    }
+    this.documentoError = '';
+    this.pasoVenta = 'carrito';
+  }
+
   tipo: TipoComprobante = 'BOLETA';
   clienteId?: number;
   productoId?: number;
@@ -303,7 +424,7 @@ export class VentasComponent implements OnInit {
   }
 
   get comprobanteCliente(): string {
-    return this.ventaEmitida?.clienteNombre || this.clienteSeleccionado;
+    return this.ventaEmitida?.clienteNombre || this.documentoNombre.trim() || this.clienteSeleccionado;
   }
 
   get comprobanteDocumento(): string {
@@ -314,11 +435,21 @@ export class VentasComponent implements OnInit {
     return '';
   }
 
+  stockDisponibleCarrito(producto: Producto): number {
+    const cantidadEnCarrito = this.detalles
+      .filter(item => item.productoId === producto.id)
+      .reduce((total, item) => total + item.cantidad, 0);
+
+    return Math.max(0, producto.stock - cantidadEnCarrito);
+  }
+
   get productosFiltrados(): Producto[] {
     const filtro = this.productoFiltro.trim().toLowerCase();
-    return filtro
-      ? this.productos.filter(item => item.nombre.toLowerCase().includes(filtro))
-      : this.productos;
+
+    return this.productos.filter(producto =>
+      this.stockDisponibleCarrito(producto) > 0 &&
+      producto.nombre.toLowerCase().includes(filtro)
+    );
   }
 
   get productoSeleccionadoNombre(): string {
@@ -355,6 +486,7 @@ export class VentasComponent implements OnInit {
   }
 
   onTipoChange(): void {
+    this.mostrarDatosCliente = false;
     this.ventaEmitida = undefined;
     this.documento = '';
     this.documentoNombre = '';
@@ -364,6 +496,8 @@ export class VentasComponent implements OnInit {
   }
 
   onDocumentoChange(): void {
+    this.mostrarDatosCliente = false;
+    this.documento = this.documento.replace(/\D/g, '');
     this.documentoNombre = '';
     this.documentoError = '';
     this.documentoValido = false;
@@ -381,6 +515,7 @@ export class VentasComponent implements OnInit {
   }
 
   buscarDocumento(): void {
+    this.mostrarDatosCliente = true;
     this.documentoError = '';
     this.documentoNombre = '';
     this.documentoValido = false;
@@ -440,7 +575,7 @@ export class VentasComponent implements OnInit {
               'Ingrese la razón social y dirección fiscal manualmente.';
           } else if (status === 401) {
             this.documentoError =
-              'Su sesión ha expirado. Inicie sesión nuevamente.';
+              'No se pudo autorizar la consulta RUC. Complete los datos manualmente mientras se corrige el servicio.';
           } else if (status === 404) {
             this.documentoError =
               'No se encontró el servicio de consulta RUC.';
@@ -486,7 +621,7 @@ export class VentasComponent implements OnInit {
     const existente = this.detalles.find(item => item.productoId === producto.id);
     const cantidadTotal = cantidad + (existente?.cantidad || 0);
     if (cantidadTotal > producto.stock) {
-      this.mostrarErrorSimple(`Stock insuficiente. Solo hay ${producto.stock} unidades disponibles.`);
+      this.mostrarErrorSimple(`Stock insuficiente. Solo quedan ${this.stockDisponibleCarrito(producto)} unidades disponibles para agregar.`);
       return;
     }
 
@@ -514,8 +649,12 @@ export class VentasComponent implements OnInit {
   }
 
   registrar(): void {
-    if (!this.detalles.length) return;
-    // Para esta versión provisional, el documento se puede ingresar manualmente así no se valide.
+    if (this.procesando || !this.detalles.length) return;
+    if (this.pasoVenta !== 'pago' || this.metodoPago !== 'EFECTIVO' || !this.pagoConfirmado) {
+      this.mostrarErrorSimple('Confirma el pago en efectivo antes de registrar la venta.');
+      return;
+    }
+    // El backend actual no recibe ni persiste el método de pago.
 
     this.procesando = true;
     this.mensaje = '';
@@ -557,16 +696,36 @@ export class VentasComponent implements OnInit {
 
   reimprimir(venta: Venta): void {
     this.ventaEmitida = venta;
+    this.mostrarFormularioVenta = true;
+    this.pasoVenta = 'carrito';
     this.abrirDialogoImpresion();
   }
 
   nuevoComprobante(): void {
+    this.mostrarFormularioVenta = true;
+    this.pasoVenta = 'cliente';
+    this.metodoPago = 'EFECTIVO';
+    this.pagoConfirmado = false;
+    this.mostrarDatosCliente = false;
     this.ventaEmitida = undefined;
     this.detalles = [];
     this.tipo = 'BOLETA';
     this.clienteId = undefined;
     this.cantidad = 1;
+    this.productoId = undefined;
+    this.productoFiltro = '';
+    this.documento = '';
+    this.documentoNombre = '';
+    this.documentoDireccion = '';
+    this.documentoError = '';
+    this.documentoValido = false;
     this.mensaje = '';
+  }
+
+  cerrarFormularioVenta(): void {
+    if (this.procesando) return;
+    this.mostrarFormularioVenta = false;
+    this.mostrarDialogoImpresion = false;
   }
 
   abrirDialogoImpresion(): void {
@@ -606,6 +765,8 @@ export class VentasComponent implements OnInit {
 
   async descargarPdf(venta: Venta): Promise<void> {
     this.ventaEmitida = venta;
+    this.mostrarFormularioVenta = true;
+    this.pasoVenta = 'carrito';
     // esperar que la vista se actualice
     await new Promise(res => setTimeout(res, 120));
     const el = document.getElementById('comprobante');
@@ -678,3 +839,4 @@ export class VentasComponent implements OnInit {
     this.esError = true;
   }
 }
+
