@@ -1,0 +1,1 @@
+import{e as l}from"./chunk-UU5LGN4Y.js";import{Ma as e,i as o}from"./chunk-WABLOCAC.js";function r(){return e()&&["localhost","127.0.0.1","[::1]"].includes(location.hostname)}var i=()=>r()||o(l).createUrlTree(["/login"]);export{r as a,i as b};

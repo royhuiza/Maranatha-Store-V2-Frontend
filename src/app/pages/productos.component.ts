@@ -57,12 +57,13 @@ import { AjusteInventario, ApiError, Producto } from '../models';
             <td>{{ p.descripcion || '-' }}</td>
             <td>S/ {{ p.precio | number:'1.2-2' }}</td>
             <td>{{ p.stock }}</td>
-            <td><span [class.danger]="p.stock <= 5" class="status">{{ estadoStock(p.stock) }}</span></td>
+            <td><span [class.danger]="p.activo === false || p.stock <= 5" class="status">{{ p.activo === false ? 'Inactivo' : estadoStock(p.stock) }}</span></td>
             <td>
               <button type="button" class="link" (click)="verDetalle(p)">Ver</button>
               <button type="button" class="link" *ngIf="auth.isAdmin" (click)="editar(p)">Editar</button>
               <button type="button" class="link" *ngIf="auth.isAdmin" (click)="abrirAjuste(p)">Ajustar</button>
-              <button type="button" class="link danger-text trash-eat-button" [class.trash-eating]="eliminandoAnimacionId === p.id" [disabled]="procesandoEliminar || eliminandoAnimacionId === p.id" *ngIf="auth.isAdmin" (click)="solicitarEliminar(p)" aria-label="Eliminar artículo">
+              <button type="button" class="link" *ngIf="auth.isAdmin && p.activo === false" (click)="reactivar(p)" [disabled]="procesandoEliminar">Reactivar</button>
+              <button type="button" class="link danger-text trash-eat-button" [class.trash-eating]="eliminandoAnimacionId === p.id" [disabled]="procesandoEliminar || eliminandoAnimacionId === p.id" *ngIf="auth.isAdmin && p.activo !== false" (click)="solicitarEliminar(p)" aria-label="Eliminar artículo">
                 <span class="trash-bin" aria-hidden="true"><span class="trash-bin-lid"></span><span class="trash-bin-body"></span></span>
                 <span class="trash-word" aria-hidden="true"><span>E</span><span>l</span><span>i</span><span>m</span><span>i</span><span>n</span><span>a</span><span>r</span></span>
               </button>
@@ -131,7 +132,7 @@ import { AjusteInventario, ApiError, Producto } from '../models';
       <section class="dialog inventory-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
         <span class="product-dialog-eyebrow">CONFIRMAR ACCIÓN</span><h3 id="delete-title">¿Eliminar artículo?</h3>
         <p>Confirma si deseas eliminar <strong>{{ productoEliminar.nombre }}</strong> del catálogo.</p>
-        <p>Solo se pueden eliminar productos sin stock ni ventas asociadas.</p>
+        <p>Solo se pueden eliminar productos con stock 0. El artículo no se borra: pasa a <b>INACTIVO</b>, se mantiene en el catálogo con su historial y ya no aparece para vender. Puedes reactivarlo cuando quieras.</p>
         <p *ngIf="errorEliminar" class="product-form-error" role="alert">{{ errorEliminar }}</p>
         <div class="actions"><button type="button" class="secondary" (click)="productoEliminar=null" [disabled]="procesandoEliminar">Cancelar</button><button type="button" class="danger-button" (click)="confirmarEliminar()" [disabled]="procesandoEliminar">{{ procesandoEliminar ? 'Eliminando...' : 'Sí, eliminar' }}</button></div>
       </section>
@@ -331,6 +332,15 @@ export class ProductosComponent implements OnInit {
     this.productoEliminar = p;
   }
 
+  reactivar(p: Producto): void {
+    if (!p.id || this.procesandoEliminar) return;
+    this.procesandoEliminar = true;
+    this.api.actualizarProducto({ ...p, activo: true }).subscribe({
+      next: () => { this.procesandoEliminar = false; this.mostrarMensaje(`${p.nombre} está activo nuevamente.`); this.cargar(); },
+      error: e => { this.procesandoEliminar = false; this.errorCatalogo = this.extraerMensaje(e, 'No se pudo reactivar el producto.'); }
+    });
+  }
+
   confirmarEliminar(): void {
     const p = this.productoEliminar;
     if (!p?.id || this.procesandoEliminar) return;
@@ -339,13 +349,9 @@ export class ProductosComponent implements OnInit {
     this.api.eliminarProducto(p.id).subscribe({
       next: () => {
         this.productoEliminar = null;
-        this.eliminandoAnimacionId = p.id;
-        setTimeout(() => {
-          this.procesandoEliminar = false;
-          this.eliminandoAnimacionId = undefined;
-          this.mostrarMensaje('Producto eliminado correctamente.');
-          this.cargar();
-        }, 700);
+        this.procesandoEliminar = false;
+        this.mostrarMensaje(`${p.nombre} pasó a inactivo. Sigue en el catálogo, pero no se puede vender.`);
+        this.cargar();
       },
       error: e => {
         this.procesandoEliminar = false;

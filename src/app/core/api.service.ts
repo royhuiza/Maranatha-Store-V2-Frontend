@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AjusteInventario, Cliente, CrearVentaRequest, Producto, ResultadoImportacion, Venta, DocumentoConsulta } from '../models';
+import { AjusteInventario, Cliente, CrearVentaRequest, Producto, ResultadoImportacion, Venta } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -76,8 +76,6 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/ventas/${id}`);
   }
 
-  buscarDni(dni: string): Observable<DocumentoConsulta> { return this.http.get<DocumentoConsulta>(this.base + '/clientes/documentos/dni/' + dni); }
-  buscarRuc(ruc: string): Observable<DocumentoConsulta> { return this.http.get<DocumentoConsulta>(this.base + '/clientes/documentos/ruc/' + ruc); }
   sesion() { return this.http.get<{ username: string; rol: string }>(this.base + '/auth/me'); }
 
   usuarios() { return this.http.get<Array<{id: number; username: string; email: string; rol: string}>>(this.base + '/auth/usuarios'); }
