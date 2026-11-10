@@ -469,3 +469,17 @@ dialog.modal>.dialog{width:min(100%,600px);max-height:calc(100dvh - 48px);overfl
 .recovery-mailbox-link{margin-top:18px;padding:14px;background:#2a514b;border:1px solid #62998a;border-radius:12px}.recovery-mailbox-link p{margin:0 0 8px}.recovery-mailbox-link a{color:#ffdc9d;font-weight:750}.recovery-countdown{display:flex;align-items:center;gap:8px;color:#ffe3a9!important}.recovery-countdown strong{display:inline-grid;place-items:center;min-width:36px;min-height:36px;border-radius:50%;background:#dca85f;color:#102d30;font-size:22px;font-variant-numeric:tabular-nums}
 .mailbox-shell{width:min(1150px,100%);position:relative;z-index:1}.mailbox-shell .recovery-header>img{width:145px;height:90px;object-fit:contain}.mailbox-intro h1{font-size:32px;color:#fff}.mailbox-intro p{line-height:1.7;color:#c6dbd3}.mailbox-toolbar{display:flex;align-items:flex-end;gap:14px;margin:20px 0}.mailbox-toolbar label{flex:1;display:grid;gap:8px}.mailbox-toolbar input{background:#203b40;color:#fff;border-color:#577b77}.mailbox-grid{display:grid;grid-template-columns:minmax(250px,1fr) minmax(0,1.6fr);gap:18px}.mailbox-list,.mailbox-message{background:#193339;border:1px solid #42635e;border-radius:17px;padding:20px}.mailbox-list{display:flex;flex-direction:column;gap:10px;max-height:65vh;overflow:auto}.mailbox-list button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:7px;background:#244a49;color:#eef6ed;padding:15px}.mailbox-list button.active{background:#d7a361;color:#143b36}.mailbox-list small{font-size:11px}.mailbox-message pre{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;font-family:inherit;font-size:13px}.mailbox-message h2{font-size:21px;color:#f6f6ec}.mailbox-message p{font-size:12px;line-height:1.6;color:#c5dccf}
 @media(max-width:700px){.mailbox-grid{grid-template-columns:1fr}.mailbox-list{max-height:260px}.mailbox-toolbar{align-items:stretch;flex-direction:column}.sale-search-label .product-selector{right:56px}}
+/* T06: aviso de nombre repetido en el formulario de artículos */
+.nombre-duplicado{background:#fff7e6;border:1px solid #f1d29a;border-radius:12px;padding:11px 13px;margin:-4px 0 12px;font-size:12px;color:#7a4d06;animation:product-error-in .35s ease both}
+.nombre-duplicado p{display:flex;gap:9px;align-items:flex-start;margin:0;line-height:1.5}
+.nombre-duplicado p span{display:grid;place-items:center;background:#d18a12;color:#fff;font-weight:800;border-radius:50%;width:19px;height:19px;flex:none}
+.nombre-sugerencias{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:9px 0 0 28px}
+.nombre-sugerencias small{color:#8a6a2f;font-weight:600}
+.nombre-sugerencias button{font:inherit;font-size:11.5px;padding:4px 10px;border-radius:999px;border:1px solid #e3c27e;background:#fff;color:#5d3d05;cursor:pointer;transition:background .15s,transform .15s}
+.nombre-sugerencias button:hover{background:#fdecc8;transform:translateY(-1px)}
+.nombre-sugerencias .nombre-editar{border-style:dashed;background:transparent}
+.maranatha-app.is-dark .nombre-duplicado{background:#3a2e17;border-color:#6f5521;color:#f3d9a4}
+.maranatha-app.is-dark .nombre-sugerencias small{color:#d9bd84}
+.maranatha-app.is-dark .nombre-sugerencias button{background:#2b2414;border-color:#6f5521;color:#f3d9a4}
+.maranatha-app.is-dark .nombre-sugerencias button:hover{background:#45361a}
+@media(prefers-reduced-motion:reduce){.nombre-duplicado,.nombre-sugerencias button{animation:none!important;transition:none!important}}

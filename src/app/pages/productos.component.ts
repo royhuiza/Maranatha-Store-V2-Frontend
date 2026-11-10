@@ -6,7 +6,7 @@ import { catchError, EMPTY, Subject, switchMap, timer } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { AjusteInventario, ApiError, Producto } from '../models';
+import { AjusteInventario, ApiError, EstadoStock, Producto } from '../models';
 
 @Component({
   standalone: true,
@@ -21,14 +21,14 @@ import { AjusteInventario, ApiError, Producto } from '../models';
       <button *ngIf="esError" type="button" class="link" (click)="mensaje=''">Cerrar</button>
     </div>
     <div class="catalog-controls">
-      <div class="stock-segments" role="group" aria-label="Filtro rápido de stock"><button type="button" [class.active]="filtroStock==='todos'" (click)="filtroStock='todos'">Todos</button><button type="button" [class.active]="filtroStock==='disponible'" (click)="filtroStock='disponible'">Disponibles · 6 o más</button><button type="button" [class.active]="filtroStock==='bajo'" (click)="filtroStock='bajo'">Stock bajo · 1 a 5</button><button type="button" [class.active]="filtroStock==='agotado'" (click)="filtroStock='agotado'">Sin stock</button></div>
+      <div class="stock-segments" role="group" aria-label="Filtro rápido de stock"><button type="button" [class.active]="filtroStock==='todos'" (click)="filtroStock='todos'">Todos</button><button type="button" [class.active]="filtroStock==='disponible'" (click)="filtroStock='disponible'">Disponibles</button><button type="button" [class.active]="filtroStock==='bajo'" (click)="filtroStock='bajo'">Stock bajo</button><button type="button" [class.active]="filtroStock==='agotado'" (click)="filtroStock='agotado'">Sin stock</button></div>
       <div class="toolbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción o ID..." [ngModel]="q" (ngModelChange)="cambiarBusqueda($event)">
         <select aria-label="Filtrar por existencias" [(ngModel)]="filtroStock" class="stock-filter">
           <option value="todos">Todos los artículos</option>
-          <option value="bajo">Stock bajo (1–5)</option>
+          <option value="bajo">Stock bajo (≤ stock mínimo)</option>
           <option value="agotado">Sin stock (0)</option>
-          <option value="disponible">Disponibles (6+)</option>
+          <option value="disponible">Disponibles (sobre el mínimo)</option>
         </select>
         <form *ngIf="auth.isAdmin" [formGroup]="formImportacion">
           <button class="secondary" type="button" (click)="archivoImportar.click()" [disabled]="importando">
@@ -56,8 +56,8 @@ import { AjusteInventario, ApiError, Producto } from '../models';
             <td><b>{{ p.nombre }}</b><br><small>ID {{ p.id }}</small></td>
             <td>{{ p.descripcion || '-' }}</td>
             <td>S/ {{ p.precio | number:'1.2-2' }}</td>
-            <td>{{ p.stock }}</td>
-            <td><span [class.danger]="p.activo === false || p.stock <= 5" class="status">{{ p.activo === false ? 'Inactivo' : estadoStock(p.stock) }}</span></td>
+            <td>{{ p.stock }}<br><small>mín. {{ p.stockMinimo ?? 5 }}</small></td>
+            <td><span [class.danger]="p.activo === false || estado(p) !== 'DISPONIBLE'" class="status">{{ p.activo === false ? 'Inactivo' : textoEstado(p) }}</span></td>
             <td>
               <button type="button" class="link" (click)="verDetalle(p)">Ver</button>
               <button type="button" class="link" *ngIf="auth.isAdmin" (click)="editar(p)">Editar</button>
@@ -86,7 +86,8 @@ import { AjusteInventario, ApiError, Producto } from '../models';
           <div><dt>ID del producto</dt><dd>{{ detalle.id }}</dd></div>
           <div><dt>Precio</dt><dd>S/ {{ detalle.precio | number:'1.2-2' }}</dd></div>
           <div><dt>Stock</dt><dd>{{ detalle.stock }}</dd></div>
-          <div><dt>Estado</dt><dd>{{ estadoStock(detalle.stock) }}</dd></div>
+          <div><dt>Stock mínimo</dt><dd>{{ detalle.stockMinimo ?? 5 }}</dd></div>
+          <div><dt>Estado</dt><dd>{{ textoEstado(detalle) }}</dd></div>
         </dl>
         <section *ngIf="auth.isAdmin" aria-label="Historial de ajustes">
           <h4>Historial de ajustes</h4>
@@ -149,8 +150,16 @@ import { AjusteInventario, ApiError, Producto } from '../models';
         </div>
         <div class="product-dialog-fields">
           <label>Nombre del artículo <span class="required-star">*</span>
-            <input [(ngModel)]="form.nombre" name="nombre" required maxlength="150" placeholder="Ej. Cuaderno cuadriculado A4" [class.field-invalid]="errorFormulario && !form.nombre.trim()" (input)="limpiarError()" autofocus>
+            <input [(ngModel)]="form.nombre" name="nombre" required maxlength="150" placeholder="Ej. Cuaderno cuadriculado A4" [class.field-invalid]="(errorFormulario && !form.nombre.trim()) || !!duplicado" (input)="limpiarError()" autofocus>
           </label>
+          <div class="nombre-duplicado" *ngIf="duplicado as d" role="alert">
+            <p><span aria-hidden="true">!</span><b>Ya existe un artículo llamado “{{ d.nombre }}”</b> (ID {{ d.id }}{{ d.activo === false ? ', inactivo' : '' }}, stock {{ d.stock }}). Usa otro nombre o edita el existente.</p>
+            <div class="nombre-sugerencias">
+              <small *ngIf="sugerenciasNombre.length">Prueba con:</small>
+              <button type="button" *ngFor="let s of sugerenciasNombre" (click)="usarNombre(s)">{{ s }}</button>
+              <button type="button" class="nombre-editar" (click)="editar(d)">Editar el existente</button>
+            </div>
+          </div>
           <label>Descripción <span class="required-star">*</span>
             <input [(ngModel)]="form.descripcion" name="descripcion" required maxlength="500" placeholder="Características del artículo" [class.field-invalid]="errorFormulario && !form.descripcion?.trim()" (input)="limpiarError()">
           </label>
@@ -161,13 +170,16 @@ import { AjusteInventario, ApiError, Producto } from '../models';
             <label>Stock <span class="required-star">*</span>
               <input type="number" min="0" step="1" [(ngModel)]="form.stock" name="stock" required [class.field-invalid]="errorFormulario && (!esStockValido())" (input)="limpiarError()">
             </label>
+            <label>Stock mínimo <span class="required-star">*</span>
+              <input type="number" min="0" step="1" [(ngModel)]="form.stockMinimo" name="stockMinimo" required [class.field-invalid]="errorFormulario && !esStockMinimoValido()" (input)="limpiarError()" title="Cuando el stock llegue a este número se mostrará la alerta de stock bajo">
+            </label>
           </div>
-          <p class="product-field-hint">El precio debe ser mayor que cero y el stock debe ser un número entero no negativo.</p>
+          <p class="product-field-hint">El precio debe ser mayor que cero. Stock y stock mínimo son enteros no negativos; con stock igual o menor al mínimo el artículo aparece como “Stock bajo”.</p>
           <div class="product-form-error" *ngIf="errorFormulario" role="alert"><span aria-hidden="true">!</span>{{ errorFormulario }}</div>
         </div>
         <div class="actions product-dialog-actions">
           <button type="button" class="secondary" (click)="cerrarModal()" [disabled]="procesando">Cancelar</button>
-          <button type="submit" class="workspace-primary" [disabled]="procesando">{{ procesando ? 'Guardando...' : (form.id ? 'Guardar cambios' : 'Registrar artículo') }}</button>
+          <button type="submit" class="workspace-primary" [disabled]="procesando || !!duplicado">{{ procesando ? 'Guardando...' : (form.id ? 'Guardar cambios' : 'Registrar artículo') }}</button>
         </div>
       </form>
     </div>
@@ -215,13 +227,56 @@ export class ProductosComponent implements OnInit {
   esError = false;
   errorFormulario = '';
   form: Producto = this.vacio();
+  /** Catálogo completo (sin filtro de búsqueda) para detectar nombres repetidos al registrar. */
+  private catalogoCompleto: Producto[] = [];
+  private nombreOriginal = '';
+
+  /** T06: artículo que ya usa el nombre escrito (ignora mayúsculas y espacios extra). */
+  get duplicado(): Producto | undefined {
+    const clave = this.claveNombre(this.form.nombre);
+    if (!clave || (this.form.id && clave === this.claveNombre(this.nombreOriginal))) return undefined;
+    return this.catalogoCompleto.find(p => p.id !== this.form.id && this.claveNombre(p.nombre) === clave);
+  }
+
+  get sugerenciasNombre(): string[] {
+    const nombre = (this.form.nombre ?? '').trim().replace(/\s+/g, ' ');
+    const descripcion = (this.form.descripcion ?? '').trim();
+    const candidatos: string[] = [];
+    if (descripcion && !this.claveNombre(nombre).includes(this.claveNombre(descripcion))) {
+      candidatos.push(`${nombre} ${descripcion}`);
+    }
+    const numero = nombre.match(/^(.*?)(\d+)$/);
+    for (let i = 1; candidatos.length < 3 && i < 50; i++) {
+      candidatos.push(numero
+        ? numero[1] + String(Number(numero[2]) + i).padStart(numero[2].length, '0')
+        : `${nombre} ${i + 1}`);
+    }
+    const usados = new Set(this.catalogoCompleto.map(p => this.claveNombre(p.nombre)));
+    return candidatos.map(c => c.slice(0, 150)).filter(c => !usados.has(this.claveNombre(c))).slice(0, 3);
+  }
+
+  usarNombre(nombre: string): void {
+    this.form.nombre = nombre;
+    this.limpiarError();
+  }
+
+  private claveNombre(nombre?: string | null): string {
+    return (nombre ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+  }
+
+  private cargarCatalogoCompleto(): void {
+    this.api.productos('').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: productos => this.catalogoCompleto = productos,
+      error: () => this.catalogoCompleto = []
+    });
+  }
 
   get filtrados(): Producto[] {
     if (this.cargandoCatalogo || this.errorCatalogo) return [];
     return this.lista.filter(p => this.filtroStock === 'todos'
-      || (this.filtroStock === 'bajo' && p.stock >= 1 && p.stock <= 5)
-      || (this.filtroStock === 'agotado' && p.stock === 0)
-      || (this.filtroStock === 'disponible' && p.stock > 5));
+      || (this.filtroStock === 'bajo' && this.estado(p) === 'STOCK_BAJO')
+      || (this.filtroStock === 'agotado' && this.estado(p) === 'SIN_STOCK')
+      || (this.filtroStock === 'disponible' && this.estado(p) === 'DISPONIBLE'));
   }
 
   get mensajeSinResultados(): string {
@@ -232,9 +287,15 @@ export class ProductosComponent implements OnInit {
     return 'No encontramos artículos con estos filtros. Prueba otro nombre, ID o estado.';
   }
 
-  estadoStock(stock: number): string {
-    if (stock === 0) return 'Sin stock';
-    return stock <= 5 ? 'Stock bajo' : 'Disponible';
+  /** T41: usa el estado que calcula el backend (stock vs. stock mínimo). */
+  estado(p: Producto): EstadoStock {
+    if (p.estadoStock) return p.estadoStock;
+    if (p.stock <= 0) return 'SIN_STOCK';
+    return p.stock <= (p.stockMinimo ?? 5) ? 'STOCK_BAJO' : 'DISPONIBLE';
+  }
+
+  textoEstado(p: Producto): string {
+    return { SIN_STOCK: 'Sin stock', STOCK_BAJO: 'Stock bajo', DISPONIBLE: 'Disponible' }[this.estado(p)];
   }
 
   ngOnInit(): void {
@@ -363,7 +424,7 @@ export class ProductosComponent implements OnInit {
   async exportarVista(): Promise<void> {
     const XLSX = await import('xlsx');
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(this.filtrados.map(p => ({ ID: p.id, Producto: p.nombre, Descripcion: p.descripcion, Precio: p.precio, Stock: p.stock, Estado: p.activo === false ? 'INACTIVO' : 'ACTIVO' }))), 'Inventario');
+    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(this.filtrados.map(p => ({ ID: p.id, Producto: p.nombre, Descripcion: p.descripcion, Precio: p.precio, Stock: p.stock, StockMinimo: p.stockMinimo ?? 5, Estado: p.activo === false ? 'INACTIVO' : 'ACTIVO' }))), 'Inventario');
     XLSX.writeFile(libro, 'inventario-mostrado.xlsx');
   }
   async descargarPlantilla(): Promise<void> {
@@ -389,26 +450,39 @@ export class ProductosComponent implements OnInit {
     if (this.errorFormulario) this.errorFormulario = '';
   }
 
+  esStockMinimoValido(): boolean {
+    const v = this.form.stockMinimo;
+    return v != null && Number.isInteger(Number(v)) && Number(v) >= 0;
+  }
+
   esStockValido(): boolean {
     return this.form.stock != null && Number.isInteger(Number(this.form.stock)) && Number(this.form.stock) >= 0;
   }
 
   nuevo(): void {
     this.form = this.vacio();
+    this.nombreOriginal = '';
     this.errorFormulario = '';
     this.abierto = true;
+    this.cargarCatalogoCompleto();
   }
 
   editar(producto: Producto): void {
     this.form = { ...producto };
+    this.nombreOriginal = producto.nombre;
     this.errorFormulario = '';
     this.abierto = true;
+    this.cargarCatalogoCompleto();
   }
 
   guardar(): void {
     this.errorFormulario = '';
     if (!this.form.nombre.trim()) {
       this.errorFormulario = 'Ingrese el nombre del producto.';
+      return;
+    }
+    if (this.duplicado) {
+      this.errorFormulario = 'Ese nombre ya está registrado. Elige otro nombre.';
       return;
     }
     if (!this.form.descripcion?.trim()) {
@@ -423,12 +497,16 @@ export class ProductosComponent implements OnInit {
       this.errorFormulario = 'El precio admite hasta dos decimales.';
       return;
     }
+    if (!this.esStockMinimoValido()) {
+      this.errorFormulario = 'El stock mínimo debe ser un número entero no negativo.';
+      return;
+    }
     if (!this.esStockValido()) {
       this.errorFormulario = 'El stock debe ser un número entero no negativo.';
       return;
     }
 
-    this.form.nombre = this.form.nombre.trim();
+    this.form.nombre = this.form.nombre.trim().replace(/\s+/g, ' ');
     this.form.descripcion = this.form.descripcion.trim();
     this.procesando = true;
     const operacion = this.form.id
@@ -484,7 +562,7 @@ export class ProductosComponent implements OnInit {
 
   trackById(_: number, item: Producto): number | undefined { return item.id; }
 
-  private vacio(): Producto { return { nombre: '', descripcion: '', precio: 0, stock: 0, activo: true }; }
+  private vacio(): Producto { return { nombre: '', descripcion: '', precio: 0, stock: 0, stockMinimo: 5, activo: true }; }
   private mostrarMensaje(mensaje: string): void {
     this.mensaje = mensaje; this.esError = false; this.programarLimpiarMensaje();
   }

@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { Subscription, forkJoin, of, switchMap } from 'rxjs';
 import { ViewportModalDirective } from '../core/viewport-modal.directive';
 import { createReceiptQr } from '../core/receipt-qr';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } from '../models';
+import { ApiError, Cliente, DetalleVenta, HistorialVentas, Producto, TipoComprobante, Venta } from '../models';
+
+type AnimacionHistorial = 'next' | 'prev' | 'filtro' | 'tamano';
 
 @Component({
   standalone: true,
@@ -73,7 +75,7 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
               <div class="sale-search-control"><input type="text" [(ngModel)]="productoFiltro" (ngModelChange)="onProductoFiltroChange()" placeholder="Buscar por nombre o letra" autocomplete="off" (focus)="mostrarBuscador=!productoId" (blur)="cerrarBuscador()" (keydown.escape)="mostrarBuscador=false" aria-label="Buscar producto" aria-controls="selector-productos" [attr.aria-expanded]="mostrarBuscador"><button class="sale-search-button" type="button" (click)="mostrarBuscador=!mostrarBuscador" aria-label="Mostrar productos coincidentes"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg></button></div>
               <div id="selector-productos" class="suggestions product-selector" *ngIf="mostrarBuscador && productoFiltro.trim()" aria-label="Hasta cinco productos coincidentes">
                 <div *ngFor="let p of productosFiltrados" class="suggestion" [class.selected]="productoId === p.id" [class.disabled]="p.stock<=0" (mousedown)="$event.preventDefault()" (click)="seleccionarProducto(p.id)" role="button" tabindex="0" (keydown.enter)="seleccionarProducto(p.id)">
-                  {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — disponible {{ disponible(p) }} {{ p.stock <= 0 ? '· Sin stock: no vendible' : p.stock <= 5 ? '· Stock bajo' : '· Disponible para venta' }}
+                  {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — disponible {{ disponible(p) }} {{ p.stock <= 0 ? '· Sin stock: no vendible' : p.stock <= (p.stockMinimo ?? 5) ? '· Stock bajo' : '· Disponible para venta' }}
                 </div>
                 <div *ngIf="!productosFiltrados.length" class="product-search-empty" role="status"><b>No encontramos productos</b><span>Prueba otro nombre o revisa el inventario.</span></div>
               </div>
@@ -224,17 +226,18 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
     <section class="panel history no-print">
       <div class="history-title"><div><h3>Historial de ventas</h3><p>Filtra por fecha y número de comprobante.</p></div></div>
       <form class="history-filters" (submit)="$event.preventDefault()" aria-label="Filtros del historial de ventas">
-        <label>Desde<input type="date" [(ngModel)]="filtroDesde" name="filtroDesde" [max]="filtroHasta || null"></label>
-        <label>Hasta<input type="date" [(ngModel)]="filtroHasta" name="filtroHasta" [min]="filtroDesde || null"></label>
-        <label>N.° de comprobante<input type="search" [(ngModel)]="filtroNumero" name="filtroNumero" placeholder="Ej.: B001-00000012 o 12" autocomplete="off"></label>
+        <label>Desde<input type="date" [(ngModel)]="filtroDesde" (ngModelChange)="filtrar()" name="filtroDesde" [max]="filtroHasta || null"></label>
+        <label>Hasta<input type="date" [(ngModel)]="filtroHasta" (ngModelChange)="filtrar()" name="filtroHasta" [min]="filtroDesde || null"></label>
+        <label>N.° de comprobante<input type="search" [(ngModel)]="filtroNumero" (ngModelChange)="filtrar(true)" name="filtroNumero" placeholder="Ej.: B001-00000012 o 12" autocomplete="off"></label>
         <button type="button" class="secondary" (click)="limpiarFiltros()" [disabled]="!hayFiltros">Limpiar</button>
       </form>
-      <p class="history-count" aria-live="polite">{{ ventasFiltradas.length }} de {{ ventas.length }} venta(s) · Total filtrado S/ {{ totalFiltrado | number:'1.2-2' }}</p>
-      <div class="table-wrap">
+      <p class="history-count" aria-live="polite"><ng-container *ngFor="let k of [claveAnimacion]"><span class="history-count-value">{{ historial?.totalElementos ?? 0 }} de {{ historial?.totalVentas ?? 0 }} venta(s) · Total filtrado S/ {{ totalFiltrado | number:'1.2-2' }}</span></ng-container><span *ngIf="cargandoHistorial" class="history-loading-text"> · Cargando…</span></p>
+      <div class="table-wrap history-table" [class.history-busy]="cargandoHistorial" [attr.aria-busy]="cargandoHistorial">
+        <div class="history-progress" *ngIf="cargandoHistorial" aria-hidden="true"></div>
         <table>
           <thead><tr><th>Comprobante</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Estado</th><th></th></tr></thead>
-          <tbody>
-            <tr *ngFor="let v of ventasFiltradas" [class.sale-row-annulled]="ventaAnimadaId === v.id" [class.sale-row-removing]="ventaEliminadaId === v.id">
+          <tbody [ngClass]="'hist-' + (animacionHistorial || 'filtro')">
+            <tr *ngFor="let v of ventasFiltradas; let i = index" [style.--fila]="i" [class.sale-row-annulled]="ventaAnimadaId === v.id" [class.sale-row-removing]="ventaEliminadaId === v.id">
               <td><b>{{ v.serie }}-{{ v.numero }}</b><br><small>{{ textoTipo(v.tipoComprobante) }}</small></td>
               <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
               <td>{{ v.clienteNombre }}<br><small *ngIf="v.clienteDocumento">{{ v.clienteDocumento }}</small></td>
@@ -246,10 +249,20 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
                 <button *ngIf="auth.isAdmin" class="link danger-text trash-eat-button" [class.trash-eating]="ventaEliminadaId===v.id" (click)="ventaEliminar=v" [disabled]="eliminandoVenta" aria-label="Eliminar comprobante interno"><span class="trash-bin" aria-hidden="true"><span class="trash-bin-lid"></span><span class="trash-bin-body"></span></span><span>Eliminar</span></button>
               </td>
             </tr>
-            <tr *ngIf="!ventasFiltradas.length"><td colspan="6" class="empty">{{ ventas.length ? 'Ninguna venta coincide con los filtros.' : 'Todavía no hay ventas registradas.' }}</td></tr>
+            <tr *ngIf="!ventasFiltradas.length && !cargandoHistorial"><td colspan="6" class="empty">{{ historial?.totalVentas ? 'Ninguna venta coincide con los filtros.' : 'Todavía no hay ventas registradas.' }}</td></tr>
           </tbody>
         </table>
       </div>
+      <nav class="history-pager" *ngIf="historial && historial.totalElementos > 0" aria-label="Paginación del historial">
+        <button type="button" class="secondary" (click)="irPagina(paginaHistorial - 1, 'prev')" [disabled]="paginaHistorial === 0 || cargandoHistorial">‹ Anterior</button>
+        <span class="pager-label"><ng-container *ngFor="let k of [claveAnimacion]"><b class="pager-page" [ngClass]="'hist-' + (animacionHistorial || 'filtro')">Página {{ paginaHistorial + 1 }}</b></ng-container> de {{ historial.totalPaginas }}</span>
+        <button type="button" class="secondary" (click)="irPagina(paginaHistorial + 1, 'next')" [disabled]="paginaHistorial + 1 >= historial.totalPaginas || cargandoHistorial">Siguiente ›</button>
+        <label>Mostrar
+          <select [(ngModel)]="tamanoHistorial" (ngModelChange)="irPagina(0, 'tamano')" name="tamanoHistorial">
+            <option [ngValue]="10">10</option><option [ngValue]="20">20</option><option [ngValue]="50">50</option>
+          </select>
+        </label>
+      </nav>
     </section>
   `,
   styles: [`
@@ -257,6 +270,39 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
     .history-filters label{display:grid;gap:6px;font-size:12px;font-weight:600}
     .history-filters button{height:40px}
     .history-count{margin:0 0 10px;font-size:12px;opacity:.75}
+    .history-pager{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:12px;animation:filtrosEntrada .35s ease both}
+    .history-pager button{height:34px;padding:0 14px;transition:transform .18s ease,box-shadow .18s ease,opacity .2s}
+    .history-pager button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 12px #1e493218}
+    .history-pager button:not(:disabled):active{transform:scale(.96)}
+    .history-pager select{transition:box-shadow .2s}
+    .history-pager select:focus{box-shadow:0 0 0 3px #40867a33}
+    .pager-label{display:inline-flex;gap:4px;align-items:baseline}
+    .pager-page{display:inline-block;font-weight:700}
+    .pager-page.hist-next{animation:paginaNext .32s cubic-bezier(.2,.8,.2,1) both}
+    .pager-page.hist-prev{animation:paginaPrev .32s cubic-bezier(.2,.8,.2,1) both}
+    .pager-page.hist-filtro,.pager-page.hist-tamano{animation:conteoPop .35s ease both}
+    .history-count-value{display:inline-block;animation:conteoPop .35s ease both}
+    .history-loading-text{animation:parpadeo 1s ease-in-out infinite}
+    .history-table{position:relative;transition:opacity .2s ease,filter .2s ease}
+    .history-table.history-busy{opacity:.55;filter:saturate(.7)}
+    .history-progress{position:absolute;top:0;left:0;right:0;height:3px;z-index:2;overflow:hidden;border-radius:3px}
+    .history-progress::after{content:'';position:absolute;top:0;bottom:0;width:35%;background:linear-gradient(90deg,transparent,#40867a,#d6a264,transparent);animation:barraCarga 1s ease-in-out infinite}
+    tbody.hist-next tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaNext .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--fila,0) * 30ms)}
+    tbody.hist-prev tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaPrev .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--fila,0) * 30ms)}
+    tbody.hist-filtro tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaFiltro .34s ease both;animation-delay:calc(var(--fila,0) * 28ms)}
+    tbody.hist-tamano tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaTamano .36s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--fila,0) * 18ms)}
+    @keyframes filaNext{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+    @keyframes filaPrev{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+    @keyframes filaFiltro{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    @keyframes filaTamano{from{opacity:0;transform:scaleY(.6);transform-origin:top}to{opacity:1;transform:none}}
+    @keyframes paginaNext{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+    @keyframes paginaPrev{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+    @keyframes conteoPop{0%{opacity:0;transform:translateY(4px)}60%{opacity:1;transform:translateY(-1px)}100%{opacity:1;transform:none}}
+    @keyframes parpadeo{50%{opacity:.35}}
+    @keyframes barraCarga{from{left:-35%}to{left:100%}}
+    @media(prefers-reduced-motion:reduce){.history-pager,.history-pager button,.pager-page,.history-count-value,.history-loading-text,.history-progress::after,tbody[class*="hist-"] tr{animation:none!important;transition:none!important}}
+    .history-pager label{display:flex;align-items:center;gap:6px;font-weight:600}
+    .history-pager select{height:34px;width:auto}
     @keyframes filtrosEntrada{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
     @media (max-width:900px){.history-filters{grid-template-columns:1fr 1fr}}
     .documento-row{animation:documentoEntrada .45s cubic-bezier(.2,.8,.2,1) both}
@@ -284,7 +330,18 @@ export class VentasComponent implements OnInit, OnDestroy {
   filtroNumero = '';
   productos: Producto[] = [];
   clientes: Cliente[] = [];
+  /** Ventas de la página actual del historial (T67/T69: filtradas y paginadas en el backend). */
   ventas: Venta[] = [];
+  historial?: HistorialVentas;
+  paginaHistorial = 0;
+  tamanoHistorial = 10;
+  cargandoHistorial = false;
+  /** Animación de entrada del historial: siguiente/anterior página, filtro o cambio de tamaño. */
+  animacionHistorial: AnimacionHistorial | '' = '';
+  private animacionPendiente: AnimacionHistorial = 'filtro';
+  claveAnimacion = 0;
+  private esperaFiltro?: ReturnType<typeof setTimeout>;
+  private historialSub?: Subscription;
   ventaAnular?: Venta;
   ventaEliminar?: Venta;
   eliminandoVenta = false;
@@ -347,25 +404,28 @@ export class VentasComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  /** T65: historial filtrado por rango de fechas (hora de Perú), número de comprobante. */
+  /** T65/T67: el filtro por fechas y número lo aplica el backend; aquí solo está la página actual. */
   get ventasFiltradas(): Venta[] {
-    const numero = this.filtroNumero.trim().toUpperCase().replace(/\s+/g, '');
-    return this.ventas.filter(v => {
-      const dia = this.diaPeru(v.fecha);
-      if (this.filtroDesde && dia < this.filtroDesde) return false;
-      if (this.filtroHasta && dia > this.filtroHasta) return false;
-      if (numero) {
-        const completo = `${v.serie}-${v.numero}`.toUpperCase();
-        const sinCeros = String(Number(v.numero));
-        if (!completo.includes(numero) && sinCeros !== numero.replace(/^0+/, '')) return false;
-      }
-      return true;
-    });
+    return this.ventas;
   }
 
+  /** Suma de todas las ventas filtradas (no solo de esta página), sin las anuladas. */
   get totalFiltrado(): number {
-    return this.ventasFiltradas.filter(v => v.estado !== 'ANULADA')
-      .reduce((centavos, v) => centavos + Math.round(Number(v.total) * 100), 0) / 100;
+    return Number(this.historial?.totalMonto ?? 0);
+  }
+
+  /** Espera a que el usuario termine de escribir el número antes de consultar. */
+  filtrar(escribiendo = false): void {
+    if (this.filtroDesde && this.filtroHasta && this.filtroDesde > this.filtroHasta) return;
+    clearTimeout(this.esperaFiltro);
+    this.esperaFiltro = setTimeout(() => this.irPagina(0, 'filtro'), escribiendo ? 350 : 0);
+  }
+
+  /** Cambia de página; el origen decide la animación de entrada de las filas. */
+  irPagina(pagina: number, origen: AnimacionHistorial = 'filtro'): void {
+    this.animacionPendiente = origen;
+    this.paginaHistorial = Math.max(0, pagina);
+    this.cargarVentas();
   }
 
   get hayFiltros(): boolean {
@@ -374,10 +434,7 @@ export class VentasComponent implements OnInit, OnDestroy {
 
   limpiarFiltros(): void {
     this.filtroDesde = ''; this.filtroHasta = ''; this.filtroNumero = '';
-  }
-
-  private diaPeru(fecha: string): string {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(fecha));
+    this.filtrar();
   }
 
   get productosFiltrados(): Producto[] {
@@ -428,7 +485,7 @@ export class VentasComponent implements OnInit, OnDestroy {
     this.documentoError = '';
   }
 
-  ngOnDestroy(): void { clearInterval(this.reloj); clearTimeout(this.temporizadorDocumento); this.cerrarPdf(); }
+  ngOnDestroy(): void { clearInterval(this.reloj); clearTimeout(this.temporizadorDocumento); clearTimeout(this.esperaFiltro); this.historialSub?.unsubscribe(); this.cerrarPdf(); }
 
   /** Al elegir un cliente se completa su DNI/RUC registrado en el módulo Clientes. */
   onClienteSeleccionado(): void {
@@ -496,9 +553,23 @@ export class VentasComponent implements OnInit, OnDestroy {
   }
 
   cargarVentas(): void {
-    this.api.ventas().subscribe({
-      next: ventas => this.ventas = ventas,
-      error: error => this.mostrarError(error, 'No se pudo cargar el historial de ventas.')
+    this.historialSub?.unsubscribe();
+    this.cargandoHistorial = true;
+    this.historialSub = this.api.historialVentas({
+      desde: this.filtroDesde, hasta: this.filtroHasta, numero: this.filtroNumero,
+      pagina: this.paginaHistorial, tamano: this.tamanoHistorial
+    }).subscribe({
+      next: historial => {
+        this.cargandoHistorial = false;
+        // Si se eliminó la última venta de la página, se vuelve a la anterior.
+        if (!historial.contenido.length && this.paginaHistorial > 0) { this.irPagina(historial.totalPaginas - 1, 'prev'); return; }
+        this.animacionHistorial = this.animacionPendiente;
+        this.animacionPendiente = 'filtro';
+        this.claveAnimacion++;
+        this.historial = historial;
+        this.ventas = historial.contenido;
+      },
+      error: error => { this.cargandoHistorial = false; this.mostrarError(error, 'No se pudo cargar el historial de ventas.'); }
     });
   }
 
@@ -609,7 +680,7 @@ export class VentasComponent implements OnInit, OnDestroy {
     this.eliminandoVenta=true;
     const anularPrimero=venta.estado==='EMITIDA'?this.api.anularVenta(venta.id):of(venta);
     anularPrimero.pipe(switchMap(()=>this.api.eliminarVenta(venta.id))).subscribe({
-      next:()=>{this.ventaEliminar=undefined;this.ventaEliminadaId=venta.id;this.eliminandoVenta=false;this.esError=false;this.mensaje='Registro interno eliminado. El stock se repuso durante su anulación.';if(this.ventaEmitida?.id===venta.id)this.ventaEmitida=undefined;this.cargarCatalogos();setTimeout(()=>{this.ventas=this.ventas.filter(v=>v.id!==venta.id);this.ventaEliminadaId=undefined;},650);},
+      next:()=>{this.ventaEliminar=undefined;this.ventaEliminadaId=venta.id;this.eliminandoVenta=false;this.esError=false;this.mensaje='Registro interno eliminado. El stock se repuso durante su anulación.';if(this.ventaEmitida?.id===venta.id)this.ventaEmitida=undefined;this.cargarCatalogos();setTimeout(()=>{this.ventaEliminadaId=undefined;this.cargarVentas();},650);},
       error:e=>{this.eliminandoVenta=false;this.ventaEliminar=undefined;this.cargarVentas();this.cargarCatalogos();this.mostrarError(e,'No se completó la eliminación. Revise el estado de la venta.');}
     });
   }

@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AjusteInventario, Cliente, CrearVentaRequest, Producto, ResultadoImportacion, Venta } from '../models';
+import { AjusteInventario, Cliente, CrearVentaRequest, FiltrosHistorial, HistorialVentas, Producto, ResultadoImportacion, Venta } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -58,6 +58,20 @@ export class ApiService {
 
   ventas(): Observable<Venta[]> {
     return this.http.get<Venta[]>(`${this.base}/ventas`);
+  }
+
+  /** T67/T69: el backend filtra por fechas y número, y devuelve una sola página. */
+  historialVentas(filtros: FiltrosHistorial): Observable<HistorialVentas> {
+    let params = new HttpParams().set('pagina', filtros.pagina).set('tamano', filtros.tamano);
+    if (filtros.desde) params = params.set('desde', filtros.desde);
+    if (filtros.hasta) params = params.set('hasta', filtros.hasta);
+    if (filtros.numero?.trim()) params = params.set('numero', filtros.numero.trim());
+    return this.http.get<HistorialVentas>(`${this.base}/ventas/historial`, { params });
+  }
+
+  /** T39: artículos activos con stock menor o igual a su stock mínimo. */
+  productosStockBajo(): Observable<Producto[]> {
+    return this.http.get<Producto[]>(`${this.base}/productos/stock-bajo`);
   }
 
   obtenerVenta(id: number): Observable<Venta> {

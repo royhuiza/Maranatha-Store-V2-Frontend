@@ -4,8 +4,33 @@ export interface Producto {
   descripcion?: string | null;
   precio: number;
   stock: number;
+  /** T40: umbral propio del artículo (por defecto 5). */
+  stockMinimo?: number;
+  /** T41: calculado por el backend comparando stock y stockMinimo. */
+  readonly estadoStock?: EstadoStock;
   activo?: boolean;
   version?: number;
+}
+
+export type EstadoStock = 'DISPONIBLE' | 'STOCK_BAJO' | 'SIN_STOCK';
+
+/** T67/T69: página del historial de ventas devuelta por el backend. */
+export interface HistorialVentas {
+  contenido: Venta[];
+  pagina: number;
+  tamano: number;
+  totalElementos: number;
+  totalPaginas: number;
+  totalMonto: number;
+  totalVentas: number;
+}
+
+export interface FiltrosHistorial {
+  desde?: string;
+  hasta?: string;
+  numero?: string;
+  pagina: number;
+  tamano: number;
 }
 
 export interface AjusteInventario {
