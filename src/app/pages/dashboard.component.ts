@@ -16,7 +16,7 @@ import { ApiService } from '../core/api.service';
         <div class="overview-metrics">
           <article class="overview-metric metric-feature"><span class="metric-icon" aria-hidden="true">↗</span><span>Ventas emitidas</span><strong>{{ventas}}</strong><small>Historial sin anuladas</small></article>
           <article class="overview-metric"><span class="metric-icon" aria-hidden="true">▤</span><span>Productos activos</span><strong>{{productos}}</strong><small>Artículos en el catálogo</small></article>
-          <article class="overview-metric metric-warning"><span class="metric-icon" aria-hidden="true">!</span><span>Por reponer</span><strong>{{stockBajo}}</strong><small>Con 5 unidades o menos</small></article>
+          <article class="overview-metric metric-warning"><span class="metric-icon" aria-hidden="true">!</span><span>Por reponer</span><strong>{{stockBajo}}</strong><small>En o bajo su stock mínimo</small></article>
           <article class="overview-metric"><span class="metric-icon" aria-hidden="true">♙</span><span>Clientes</span><strong>{{clientes}}</strong><small>Registros activos</small></article>
         </div>
         <div class="overview-charts">
@@ -58,11 +58,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private fechaLocal(d:Date):string{return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
   cargar():void {
     if(this.cargando)return;this.cargando=true;
-    this.consulta=forkJoin([this.api.productos(),this.api.clientes(),this.api.ventas()]).subscribe({
-      next:([productos,clientes,ventas])=>{
+    this.consulta=forkJoin([this.api.productos(),this.api.clientes(),this.api.ventas(),this.api.productosStockBajo()]).subscribe({
+      next:([productos,clientes,ventas,bajos])=>{
         const emitidas=ventas.filter(v=>v.estado==='EMITIDA');
         this.productos=productos.filter(p=>p.activo!==false).length;
-        this.stockBajo=productos.filter(p=>p.activo!==false&&p.stock<=5).length;
+        this.stockBajo=bajos.length; // T39: lo calcula el backend con el stock mínimo de cada artículo
         this.clientes=clientes.filter(c=>c.activo!==false).length;this.ventas=emitidas.length;
         this.dias=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const fecha=this.fechaLocal(d);return {fecha,total:emitidas.filter(v=>v.fecha.slice(0,10)===fecha).reduce((n,v)=>n+Number(v.total),0)};});
         const fechas=new Set(this.dias.map(d=>d.fecha));this.unidadesSemana=emitidas.filter(v=>fechas.has(v.fecha.slice(0,10))).flatMap(v=>v.detalles||[]).reduce((n,d)=>n+d.cantidad,0);

@@ -9,7 +9,7 @@ import { Venta } from '../models';
 <div class="page-title"><h2>Reportes estadísticos</h2><button class="secondary" (click)="cargar()">Actualizar datos</button></div>
 <p class="error" role="alert">{{error}}</p><section class="panel report-workspace"><div class="report-section-title"><span class="module-kicker">ACTIVIDAD COMERCIAL</span><h3>Ventas del período</h3></div><div class="row report-filters">
 <label>Período<select [(ngModel)]="periodo"><option value="semana">Semanal</option><option value="mes">Mensual</option><option value="anual">Anual</option></select></label>
-<label>Fecha de referencia<input type="date" [(ngModel)]="fecha"></label></div><p>Se excluyen ventas anuladas. Las ventas registradas no equivalen a pagos confirmados.</p>
+<label>Fecha de referencia<input type="date" [(ngModel)]="fecha"></label></div><p>Se excluyen ventas anuladas.</p>
 <div class="cards report-metrics"><article><span>Ventas</span><strong>{{filtradas.length}}</strong></article><article class="report-feature"><span>Total registrado</span><strong>S/ {{total | number:'1.2-2'}}</strong></article><article><span>Promedio por venta</span><strong>S/ {{promedio | number:'1.2-2'}}</strong></article></div>
 <div class="report-chart" *ngIf="filtradas.length">
   <div class="report-chart-row" *ngFor="let grupo of grupos">
@@ -29,7 +29,7 @@ export class ReportesComponent implements OnInit {
  get total(){return this.filtradas.reduce((n,v)=>n+Number(v.total),0);} get promedio(){return this.filtradas.length?this.total/this.filtradas.length:0;}
  get grupos(){const mapa=new Map<string,number>();for(const v of this.filtradas){const nombre=v.fecha.slice(0,this.periodo==='anual'?7:10);mapa.set(nombre,(mapa.get(nombre)||0)+Number(v.total));}return [...mapa].sort(([a],[b])=>a.localeCompare(b)).map(([nombre,total])=>({nombre,total}));}
  get maximo(){return Math.max(1,...this.grupos.map(g=>g.total));}
- exportarVentas(){this.guardar('ventas-'+this.periodo+'.xlsx',this.filtradas.map(v=>({Comprobante:v.serie+'-'+v.numero,Fecha:v.fecha,Cliente:v.clienteNombre,Total:v.total,Estado:v.estado,Pago:v.estadoPago||'NO_VERIFICADO'})));}
+ exportarVentas(){this.guardar('ventas-'+this.periodo+'.xlsx',this.filtradas.map(v=>({Comprobante:v.serie+'-'+v.numero,Fecha:v.fecha,Cliente:v.clienteNombre,Total:v.total,Estado:v.estado})));}
  inventario(){this.api.productos().subscribe({next:p=>this.guardar('inventario-actual.xlsx',p),error:()=>this.error='No se pudo descargar el inventario.'});}
  integral(){forkJoin([this.api.productos(),this.api.clientes(),this.api.ventas()]).subscribe({next:([productos,clientes,ventas])=>{this.ventas=ventas;const seleccion=this.filtradas;this.guardarLibro('reporte-integral.xlsx',{Productos:productos,Clientes:clientes,Ventas:seleccion,Detalles:seleccion.flatMap(v=>v.detalles.map(d=>({VentaID:v.id,Comprobante:v.serie+'-'+v.numero,...d})))});},error:()=>this.error='No se pudo descargar el informe integral.'});}
  private guardarLibro(nombre:string,hojas:Record<string,unknown[]>){const libro=XLSX.utils.book_new();for(const [hoja,datos]of Object.entries(hojas)){XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(datos),hoja);}XLSX.writeFile(libro,nombre);}

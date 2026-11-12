@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin, of, Observable, Subscription, switchMap } from 'rxjs';
+import { Subscription, forkJoin, of, switchMap } from 'rxjs';
 import { ViewportModalDirective } from '../core/viewport-modal.directive';
 import { createReceiptQr } from '../core/receipt-qr';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, DocumentoConsulta } from '../models';
+import { ApiError, Cliente, DetalleVenta, HistorialVentas, Producto, TipoComprobante, Venta } from '../models';
+
+type AnimacionHistorial = 'next' | 'prev' | 'filtro' | 'tamano';
 
 @Component({
   standalone: true,
@@ -35,58 +37,36 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
       </div>
     </dialog>
 
-    <dialog viewportModal (modalDismiss)="stockBloqueado=undefined" class="modal no-print" *ngIf="stockBloqueado" role="alertdialog" aria-modal="true" aria-label="Stock bajo"><section class="dialog stock-warning"><h3>Stock bajo: producto no disponible para venta</h3><p>{{ stockBloqueado.nombre }} tiene {{ stockBloqueado.stock }} unidades. Se requiere stock mayor que 5.</p><h4>Alternativas disponibles</h4><button class="secondary" *ngFor="let p of alternativas" (click)="stockBloqueado=undefined; seleccionarProducto(p.id)">{{ p.nombre }} · {{ disponible(p) }} disponibles</button><p *ngIf="!alternativas.length">No hay alternativas con stock disponible.</p><button (click)="stockBloqueado=undefined">Cerrar</button></section></dialog>
-    <ng-template #datosCobro let-metodo="metodo" let-importe="importe">
-      <section *ngIf="metodo==='TARJETA'" class="card-provider-panel" aria-live="polite"><span class="eyebrow">TARJETA · CHECKOUT</span><h3>Un pago, desde tu tienda.</h3><p>El formulario seguro se habilitará al conectar la cuenta comercial de la pasarela.</p><div class="card-preview" aria-hidden="true"><span>MARANATHA</span><b>•••• &nbsp; •••• &nbsp; •••• &nbsp; ••••</b><small>VISA / MASTERCARD</small></div><p>No hay conexión de cobro activa. Los datos de tarjeta y CVV se introducirán en el formulario del proveedor.</p><button disabled>Conectar pasarela para pagar</button></section>
-      <section class="recipient-payment" *ngIf="metodo==='YAPE' || metodo==='PLIN' || metodo==='TRANSFERENCIA'" aria-label="Datos para pagar">
-        <span class="eyebrow">DESTINATARIO DEL NEGOCIO</span><h4>{{metodo==='TRANSFERENCIA' ? 'Transferencia a BCP' : metodo==='PLIN' ? 'Desde Plin, elige destino Yape' : 'Paga con tu aplicación Yape'}}</h4>
-        <p>Titular receptor: <strong>Diego Franco Contreras Ramos</strong></p>
-        <p class="recipient-amount">Importe a pagar: <strong>S/ {{importe | number:'1.2-2'}}</strong></p>
-        <ng-container *ngIf="metodo==='TRANSFERENCIA'; else billetera">
-          <p>Banco receptor: <strong>BCP</strong></p><p>CCI: <strong class="recipient-number">00219119654521802054</strong></p><button type="button" class="secondary copy-payment" (click)="copiarCobro('00219119654521802054')">Copiar CCI</button>
-          <p>En la aplicación de tu banco selecciona transferencia por CCI, ingresa este CCI y comprueba el titular antes de enviar.</p>
-        </ng-container>
-        <ng-template #billetera>
-          <p>Celular receptor: <strong class="recipient-number">+51 998 482 875</strong></p><button type="button" class="secondary copy-payment" (click)="copiarCobro('998482875')">Copiar número</button>
-          <p *ngIf="metodo==='PLIN'">Desde la aplicación de tu banco usa Plin, ingresa 998482875 y selecciona Yape como destino. La disponibilidad depende de tu banco.</p>
-          <img *ngIf="metodo==='YAPE'" class="recipient-qr" src="/payments/yape-diego-qr.png" alt="QR de Yape de Diego Franco Contreras Ramos">
-          <p>Ingresa el importe indicado en tu aplicación. Este QR no incorpora automáticamente el total de la venta.</p>
-        </ng-template>
-        <span class="copy-feedback" role="status" *ngIf="copiaCobro">{{copiaCobro}}</span><p class="recipient-pending">Pendiente de verificación manual. Este sistema no comprueba automáticamente el pago.</p>
-      </section>
-    </ng-template>
-    <dialog viewportModal (modalDismiss)="mostrarPago=false" class="modal no-print" *ngIf="mostrarPago" role="dialog" aria-modal="true" aria-label="Resumen de pago"><section class="dialog payment-dialog"><span class="product-dialog-eyebrow">VENTA REGISTRADA</span><h3>Tu venta está lista</h3><p class="payment-reference">{{ventaEmitida?.serie}}-{{ventaEmitida?.numero}}</p><div class="payment-summary-total"><span>Total registrado</span><strong>S/ {{ventaEmitida?.total | number:'1.2-2'}}</strong></div><div class="payment-summary-method"><span>Método previsto</span><b>{{ventaEmitida?.metodoPago || metodoPago || 'SIN ELEGIR'}}</b><span class="status danger">Pago pendiente</span></div><p>No se ha confirmado un ingreso bancario. Verifica el pago en la cuenta receptora.</p><ng-container *ngTemplateOutlet="datosCobro; context: {metodo: ventaEmitida?.metodoPago || metodoPago, importe: ventaEmitida?.total}"></ng-container><div class="payment-next"><b>¿Qué sigue?</b><p>Puedes descargar el comprobante interno o volver a la venta. Un comprobante no acredita el pago.</p></div><div class="actions"><button class="secondary" (click)="mostrarPago=false; ventaDescargas=ventaEmitida">Descargar comprobante</button><button (click)="mostrarPago=false">Volver a ventas</button></div></section></dialog>
+    <dialog viewportModal (modalDismiss)="stockBloqueado=undefined" class="modal no-print" *ngIf="stockBloqueado" role="alertdialog" aria-modal="true" aria-label="Sin stock"><section class="dialog stock-warning"><h3>Sin stock: producto no disponible para venta</h3><p>{{ stockBloqueado.nombre }} no tiene unidades disponibles. Puede elegir otro producto:</p><h4>Alternativas disponibles</h4><button class="secondary" *ngFor="let p of alternativas" (click)="stockBloqueado=undefined; seleccionarProducto(p.id)">{{ p.nombre }} · {{ disponible(p) }} disponibles</button><p *ngIf="!alternativas.length">No hay alternativas con stock disponible.</p><button (click)="stockBloqueado=undefined">Cerrar</button></section></dialog>
     <dialog viewportModal (modalDismiss)="cerrarPdf()" class="modal no-print" *ngIf="pdfPreparado as pdf" aria-label="PDF preparado"><section class="dialog pdf-ready-dialog"><span class="product-dialog-eyebrow">DOCUMENTO GENERADO</span><h3>Tu PDF está listo</h3><p>{{pdf.nombre}}</p><p>Conserva el fondo blanco, el logo y el QR del registro.</p><div class="actions"><button class="secondary" (click)="cerrarPdf()">Cerrar</button><a class="save-pdf-link" [href]="pdf.url" [download]="pdf.nombre">Guardar PDF</a></div></section></dialog>
     <div class="sale-grid">
-      <section class="panel no-print">
-        <h3>Datos del comprobante</h3>
-        <div class="row">
-          <label>Tipo
-            <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
-              <option value="BOLETA">Boleta</option>
-              <option value="FACTURA">Factura</option>
-              <option value="NOTA_PEDIDO">Nota de pedido</option>
-            </select>
-          </label>
-          <label>Cliente
-            <select [(ngModel)]="clienteId" (ngModelChange)="ventaEmitida=undefined">
-              <option [ngValue]="undefined">Público general</option>
-              <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }} · {{ c.numeroDocumento || 'sin documento' }}</option>
-            </select>
-          </label>
-          <label style="align-self:center">
-            <input type="checkbox" [(ngModel)]="preciosIncluyenIgv"> Precios incluyen IGV ({{ (igvRate*100) | number:'1.0-0' }}%)
-          </label>
-        </div>
-        <div *ngIf="tipo==='BOLETA' || tipo==='FACTURA'" class="row">
-          <label>{{ tipo === 'BOLETA' ? 'DNI' : 'RUC' }}
-            <input type="text" [(ngModel)]="documento" name="documento" [attr.maxlength]="tipo === 'BOLETA' ? 8 : 11" placeholder="{{ tipo === 'BOLETA' ? 'Ingrese DNI' : 'Ingrese RUC' }}">
-          </label>
-        </div>
-        <small class="hint" *ngIf="documentoNombre">{{ documentoNombre }}</small>
-        <small class="error" *ngIf="documentoError">{{ documentoError }}</small>
-        <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
+      <section class="panel sale-workspace no-print">
+        <section class="sale-step" aria-labelledby="sale-customer-title">
+          <h3 class="sale-step-title" id="sale-customer-title"><span aria-hidden="true">01</span> Datos del comprobante</h3>
+          <div class="row">
+            <label>Tipo
+              <select [(ngModel)]="tipo" (ngModelChange)="onTipoChange()">
+                <option value="BOLETA">Boleta</option>
+                <option value="FACTURA">Factura</option>
+                <option value="NOTA_PEDIDO">Nota de pedido</option>
+              </select>
+            </label>
+            <label>Cliente
+              <select [(ngModel)]="clienteId" (ngModelChange)="onClienteSeleccionado()">
+                <option [ngValue]="undefined">Público general</option>
+                <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }} · {{ c.numeroDocumento || 'sin documento' }}</option>
+              </select>
+            </label>
+          </div>
+          <div *ngIf="tipo==='BOLETA' || tipo==='FACTURA'" class="row documento-row" [class.documento-relleno]="documentoAnimado">
+            <label>{{ tipo === 'BOLETA' ? 'DNI' : 'RUC' }}
+              <input type="text" inputmode="numeric" [(ngModel)]="documento" name="documento" (ngModelChange)="onDocumentoChange()" [attr.maxlength]="tipo === 'BOLETA' ? 8 : 11" placeholder="{{ tipo === 'BOLETA' ? 'Ingrese DNI (8 dígitos)' : 'Ingrese RUC (11 dígitos)' }}">
+            </label>
+          </div>
+          <small class="error documento-error" *ngIf="documentoError">{{ documentoError }}</small>
+          <small class="warning" *ngIf="tipo==='FACTURA'">La factura exige un cliente con RUC válido de 11 dígitos.</small>
 
+        </section>
         <section class="sale-step" aria-labelledby="sale-products-title">
           <h3 class="sale-step-title" id="sale-products-title"><span aria-hidden="true">02</span> Productos</h3>
           <div class="sale-help-banner no-print"><span aria-hidden="true">✦</span><div><b>Arma tu venta paso a paso</b><p>Busca el primer artículo, elige una cantidad y pulsa Agregar al carrito. Repite con otro producto; el total se actualizará solo.</p></div></div>
@@ -94,8 +74,8 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
             <label class="sale-search-label">Producto
               <div class="sale-search-control"><input type="text" [(ngModel)]="productoFiltro" (ngModelChange)="onProductoFiltroChange()" placeholder="Buscar por nombre o letra" autocomplete="off" (focus)="mostrarBuscador=!productoId" (blur)="cerrarBuscador()" (keydown.escape)="mostrarBuscador=false" aria-label="Buscar producto" aria-controls="selector-productos" [attr.aria-expanded]="mostrarBuscador"><button class="sale-search-button" type="button" (click)="mostrarBuscador=!mostrarBuscador" aria-label="Mostrar productos coincidentes"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path></svg></button></div>
               <div id="selector-productos" class="suggestions product-selector" *ngIf="mostrarBuscador && productoFiltro.trim()" aria-label="Hasta cinco productos coincidentes">
-                <div *ngFor="let p of productosFiltrados" class="suggestion" [class.selected]="productoId === p.id" [class.disabled]="p.stock<=5" (mousedown)="$event.preventDefault()" (click)="seleccionarProducto(p.id)" role="button" tabindex="0" (keydown.enter)="seleccionarProducto(p.id)">
-                  {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — disponible {{ disponible(p) }} {{ p.stock <= 5 ? '· Stock bajo: no vendible' : '· Disponible para venta' }}
+                <div *ngFor="let p of productosFiltrados" class="suggestion" [class.selected]="productoId === p.id" [class.disabled]="p.stock<=0" (mousedown)="$event.preventDefault()" (click)="seleccionarProducto(p.id)" role="button" tabindex="0" (keydown.enter)="seleccionarProducto(p.id)">
+                  {{ p.nombre }} — S/ {{ p.precio | number:'1.2-2' }} — disponible {{ disponible(p) }} {{ p.stock <= 0 ? '· Sin stock: no vendible' : p.stock <= (p.stockMinimo ?? 5) ? '· Stock bajo' : '· Disponible para venta' }}
                 </div>
                 <div *ngIf="!productosFiltrados.length" class="product-search-empty" role="status"><b>No encontramos productos</b><span>Prueba otro nombre o revisa el inventario.</span></div>
               </div>
@@ -123,12 +103,11 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
           </div>
           <div class="sale-count no-print" *ngIf="detalles.length" aria-live="polite">{{ detalles.length }} artículo(s) diferente(s) · {{ unidadesCarrito }} unidad(es) en el carrito</div>
         </section>
-        <section class="sale-step" aria-labelledby="sale-payment-title">
-          <h3 class="sale-step-title" id="sale-payment-title"><span aria-hidden="true">03</span> Pago</h3>
+        <section class="sale-step" aria-labelledby="sale-total-title">
+          <h3 class="sale-step-title" id="sale-total-title"><span aria-hidden="true">03</span> Total</h3>
           <div class="total animated-sale-total"><span>Total calculado automáticamente</span><strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong></div>
-          <fieldset class="payment-picker"><legend>Método de pago previsto</legend><p>Elige cómo pagar. Comprueba el destinatario en tu aplicación bancaria antes de confirmar.</p><div class="payment-methods"><label *ngFor="let m of metodosPago" [class.payment-selected]="metodoPago===m.codigo"><input type="radio" name="metodoPago" [(ngModel)]="metodoPago" [value]="m.codigo" [disabled]="!m.activo"><img class="payment-brand-logo" [src]="m.logo" [alt]="m.nombre"><span>{{m.nombre}}</span><span class="payment-unavailable">{{m.codigo==='TARJETA' ? 'Pendiente de conexión' : 'Verificación manual'}}</span></label></div><small>La venta permanece pendiente hasta verificar el ingreso. Mostrar estos datos no realiza una transferencia.</small><ng-container *ngTemplateOutlet="datosCobro; context: {metodo: metodoPago, importe: totalBorrador}"></ng-container></fieldset>
           <button class="primary-wide workspace-primary" [disabled]="!detalles.length || procesando" (click)="registrar()">
-            {{ procesando ? 'Registrando...' : 'Registrar y continuar' }}
+            {{ procesando ? 'Registrando...' : 'Registrar venta' }}
           </button>
         </section>
       </section>
@@ -151,7 +130,7 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
           <hr>
           <p>
             Fecha: {{ comprobanteFecha | date:'dd/MM/yyyy HH:mm':'-0500' }}<br>
-            Estado: {{ ventaEmitida?.estado || 'BORRADOR' }} · Pago: {{ ventaEmitida?.estadoPago || 'PENDIENTE' }}
+            Estado: {{ ventaEmitida?.estado || 'BORRADOR' }}
           </p>
           <p>Cliente: {{ comprobanteCliente }}<br><small *ngIf="comprobanteDocumento">{{ comprobanteDocumento }}</small></p>
 
@@ -175,7 +154,7 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
             <tr class="total"><td class="label"><strong>TOTAL</strong></td><td class="value"><strong>S/ {{ comprobanteTotalConIgv | number:'1.2-2' }}</strong></td></tr>
           </table>
 
-          <div class="receipt-verification" *ngIf="qrComprobante && ventaEmitida"><img [src]="qrComprobante" alt="QR con los datos del comprobante"><small>Escanea para leer el resumen del registro.<br>No valida pago ni emisión SUNAT.</small></div>
+          <div class="receipt-verification" *ngIf="qrComprobante && ventaEmitida"><img [src]="qrComprobante" alt="QR con los datos del comprobante"><small>Escanea para leer el resumen del registro.</small></div>
           <small>Gracias por su compra</small>
           <div class="receipt-legend">
             <small>Representación impresa del comprobante. Este sistema no está asociado a SUNAT; el documento mostrado no constituye comprobante fiscal validado por SUNAT.</small>
@@ -206,7 +185,7 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
               <div><span>IGV</span><span class="right">S/ {{ comprobanteIgv | number:'1.2-2' }}</span></div>
               <div class="total"><span><strong>TOTAL</strong></span><span class="right"><strong>S/ {{ comprobanteTotalConIgv | number:'1.2-2' }}</strong></span></div>
             </div>
-            <div class="receipt-verification" *ngIf="qrComprobante && ventaEmitida"><img [src]="qrComprobante" alt="QR con los datos del comprobante"><small>Resumen del registro · no valida pago</small></div>
+            <div class="receipt-verification" *ngIf="qrComprobante && ventaEmitida"><img [src]="qrComprobante" alt="QR con los datos del comprobante"><small>Resumen del registro</small></div>
             <div class="receipt-legend small">Representación impresa. No validado por SUNAT.</div>
           </div>
         </div>
@@ -242,32 +221,98 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta, Docu
         <div class="actions"><button type="button" (click)="ventaDetalle=undefined">Cerrar</button></div>
       </section>
     </dialog>
-    <dialog viewportModal (modalDismiss)="ventaDescargas=undefined" class="modal no-print" *ngIf="ventaDescargas as v" (click)="ventaDescargas=undefined" role="presentation"><section class="dialog receipt-download-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="download-title"><span class="product-dialog-eyebrow">{{v.serie}}-{{v.numero}}</span><h3 id="download-title">Descargar comprobante</h3><p>Elige un formato. PDF A4 e impresión conservan la misma plantilla.</p><div class="receipt-download-grid"><button (click)="ventaDescargas=undefined; descargarPdf(v)"><b>PDF A4</b><small>Hoja completa, fondo blanco</small></button><button (click)="ventaDescargas=undefined; descargarPdf(v,true)"><b>PDF ticket</b><small>Formato ampliado de 80 mm</small></button><button (click)="ventaDescargas=undefined; descargarJson(v)"><b>JSON interno</b><small>Datos del registro</small></button><button (click)="ventaDescargas=undefined; reimprimir(v)"><b>Imprimir</b><small>Elegir A4 o ticket</small></button><button disabled title="Falta integrar la emisión electrónica con un proveedor fiscal"><b>XML fiscal</b><small>Pendiente de emisión y firma</small></button><button disabled title="Solo puede descargarse una constancia recibida realmente de SUNAT u OSE"><b>CDR</b><small>Pendiente de respuesta fiscal</small></button></div><p class="hint">XML y CDR se habilitarán cuando existan archivos fiscales reales para este comprobante.</p><div class="actions"><button class="secondary" (click)="ventaDescargas=undefined">Cerrar</button></div></section></dialog>
-    <dialog viewportModal [modalBusy]="eliminandoVenta" (modalDismiss)="ventaEliminar=undefined" class="modal product-modal no-print" *ngIf="ventaEliminar as v" role="presentation"><section class="dialog inventory-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-sale-title"><span class="product-dialog-eyebrow">REGISTRO INTERNO</span><h3 id="delete-sale-title">¿Eliminar {{v.serie}}-{{v.numero}}?</h3><p>Se eliminará el registro y su detalle. Si la venta está emitida, primero se anulará para reponer las existencias. Una venta ya anulada no repondrá stock otra vez.</p><p>Esta opción no está permitida para comprobantes fiscales o ventas con pago registrado.</p><div class="actions"><button class="secondary" (click)="ventaEliminar=undefined" [disabled]="eliminandoVenta">Cancelar</button><button class="danger-button" (click)="confirmarEliminacionVenta()" [disabled]="eliminandoVenta">{{eliminandoVenta ? 'Eliminando…' : 'Eliminar registro'}}</button></div></section></dialog>
+    <dialog viewportModal (modalDismiss)="ventaDescargas=undefined" class="modal no-print" *ngIf="ventaDescargas as v" (click)="ventaDescargas=undefined" role="presentation"><section class="dialog receipt-download-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="download-title"><span class="product-dialog-eyebrow">{{v.serie}}-{{v.numero}}</span><h3 id="download-title">Descargar comprobante</h3><p>Elige un formato. PDF A4 e impresión conservan la misma plantilla.</p><div class="receipt-download-grid"><button (click)="ventaDescargas=undefined; descargarPdf(v)"><b>PDF A4</b><small>Hoja completa, fondo blanco</small></button><button (click)="ventaDescargas=undefined; descargarPdf(v,true)"><b>PDF ticket</b><small>Formato ampliado de 80 mm</small></button><button (click)="ventaDescargas=undefined; descargarJson(v)"><b>JSON interno</b><small>Datos del registro</small></button><button (click)="ventaDescargas=undefined; reimprimir(v)"><b>Imprimir</b><small>Elegir A4 o ticket</small></button></div><div class="actions"><button class="secondary" (click)="ventaDescargas=undefined">Cerrar</button></div></section></dialog>
+    <dialog viewportModal [modalBusy]="eliminandoVenta" (modalDismiss)="ventaEliminar=undefined" class="modal product-modal no-print" *ngIf="ventaEliminar as v" role="presentation"><section class="dialog inventory-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-sale-title"><span class="product-dialog-eyebrow">REGISTRO INTERNO</span><h3 id="delete-sale-title">¿Eliminar {{v.serie}}-{{v.numero}}?</h3><p>Se eliminará el registro y su detalle. Si la venta está emitida, primero se anulará para reponer las existencias. Una venta ya anulada no repondrá stock otra vez.</p><div class="actions"><button class="secondary" (click)="ventaEliminar=undefined" [disabled]="eliminandoVenta">Cancelar</button><button class="danger-button" (click)="confirmarEliminacionVenta()" [disabled]="eliminandoVenta">{{eliminandoVenta ? 'Eliminando…' : 'Eliminar registro'}}</button></div></section></dialog>
     <section class="panel history no-print">
-      <div class="history-title"><div><h3>Comprobantes emitidos</h3><p>La eliminación de registros internos repone el stock una sola vez.</p></div></div>
-      <div class="table-wrap">
+      <div class="history-title"><div><h3>Historial de ventas</h3><p>Filtra por fecha y número de comprobante.</p></div></div>
+      <form class="history-filters" (submit)="$event.preventDefault()" aria-label="Filtros del historial de ventas">
+        <label>Desde<input type="date" [(ngModel)]="filtroDesde" (ngModelChange)="filtrar()" name="filtroDesde" [max]="filtroHasta || null"></label>
+        <label>Hasta<input type="date" [(ngModel)]="filtroHasta" (ngModelChange)="filtrar()" name="filtroHasta" [min]="filtroDesde || null"></label>
+        <label>N.° de comprobante<input type="search" [(ngModel)]="filtroNumero" (ngModelChange)="filtrar(true)" name="filtroNumero" placeholder="Ej.: B001-00000012 o 12" autocomplete="off"></label>
+        <button type="button" class="secondary" (click)="limpiarFiltros()" [disabled]="!hayFiltros">Limpiar</button>
+      </form>
+      <p class="history-count" aria-live="polite"><ng-container *ngFor="let k of [claveAnimacion]"><span class="history-count-value">{{ historial?.totalElementos ?? 0 }} de {{ historial?.totalVentas ?? 0 }} venta(s) · Total filtrado S/ {{ totalFiltrado | number:'1.2-2' }}</span></ng-container><span *ngIf="cargandoHistorial" class="history-loading-text"> · Cargando…</span></p>
+      <div class="table-wrap history-table" [class.history-busy]="cargandoHistorial" [attr.aria-busy]="cargandoHistorial">
+        <div class="history-progress" *ngIf="cargandoHistorial" aria-hidden="true"></div>
         <table>
           <thead><tr><th>Comprobante</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Estado</th><th></th></tr></thead>
-          <tbody>
-            <tr *ngFor="let v of ventas" [class.sale-row-annulled]="ventaAnimadaId === v.id" [class.sale-row-removing]="ventaEliminadaId === v.id">
+          <tbody [ngClass]="'hist-' + (animacionHistorial || 'filtro')">
+            <tr *ngFor="let v of ventasFiltradas; let i = index" [style.--fila]="i" [class.sale-row-annulled]="ventaAnimadaId === v.id" [class.sale-row-removing]="ventaEliminadaId === v.id">
               <td><b>{{ v.serie }}-{{ v.numero }}</b><br><small>{{ textoTipo(v.tipoComprobante) }}</small></td>
               <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-              <td>{{ v.clienteNombre }}</td>
+              <td>{{ v.clienteNombre }}<br><small *ngIf="v.clienteDocumento">{{ v.clienteDocumento }}</small></td>
               <td>S/ {{ v.total | number:'1.2-2' }}</td>
               <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td>
               <td>
                 <button class="link" (click)="abrirDetalleVenta(v)">Ver detalle</button>
-                <button class="link" (click)="ventaDescargas=v" [disabled]="exportando">Descargar ▾</button>
-                <button *ngIf="auth.isAdmin && !v.validadoSunat && (!v.estadoPago || v.estadoPago==='PENDIENTE')" class="link danger-text trash-eat-button" [class.trash-eating]="ventaEliminadaId===v.id" (click)="ventaEliminar=v" [disabled]="eliminandoVenta" aria-label="Eliminar comprobante interno"><span class="trash-bin" aria-hidden="true"><span class="trash-bin-lid"></span><span class="trash-bin-body"></span></span><span>Eliminar</span></button>
+                <button class="link" (click)="ventaDescargas=v" [disabled]="exportando">Comprobante ▾</button>
+                <button *ngIf="auth.isAdmin" class="link danger-text trash-eat-button" [class.trash-eating]="ventaEliminadaId===v.id" (click)="ventaEliminar=v" [disabled]="eliminandoVenta" aria-label="Eliminar comprobante interno"><span class="trash-bin" aria-hidden="true"><span class="trash-bin-lid"></span><span class="trash-bin-body"></span></span><span>Eliminar</span></button>
               </td>
             </tr>
-            <tr *ngIf="!ventas.length"><td colspan="6" class="empty">Todavía no hay ventas registradas.</td></tr>
+            <tr *ngIf="!ventasFiltradas.length && !cargandoHistorial"><td colspan="6" class="empty">{{ historial?.totalVentas ? 'Ninguna venta coincide con los filtros.' : 'Todavía no hay ventas registradas.' }}</td></tr>
           </tbody>
         </table>
       </div>
+      <nav class="history-pager" *ngIf="historial && historial.totalElementos > 0" aria-label="Paginación del historial">
+        <button type="button" class="secondary" (click)="irPagina(paginaHistorial - 1, 'prev')" [disabled]="paginaHistorial === 0 || cargandoHistorial">‹ Anterior</button>
+        <span class="pager-label"><ng-container *ngFor="let k of [claveAnimacion]"><b class="pager-page" [ngClass]="'hist-' + (animacionHistorial || 'filtro')">Página {{ paginaHistorial + 1 }}</b></ng-container> de {{ historial.totalPaginas }}</span>
+        <button type="button" class="secondary" (click)="irPagina(paginaHistorial + 1, 'next')" [disabled]="paginaHistorial + 1 >= historial.totalPaginas || cargandoHistorial">Siguiente ›</button>
+        <label>Mostrar
+          <select [(ngModel)]="tamanoHistorial" (ngModelChange)="irPagina(0, 'tamano')" name="tamanoHistorial">
+            <option [ngValue]="10">10</option><option [ngValue]="20">20</option><option [ngValue]="50">50</option>
+          </select>
+        </label>
+      </nav>
     </section>
-  `
+  `,
+  styles: [`
+    .history-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:12px;align-items:end;margin:4px 0 10px;animation:filtrosEntrada .45s cubic-bezier(.2,.8,.2,1) both}
+    .history-filters label{display:grid;gap:6px;font-size:12px;font-weight:600}
+    .history-filters button{height:40px}
+    .history-count{margin:0 0 10px;font-size:12px;opacity:.75}
+    .history-pager{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:12px;animation:filtrosEntrada .35s ease both}
+    .history-pager button{height:34px;padding:0 14px;transition:transform .18s ease,box-shadow .18s ease,opacity .2s}
+    .history-pager button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 12px #1e493218}
+    .history-pager button:not(:disabled):active{transform:scale(.96)}
+    .history-pager select{transition:box-shadow .2s}
+    .history-pager select:focus{box-shadow:0 0 0 3px #40867a33}
+    .pager-label{display:inline-flex;gap:4px;align-items:baseline}
+    .pager-page{display:inline-block;font-weight:700}
+    .pager-page.hist-next{animation:paginaNext .32s cubic-bezier(.2,.8,.2,1) both}
+    .pager-page.hist-prev{animation:paginaPrev .32s cubic-bezier(.2,.8,.2,1) both}
+    .pager-page.hist-filtro,.pager-page.hist-tamano{animation:conteoPop .35s ease both}
+    .history-count-value{display:inline-block;animation:conteoPop .35s ease both}
+    .history-loading-text{animation:parpadeo 1s ease-in-out infinite}
+    .history-table{position:relative;transition:opacity .2s ease,filter .2s ease}
+    .history-table.history-busy{opacity:.55;filter:saturate(.7)}
+    .history-progress{position:absolute;top:0;left:0;right:0;height:3px;z-index:2;overflow:hidden;border-radius:3px}
+    .history-progress::after{content:'';position:absolute;top:0;bottom:0;width:35%;background:linear-gradient(90deg,transparent,#40867a,#d6a264,transparent);animation:barraCarga 1s ease-in-out infinite}
+    tbody.hist-next tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaNext .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--fila,0) * 30ms)}
+    tbody.hist-prev tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaPrev .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--fila,0) * 30ms)}
+    tbody.hist-filtro tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaFiltro .34s ease both;animation-delay:calc(var(--fila,0) * 28ms)}
+    tbody.hist-tamano tr:not(.sale-row-annulled):not(.sale-row-removing){animation:filaTamano .36s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--fila,0) * 18ms)}
+    @keyframes filaNext{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+    @keyframes filaPrev{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+    @keyframes filaFiltro{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    @keyframes filaTamano{from{opacity:0;transform:scaleY(.6);transform-origin:top}to{opacity:1;transform:none}}
+    @keyframes paginaNext{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+    @keyframes paginaPrev{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+    @keyframes conteoPop{0%{opacity:0;transform:translateY(4px)}60%{opacity:1;transform:translateY(-1px)}100%{opacity:1;transform:none}}
+    @keyframes parpadeo{50%{opacity:.35}}
+    @keyframes barraCarga{from{left:-35%}to{left:100%}}
+    @media(prefers-reduced-motion:reduce){.history-pager,.history-pager button,.pager-page,.history-count-value,.history-loading-text,.history-progress::after,tbody[class*="hist-"] tr{animation:none!important;transition:none!important}}
+    .history-pager label{display:flex;align-items:center;gap:6px;font-weight:600}
+    .history-pager select{height:34px;width:auto}
+    @keyframes filtrosEntrada{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    @media (max-width:900px){.history-filters{grid-template-columns:1fr 1fr}}
+    .documento-row{animation:documentoEntrada .45s cubic-bezier(.2,.8,.2,1) both}
+    .documento-row input{transition:border-color .35s ease,box-shadow .35s ease,background-color .35s ease}
+    .documento-row.documento-relleno input{animation:documentoRelleno .9s ease both}
+    .documento-error{display:block;animation:documentoEntrada .3s ease both}
+    @keyframes documentoEntrada{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+    @keyframes documentoRelleno{0%{background-color:#e3f3ea;box-shadow:0 0 0 0 rgba(46,139,98,.45)}60%{box-shadow:0 0 0 6px rgba(46,139,98,0)}100%{background-color:transparent;box-shadow:none}}
+    @media (prefers-reduced-motion:reduce){.history-filters,.documento-row,.documento-row.documento-relleno input,.documento-error{animation:none}}
+  `]
 })
 export class VentasComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
@@ -279,19 +324,24 @@ export class VentasComponent implements OnInit, OnDestroy {
   exportando = false;
   pdfPreparado?: {url:string;nombre:string};
   stockBloqueado?: Producto;
-  mostrarPago = false;
-  metodoPago = '';
-  copiaCobro = '';
-  async copiarCobro(valor:string){try{await navigator.clipboard.writeText(valor);this.copiaCobro='Dato copiado';}catch{this.copiaCobro='Selecciona el número y cópialo manualmente.';}}
   qrComprobante = '';
-  readonly metodosPago = [
-    {codigo:'YAPE',nombre:'Yape',logo:'/payments/yape.png',activo:true},
-    {codigo:'PLIN',nombre:'Plin → Yape',logo:'/payments/plin.png',activo:true},
-    {codigo:'TRANSFERENCIA',nombre:'Transferencia bancaria',logo:'/payments/bcp.ico',activo:true},
-    {codigo:'TARJETA',nombre:'Tarjeta',logo:'/payments/visa.png',activo:true}
-  ];  productos: Producto[] = [];
+  filtroDesde = '';
+  filtroHasta = '';
+  filtroNumero = '';
+  productos: Producto[] = [];
   clientes: Cliente[] = [];
+  /** Ventas de la página actual del historial (T67/T69: filtradas y paginadas en el backend). */
   ventas: Venta[] = [];
+  historial?: HistorialVentas;
+  paginaHistorial = 0;
+  tamanoHistorial = 10;
+  cargandoHistorial = false;
+  /** Animación de entrada del historial: siguiente/anterior página, filtro o cambio de tamaño. */
+  animacionHistorial: AnimacionHistorial | '' = '';
+  private animacionPendiente: AnimacionHistorial = 'filtro';
+  claveAnimacion = 0;
+  private esperaFiltro?: ReturnType<typeof setTimeout>;
+  private historialSub?: Subscription;
   ventaAnular?: Venta;
   ventaEliminar?: Venta;
   eliminandoVenta = false;
@@ -304,17 +354,11 @@ export class VentasComponent implements OnInit, OnDestroy {
   clienteId?: number;
   productoId?: number;
   cantidad = 1;
-  documento = '';
-  clienteConsultado?: Cliente;
-  private consultaDocumento?: Subscription;
-  private documentoTimer?: ReturnType<typeof setTimeout>;
   mostrarBuscador = false;
-  documentoDatos?: DocumentoConsulta;
-  documentoNombre = '';
-  documentoDireccion = '';
+  documento = '';
   documentoError = '';
-  documentoBuscando = false;
-  documentoValido = false;
+  documentoAnimado = false;
+  private temporizadorDocumento?: ReturnType<typeof setTimeout>;
   productoFiltro = '';
   detalles: DetalleVenta[] = [];
   ventaEmitida?: Venta;
@@ -360,6 +404,39 @@ export class VentasComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  /** T65/T67: el filtro por fechas y número lo aplica el backend; aquí solo está la página actual. */
+  get ventasFiltradas(): Venta[] {
+    return this.ventas;
+  }
+
+  /** Suma de todas las ventas filtradas (no solo de esta página), sin las anuladas. */
+  get totalFiltrado(): number {
+    return Number(this.historial?.totalMonto ?? 0);
+  }
+
+  /** Espera a que el usuario termine de escribir el número antes de consultar. */
+  filtrar(escribiendo = false): void {
+    if (this.filtroDesde && this.filtroHasta && this.filtroDesde > this.filtroHasta) return;
+    clearTimeout(this.esperaFiltro);
+    this.esperaFiltro = setTimeout(() => this.irPagina(0, 'filtro'), escribiendo ? 350 : 0);
+  }
+
+  /** Cambia de página; el origen decide la animación de entrada de las filas. */
+  irPagina(pagina: number, origen: AnimacionHistorial = 'filtro'): void {
+    this.animacionPendiente = origen;
+    this.paginaHistorial = Math.max(0, pagina);
+    this.cargarVentas();
+  }
+
+  get hayFiltros(): boolean {
+    return !!(this.filtroDesde || this.filtroHasta || this.filtroNumero);
+  }
+
+  limpiarFiltros(): void {
+    this.filtroDesde = ''; this.filtroHasta = ''; this.filtroNumero = '';
+    this.filtrar();
+  }
+
   get productosFiltrados(): Producto[] {
     const filtro = this.productoFiltro.trim().toLowerCase();
     return filtro
@@ -398,23 +475,53 @@ export class VentasComponent implements OnInit, OnDestroy {
     this.cargarCatalogos();
     this.cargarVentas();
     const pref = localStorage.getItem('maranatha.imprimir.formato');
-    if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET' | 'A4';
+    if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET'|'A4';
   }
 
   onTipoChange(): void {
     this.ventaEmitida = undefined;
-    clearTimeout(this.documentoTimer); this.consultaDocumento?.unsubscribe(); this.clienteConsultado = undefined; this.clienteId = undefined; this.documentoBuscando = false;
+    this.clienteId = undefined;
     this.documento = '';
-    this.documentoNombre = '';
     this.documentoError = '';
-    this.documentoValido = false;
   }
 
-  ngOnDestroy(): void { clearInterval(this.reloj); clearTimeout(this.documentoTimer); this.consultaDocumento?.unsubscribe(); this.cerrarPdf(); }
+  ngOnDestroy(): void { clearInterval(this.reloj); clearTimeout(this.temporizadorDocumento); clearTimeout(this.esperaFiltro); this.historialSub?.unsubscribe(); this.cerrarPdf(); }
+
+  /** Al elegir un cliente se completa su DNI/RUC registrado en el módulo Clientes. */
+  onClienteSeleccionado(): void {
+    this.ventaEmitida = undefined;
+    const cliente = this.clientes.find(c => c.id === this.clienteId);
+    this.documento = cliente?.numeroDocumento || '';
+    this.documentoError = this.validarDocumento();
+    this.animarDocumento();
+  }
+
+  /** Reinicia la animación del bloque DNI/RUC cada vez que se completa con un cliente. */
+  private animarDocumento(): void {
+    clearTimeout(this.temporizadorDocumento);
+    this.documentoAnimado = false;
+    if (!this.documento) return;
+    setTimeout(() => {
+      this.documentoAnimado = true;
+      this.temporizadorDocumento = setTimeout(() => this.documentoAnimado = false, 950);
+    });
+  }
+
+  /** Al escribir un DNI/RUC se busca entre los clientes registrados (sin servicios externos). */
   onDocumentoChange(): void {
-    this.documentoNombre = '';
-    this.documentoError = '';
-    this.documentoValido = false;
+    this.ventaEmitida = undefined;
+    this.documento = (this.documento || '').replace(/\D/g, '');
+    const cliente = this.documento ? this.clientes.find(c => c.numeroDocumento === this.documento) : undefined;
+    this.clienteId = cliente?.id;
+    this.documentoError = this.validarDocumento();
+  }
+
+  private validarDocumento(): string {
+    const doc = this.documento.trim();
+    if (!doc) return '';
+    if (this.tipo === 'BOLETA' && !/^\d{8}$/.test(doc)) return 'El DNI debe tener 8 dígitos.';
+    if (this.tipo === 'FACTURA' && !/^\d{11}$/.test(doc)) return 'El RUC debe tener 11 dígitos.';
+    return '';
   }
 
   onProductoFiltroChange(): void {
@@ -424,81 +531,12 @@ export class VentasComponent implements OnInit, OnDestroy {
   seleccionarProducto(id?: number): void {
     const producto = this.productos.find(p => p.id === id);
     if (!producto) return;
-    if (producto.stock <= 5) { this.productoId = undefined; this.stockBloqueado = producto; return; }
+    if (producto.stock <= 0) { this.productoId = undefined; this.mostrarBuscador = false; this.stockBloqueado = producto; return; }
     if (this.disponible(producto) < 1) { this.mostrarErrorSimple('Ya agregó todas las unidades disponibles al carrito.'); return; }
     this.productoId = id; this.mostrarBuscador = false; this.stockBloqueado = undefined;
     this.mensaje = '';
     this.productoFiltro = producto.nombre;
     this.cantidadInput?.nativeElement.focus();
-  }
-
-  buscarDocumento(): void {
-    this.documentoError = '';
-    this.documentoNombre = '';
-    this.documentoValido = false;
-
-    const numero = this.documento.trim();
-    if (this.tipo === 'BOLETA') {
-      if (!/^[0-9]{8}$/.test(numero)) {
-        this.documentoError = 'El DNI debe tener 8 dígitos válidos.';
-        return;
-      }
-      this.documentoBuscando = true;
-      this.api.buscarDni(numero).subscribe({
-        next: data => {
-          this.documentoBuscando = false;
-          this.documentoValido = true;
-          this.documentoNombre = `${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}`.trim();
-        },
-        error: err => {
-          this.documentoBuscando = false;
-          const status = err?.status ?? 0;
-          const message = err?.message ? ` ${err.message}` : '';
-          this.documentoError = status === 0
-            ? 'Error de conexión o proxy. Reinicie el servidor de desarrollo y verifique la configuración de proxy.'
-            : `No se encontró el DNI. Verifique el número e intente nuevamente. (HTTP ${status})${message}`;
-        }
-      });
-      return;
-    }
-
-    if (this.tipo === 'FACTURA') {
-      if (!/^[0-9]{11}$/.test(numero)) {
-        this.documentoError = 'El RUC debe tener 11 dígitos válidos.';
-        return;
-      }
-      this.documentoBuscando = true;
-      this.api.buscarRuc(numero).subscribe({
-        next: data => {
-          this.documentoBuscando = false;
-          this.documentoValido = true;
-          this.documentoNombre = data.nombreComercial?.trim() || data.nombre?.trim() || 'RUC válido';
-        },
-        error: err => {
-          this.documentoBuscando = false;
-          const status = err?.status ?? 0;
-
-          if (status === 503) {
-            this.documentoError =
-              'La consulta RUC oficial todavía no está habilitada. ' +
-              'Ingrese la razón social y dirección fiscal manualmente.';
-          } else if (status === 401) {
-            this.documentoError =
-              'No se pudo autorizar la consulta RUC. Complete los datos manualmente mientras se corrige el servicio.';
-          } else if (status === 404) {
-            this.documentoError =
-              'No se encontró el servicio de consulta RUC.';
-          } else if (status === 0) {
-            this.documentoError =
-              'Error de conexión o proxy. Reinicie el servidor de desarrollo y verifique la configuración de proxy.';
-          } else {
-            this.documentoError =
-              'No fue posible consultar el RUC. Intente nuevamente.';
-          }
-        }
-      });
-      return;
-    }
   }
 
   cargarCatalogos(): void {
@@ -515,9 +553,23 @@ export class VentasComponent implements OnInit, OnDestroy {
   }
 
   cargarVentas(): void {
-    this.api.ventas().subscribe({
-      next: ventas => this.ventas = ventas,
-      error: error => this.mostrarError(error, 'No se pudo cargar el historial de ventas.')
+    this.historialSub?.unsubscribe();
+    this.cargandoHistorial = true;
+    this.historialSub = this.api.historialVentas({
+      desde: this.filtroDesde, hasta: this.filtroHasta, numero: this.filtroNumero,
+      pagina: this.paginaHistorial, tamano: this.tamanoHistorial
+    }).subscribe({
+      next: historial => {
+        this.cargandoHistorial = false;
+        // Si se eliminó la última venta de la página, se vuelve a la anterior.
+        if (!historial.contenido.length && this.paginaHistorial > 0) { this.irPagina(historial.totalPaginas - 1, 'prev'); return; }
+        this.animacionHistorial = this.animacionPendiente;
+        this.animacionPendiente = 'filtro';
+        this.claveAnimacion++;
+        this.historial = historial;
+        this.ventas = historial.contenido;
+      },
+      error: error => { this.cargandoHistorial = false; this.mostrarError(error, 'No se pudo cargar el historial de ventas.'); }
     });
   }
 
@@ -529,7 +581,7 @@ export class VentasComponent implements OnInit, OnDestroy {
       this.mostrarErrorSimple('Seleccione un producto e ingrese una cantidad válida.');
       return;
     }
-    if (producto.stock <= 5) { this.stockBloqueado = producto; return; }
+    if (producto.stock <= 0) { this.stockBloqueado = producto; return; }
     const existente = this.detalles.find(item => item.productoId === producto.id);
     const cantidadTotal = cantidad + (existente?.cantidad || 0);
     if (cantidadTotal > producto.stock) {
@@ -562,31 +614,28 @@ export class VentasComponent implements OnInit, OnDestroy {
 
   registrar(): void {
     if (!this.detalles.length || this.procesando) return;
-    if (this.documentoBuscando) { this.mostrarErrorSimple('Espere a que termine la consulta del documento.'); return; }
-    if (this.documento && !this.clienteId && !this.documentoValido) { this.mostrarErrorSimple('Consulte y confirme el documento antes de registrar la venta.'); return; }
+    this.documentoError = this.validarDocumento();
+    if (this.documentoError) { this.mostrarErrorSimple(this.documentoError); return; }
 
     this.procesando = true;
     this.mensaje = '';
-    const resolverCliente: Observable<Cliente | undefined> = this.clienteConsultado && !this.clienteId ? this.api.crearCliente(this.clienteConsultado) : of(undefined);
-    resolverCliente.pipe(switchMap(cliente => {
-      if (cliente) { this.clienteId = cliente.id; this.clientes.push(cliente); this.clienteConsultado = undefined; }
-      return this.api.crearVenta({
+    this.api.crearVenta({
       clienteId: this.clienteId,
       tipoComprobante: this.tipo,
-      metodoPago: this.metodoPago || undefined,
+      documento: this.clienteId ? undefined : (this.documento.trim() || undefined),
       detalles: this.detalles.map(item => ({ productoId: item.productoId, cantidad: item.cantidad }))
-      });
-    })).subscribe({
+    }).subscribe({
       next: venta => {
         this.procesando = false;
         this.ventaEmitida = venta;
-        void this.actualizarQr(venta);
         this.detalles = [];
+        this.documento = '';
         this.mensaje = `Venta registrada: ${venta.serie}-${venta.numero}. El stock fue actualizado.`;
         this.esError = false;
+        void this.actualizarQr(venta);
         this.cargarCatalogos();
         this.cargarVentas();
-        this.mostrarPago = true;
+        this.abrirDialogoImpresion();
       },
       error: error => {
         this.procesando = false;
@@ -631,7 +680,7 @@ export class VentasComponent implements OnInit, OnDestroy {
     this.eliminandoVenta=true;
     const anularPrimero=venta.estado==='EMITIDA'?this.api.anularVenta(venta.id):of(venta);
     anularPrimero.pipe(switchMap(()=>this.api.eliminarVenta(venta.id))).subscribe({
-      next:()=>{this.ventaEliminar=undefined;this.ventaEliminadaId=venta.id;this.eliminandoVenta=false;this.esError=false;this.mensaje='Registro interno eliminado. El stock se repuso durante su anulación.';if(this.ventaEmitida?.id===venta.id)this.ventaEmitida=undefined;this.cargarCatalogos();setTimeout(()=>{this.ventas=this.ventas.filter(v=>v.id!==venta.id);this.ventaEliminadaId=undefined;},650);},
+      next:()=>{this.ventaEliminar=undefined;this.ventaEliminadaId=venta.id;this.eliminandoVenta=false;this.esError=false;this.mensaje='Registro interno eliminado. El stock se repuso durante su anulación.';if(this.ventaEmitida?.id===venta.id)this.ventaEmitida=undefined;this.cargarCatalogos();setTimeout(()=>{this.ventaEliminadaId=undefined;this.cargarVentas();},650);},
       error:e=>{this.eliminandoVenta=false;this.ventaEliminar=undefined;this.cargarVentas();this.cargarCatalogos();this.mostrarError(e,'No se completó la eliminación. Revise el estado de la venta.');}
     });
   }
@@ -677,11 +726,15 @@ export class VentasComponent implements OnInit, OnDestroy {
     return Math.max(0, p.stock - (this.detalles.find(d => d.productoId === p.id)?.cantidad || 0));
   }
   get alternativas(): Producto[] {
-    return this.productos.filter(p => p.stock > 5 && this.disponible(p) > 0 && p.id !== this.stockBloqueado?.id).slice(0, 5);
+    // Primero los productos que comparten la primera palabra (p. ej. otros "Cuaderno"), luego el resto con stock.
+    const clave = (this.stockBloqueado?.nombre || '').trim().split(/\s+/)[0]?.toLowerCase() || '';
+    const parecido = (p: Producto) => clave && p.nombre.toLowerCase().startsWith(clave) ? 0 : 1;
+    return this.productos.filter(p => p.stock > 0 && this.disponible(p) > 0 && p.id !== this.stockBloqueado?.id)
+      .sort((a, b) => parecido(a) - parecido(b)).slice(0, 5);
   }
   cambiarCantidad(indice: number, valor: number): void {
     const d = this.detalles[indice], p = this.productos.find(p => p.id === d.productoId);
-    if (!p || !Number.isInteger(Number(valor)) || valor < 1 || valor > p.stock || p.stock <= 5) {
+    if (!p || !Number.isInteger(Number(valor)) || valor < 1 || valor > p.stock || p.stock <= 0) {
       this.mostrarErrorSimple('Cantidad inválida o stock insuficiente.'); return;
     }
     d.cantidad = Number(valor); d.subtotal = Math.round(d.cantidad * (d.precioUnitario || 0) * 100) / 100;

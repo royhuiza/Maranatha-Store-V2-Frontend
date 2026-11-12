@@ -1,0 +1,1 @@
+import{e as l}from"./chunk-AVYAT4MV.js";import{Ma as e,i as o}from"./chunk-N3UJXGSQ.js";function r(){return e()&&["localhost","127.0.0.1","[::1]"].includes(location.hostname)}var i=()=>r()||o(l).createUrlTree(["/login"]);export{r as a,i as b};
