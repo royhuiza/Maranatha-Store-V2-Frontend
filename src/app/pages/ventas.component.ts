@@ -477,10 +477,24 @@ export class VentasComponent implements OnInit, OnDestroy {
         error: err => {
           this.documentoBuscando = false;
           const status = err?.status ?? 0;
-          const message = err?.message ? ` ${err.message}` : '';
-          this.documentoError = status === 0
-            ? 'Error de conexión o proxy. Reinicie el servidor de desarrollo y verifique la configuración de proxy.'
-            : `No se encontró el RUC. Verifique el número e intente nuevamente. (HTTP ${status})${message}`;
+
+          if (status === 503) {
+            this.documentoError =
+              'La consulta RUC oficial todavía no está habilitada. ' +
+              'Ingrese la razón social y dirección fiscal manualmente.';
+          } else if (status === 401) {
+            this.documentoError =
+              'No se pudo autorizar la consulta RUC. Complete los datos manualmente mientras se corrige el servicio.';
+          } else if (status === 404) {
+            this.documentoError =
+              'No se encontró el servicio de consulta RUC.';
+          } else if (status === 0) {
+            this.documentoError =
+              'Error de conexión o proxy. Reinicie el servidor de desarrollo y verifique la configuración de proxy.';
+          } else {
+            this.documentoError =
+              'No fue posible consultar el RUC. Intente nuevamente.';
+          }
         }
       });
       return;

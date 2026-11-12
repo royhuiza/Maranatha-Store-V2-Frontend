@@ -15,8 +15,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(securedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
-      // Public recovery requests display their errors in place, without navigating.
-      if (error.status === 401 && isApi && !isPublic) {
+      // Public recovery requests and the SUNAT RUC lookup display their errors in place,
+      // without forcing a logout/navigation.
+      if (error.status === 401 && isApi && !isPublic && !req.url.includes('/facturacion/ruc/')) {
         localStorage.removeItem('token');
         localStorage.removeItem('username');
         localStorage.removeItem('rol');
