@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EMPTY, catchError, finalize } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface Mensaje {
   role: 'user' | 'assistant' | 'typing' | 'error';
@@ -22,7 +23,7 @@ export interface ChatResponse {
 })
 export class ChatWidgetComponent {
   private readonly http = inject(HttpClient);
-  private readonly endpoint = '/api/v1/chat';
+  private readonly endpoint = `${environment.apiUrl}/api/v1/chat`;
 
   open = false;
   isLoading = false;

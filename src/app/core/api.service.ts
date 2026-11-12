@@ -1,12 +1,27 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AjusteInventario, Cliente, ConsultaRucResponse, CrearVentaRequest, FiltrosHistorial, HistorialVentas, Producto, ResultadoImportacion, TipoAfectacionIgv, Venta } from '../models';
+import { AjusteInventario, Cliente, ConsultaRucResponse, CrearVentaRequest, DocumentoConsulta, FiltrosHistorial, HistorialVentas, Producto, ResultadoImportacion, TipoAfectacionIgv, Venta } from '../models';
+import { environment } from '../../environments/environment';
 
+/**
+ * Cliente HTTP del API Gateway.
+ *
+ * La URL base sale de `environment.apiUrl` (http://localhost:8080) para no depender
+ * del proxy de desarrollo de Angular. El Gateway ya habilita CORS para el origen
+ * del dev server, por lo que estas llamadas funcionan cross-origin.
+ *
+ * Rutas reales expuestas por el Gateway:
+ *  - /auth/**            -> ms-auth
+ *  - /productos/**       -> ms-producto
+ *  - /clientes/**        -> ms-cliente
+ *  - /ventas/**          -> ms-ventas
+ *  - /api/facturacion/** -> ms-facturacion (SUNAT)   (esta ruta sí lleva el prefijo /api)
+ */
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly base = '/api';
+  private readonly base = environment.apiUrl;
 
   productos(consulta = ''): Observable<Producto[]> {
     return this.http.get<Producto[]>(`${this.base}/productos`, {
@@ -103,25 +118,17 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/ventas/${id}`);
   }
 
-  buscarDni(dni: string): Observable<{
-    numeroDocumento: string;
-    nombres: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string;
-    estado?: string;
-  }> {
-    return this.http.get<{
-      numeroDocumento: string;
-      nombres: string;
-      apellidoPaterno: string;
-      apellidoMaterno: string;
-      estado?: string;
-    }>(`/external/dni?numero=${encodeURIComponent(dni)}`);
+  /** Consulta de DNI en el microservicio de clientes (proveedor Decolecta). */
+  buscarDni(dni: string): Observable<DocumentoConsulta> {
+    return this.http.get<DocumentoConsulta>(
+      `${this.base}/clientes/documentos/dni/${encodeURIComponent(dni)}`
+    );
   }
 
+  /** Consulta RUC oficial (SUNAT) en el microservicio de facturacion. */
   buscarRuc(ruc: string): Observable<ConsultaRucResponse> {
     return this.http.get<ConsultaRucResponse>(
-      `${this.base}/facturacion/ruc/${encodeURIComponent(ruc)}`
+      `${this.base}/api/facturacion/ruc/${encodeURIComponent(ruc)}`
     );
   }
   sesion() { return this.http.get<{ username: string; rol: string }>(this.base + '/auth/me'); }

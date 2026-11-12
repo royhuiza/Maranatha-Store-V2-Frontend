@@ -146,7 +146,7 @@ export class ClientesComponent implements OnInit {
             'La consulta RUC oficial todavía no está disponible. Puede ingresar los datos manualmente.';
         } else if (error.status === 401) {
           this.errorFormulario =
-            'Su sesión no es válida. Inicie sesión nuevamente.';
+            'El servicio de facturación no autorizó la consulta RUC. Ingrese los datos manualmente.';
         } else {
           this.errorFormulario =
             'No se pudo consultar el RUC. Verifique el número o la conexión.';

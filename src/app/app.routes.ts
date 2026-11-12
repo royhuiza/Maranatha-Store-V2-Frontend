@@ -20,7 +20,7 @@ export const routes: Routes = [
       { path: "usuarios", loadComponent: () => import('./pages/usuarios.component').then(m => m.UsuariosComponent), canActivate: [adminGuard] },
       { path: "perfil", loadComponent: () => import('./pages/profile.component').then(m => m.ProfileComponent) },
       { path: "cambiar-contrasena", loadComponent: () => import('./pages/change-password.component').then(m => m.ChangePasswordComponent) },
-      { path: "chatbot-logs", loadComponent: () => import('./pages/chatbot-logs.component').then(m => m.ChatbotLogsComponent), canActivate: [adminGuard] },
+      { path: "chatbot", loadComponent: () => import('./pages/chatbot-logs.component').then(m => m.ChatbotLogsComponent), canActivate: [adminGuard] },
     ],
   },
   { path: "**", redirectTo: "" },

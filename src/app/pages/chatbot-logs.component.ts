@@ -7,7 +7,7 @@ import { ChatbotService, ChatLog, WhatsappStatus, ChatMetrics } from '../core/se
   selector: 'app-chatbot-logs',
   imports: [CommonModule],
   template: `
-    <div class="page-title"><div><h2>Logs del Chatbot</h2><p>Actividad del bot y conexión de WhatsApp</p></div></div>
+    <div class="page-title"><div><h2>Chatbot</h2><p>Actividad del bot y conexión de WhatsApp</p></div></div>
 
     <section class="wa-panel">
       <div class="wa-header">
