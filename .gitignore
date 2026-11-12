@@ -1,1 +1,6 @@
 node_modules
+.angular/cache/
+
+# Worktrees y estado local del agente Kilo: nunca deben versionarse.
+.kilo/
+.kilocode/

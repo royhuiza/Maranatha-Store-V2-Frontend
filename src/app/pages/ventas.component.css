@@ -1,0 +1,343 @@
+﻿    .venta-dialog { width: min(94vw, 920px); max-width: 920px; max-height: 92vh; overflow-y: auto; box-sizing: border-box; padding: 24px; }
+    .venta-header, .venta-carrito-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .venta-header h3, .venta-card h3 { margin: 0 0 6px; }
+    .venta-header p, .venta-carrito-header p { margin: 0; color: #64748b; font-size: 13px; }
+    .venta-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 22px 0; }
+    .venta-steps > div { padding: 12px; border: 1px solid #dbe4ee; border-radius: 10px; text-align: center; color: #64748b; font-weight: 600; font-size: 13px; }
+    .venta-steps > div.active { background: #eaf3ff; border-color: #93b9ec; color: #154b83; }
+    .venta-card { border: 1px solid #dbe4ee; border-radius: 14px; padding: 22px; background: #fff; }
+    .venta-help { color: #64748b; font-size: 12px; margin: 4px 0 12px; }
+    .venta-fields { display: grid; gap: 18px; margin: 20px 0; }
+    .venta-field { display: flex; flex-direction: column; gap: 8px; width: 100%; font-weight: 600; font-size: 13px; }
+    .venta-field input, .venta-field select, .venta-field textarea, .venta-lookup input { box-sizing: border-box; width: 100%; min-height: 42px; border: 1px solid #ccd8e5; border-radius: 8px; padding: 10px 12px; font: inherit; background: #fff; }
+    .venta-nombre { min-height: 90px; resize: vertical; font-size: 15px !important; }
+    .venta-lookup { display: flex; align-items: end; gap: 12px; }
+    .venta-lookup > input, .venta-lookup > label { flex: 1; min-width: 0; }
+    .venta-lookup > button { flex-shrink: 0; min-height: 42px; }
+    .venta-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+    .venta-error { color: #a51e32; background: #fff1f2; padding: 10px; border-radius: 8px; margin: 0; }
+    .venta-carrito { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 14px; align-items: start; }
+    .venta-carrito .receipt { min-width: 0; }
+    .venta-carrito .venta-card { min-width: 0; }
+    @media (max-width: 760px) {
+      .venta-dialog { width: 98vw; padding: 14px; }
+      .venta-carrito { grid-template-columns: 1fr; }
+      .venta-lookup { flex-wrap: wrap; }
+      .venta-header { align-items: flex-start; }
+    }
+    /* DISEÑO RESPONSIVE - NUEVA VENTA */
+
+    .venta-modal .venta-dialog {
+      width: min(760px, calc(100vw - 32px)) !important;
+      max-width: 760px !important;
+      max-height: 92vh !important;
+      overflow-y: auto !important;
+      padding: 24px !important;
+      box-sizing: border-box !important;
+    }
+
+    .venta-modal .venta-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .venta-modal .venta-header button {
+      width: auto !important;
+      flex: none !important;
+      white-space: nowrap;
+    }
+
+    .venta-modal .venta-card {
+      padding: 24px;
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .venta-modal .venta-fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 20px;
+      width: 100%;
+    }
+
+    .venta-modal .venta-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .venta-modal .venta-field input,
+    .venta-modal .venta-field select,
+    .venta-modal .venta-field textarea {
+      display: block;
+      width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      padding: 11px 13px;
+      font-size: 14px;
+      background: #ffffff;
+    }
+
+    /* DNI / RUC + BOTÓN BUSCAR */
+
+    .venta-modal .venta-lookup {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 120px !important;
+      align-items: end;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .venta-modal .venta-lookup > input {
+      width: 100% !important;
+      min-width: 0 !important;
+      height: 44px;
+      box-sizing: border-box;
+    }
+
+    .venta-modal .venta-lookup > label {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .venta-modal .venta-lookup > button {
+      width: 120px !important;
+      min-width: 0 !important;
+      max-width: 120px !important;
+      height: 44px;
+      padding: 0 12px !important;
+      margin: 0 !important;
+      flex: none !important;
+      white-space: nowrap;
+    }
+
+    /* NOMBRE COMPLETO / RAZÓN SOCIAL */
+
+    .venta-modal .venta-nombre {
+      width: 100% !important;
+      min-height: 105px !important;
+      padding: 14px !important;
+      font-size: 15px !important;
+      line-height: 1.5;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    /* BOTONES INFERIORES */
+
+    .venta-modal .venta-actions {
+      display: grid !important;
+      grid-template-columns: 120px minmax(0, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+      align-items: stretch;
+    }
+
+    .venta-modal .venta-actions button {
+      min-width: 0 !important;
+      height: 46px;
+      margin: 0 !important;
+    }
+
+    .venta-modal .venta-actions .secondary {
+      width: 120px !important;
+    }
+
+    .venta-modal .venta-actions .primary-wide {
+      width: 100% !important;
+    }
+
+    /* CARRITO DE COMPRAS */
+
+    .venta-modal .venta-carrito {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .venta-modal .venta-carrito .venta-lookup {
+      grid-template-columns: minmax(0, 1fr) 170px !important;
+    }
+
+    .venta-modal .venta-carrito .venta-lookup > button {
+      width: 170px !important;
+      max-width: 170px !important;
+    }
+
+    /* CELULARES */
+
+    @media (max-width: 560px) {
+      .venta-modal .venta-dialog {
+        width: calc(100vw - 16px) !important;
+        padding: 14px !important;
+      }
+
+      .venta-modal .venta-card {
+        padding: 16px;
+      }
+
+      .venta-modal .venta-lookup,
+      .venta-modal .venta-carrito .venta-lookup {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+
+      .venta-modal .venta-lookup > button,
+      .venta-modal .venta-carrito .venta-lookup > button {
+        width: 100% !important;
+        max-width: none !important;
+      }
+
+      .venta-modal .venta-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .venta-modal .venta-actions .secondary {
+        width: 100% !important;
+      }
+    }
+    @media print {
+      .venta-modal { position: static !important; background: transparent !important; padding: 0 !important; }
+      .venta-dialog { width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; box-shadow: none !important; border: 0 !important; }
+      .venta-carrito { display: block !important; }
+    }
+
+/* Paso 3: pago */
+.venta-modal .venta-carrito { grid-template-columns: minmax(0, 1fr) !important; }
+.venta-modal .pago-card { margin-top: 8px; }
+.venta-modal .pago-resumen { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px; margin: 18px 0; border: 1px solid #dbe4ee; background: #f8fafc; border-radius: 12px; }
+.venta-modal .pago-resumen strong { font-size: 24px; color: #0f4c81; }
+.venta-modal .pago-metodos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+.venta-modal .pago-metodo { min-height: 58px; padding: 12px 8px; border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 12px; cursor: pointer; font-weight: 700; }
+.venta-modal .pago-metodo.seleccionado { background: #eaf3ff; border: 2px solid #2563eb; color: #154b83; }
+.venta-modal .pago-efectivo, .venta-modal .pago-pendiente { padding: 16px; border-radius: 12px; background: #f8fafc; border: 1px solid #dbe4ee; margin: 18px 0; }
+.venta-modal .pago-pendiente { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+.venta-modal .pago-check { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.venta-modal .pago-check input { width: 18px; height: 18px; flex: 0 0 18px; }
+.venta-modal .pago-actions { display: flex !important; justify-content: flex-end; gap: 12px; }
+.venta-modal .pago-actions .secondary { width: auto !important; }
+.venta-modal .pago-actions .primary-wide { width: auto !important; }
+.venta-modal .carrito-actions { display: flex !important; justify-content: flex-end; }
+.venta-modal .carrito-actions .primary-wide { width: min(100%, 240px) !important; }
+@media (max-width: 560px) {
+  .venta-modal .venta-steps > div { font-size: 11px; padding: 10px 4px; }
+  .venta-modal .pago-metodos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .venta-modal .pago-actions { flex-direction: column; }
+  .venta-modal .pago-actions .secondary, .venta-modal .pago-actions .primary-wide { width: 100% !important; }
+}
+
+/* Fondo verde claro solamente para Razon social */
+textarea.venta-nombre.combo-razon-social {
+    background-color: #e8f8ec !important;
+    border: 1px solid #b7dfc2 !important;
+    color: #173b25 !important;
+    border-radius: 8px;
+}
+
+textarea.venta-nombre.combo-razon-social:focus {
+    background-color: #e8f8ec !important;
+    border-color: #78bd8d !important;
+}
+
+/* INICIO AJUSTES CARRITO MARANATHA */
+
+/* Lista de productos: 5 visibles y scroll */
+.suggestions-carrito {
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    z-index: 50;
+}
+
+/* Cada producto mantiene una altura uniforme */
+.suggestions-carrito .suggestion {
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+/* Alinear cantidad y boton */
+.venta-lookup-carrito {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Campo cantidad */
+.venta-lookup-carrito .venta-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+
+/* Altura uniforme */
+.venta-lookup-carrito input[type="number"] {
+    height: 42px;
+    box-sizing: border-box;
+}
+
+/* Boton alineado con el input */
+.venta-lookup-carrito > button {
+    height: 42px;
+    min-height: 42px;
+    box-sizing: border-box;
+    margin: 0 !important;
+    align-self: flex-end;
+}
+
+/* FIN AJUSTES CARRITO MARANATHA */
+
+/* INICIO VERDE CARRITO */
+
+/* Buscador de productos */
+.product-search-row input {
+    background-color: #e8f8ec !important;
+    border: 1px solid #a8d5b5 !important;
+    color: #173b25 !important;
+}
+
+/* Lista desplegable */
+.suggestions-carrito {
+    background-color: #e8f8ec !important;
+    border: 1px solid #a8d5b5 !important;
+    max-height: 220px !important;
+    overflow-y: auto !important;
+}
+
+/* Opciones */
+.suggestions-carrito .suggestion {
+    background-color: #e8f8ec;
+    color: #173b25;
+}
+
+.suggestions-carrito .suggestion:hover {
+    background-color: #c8edcf !important;
+}
+
+/* Cantidad */
+.venta-lookup-carrito input[type="number"] {
+    background-color: #e8f8ec !important;
+    border: 1px solid #a8d5b5 !important;
+}
+
+/* Boton Agregar al carrito */
+.venta-lookup-carrito > button {
+    background-color: #2e7d32 !important;
+    color: white !important;
+    border: 1px solid #2e7d32 !important;
+}
+
+/* FIN VERDE CARRITO */

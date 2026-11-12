@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../core/api.service';
 
 @Component({
   standalone: true,
@@ -31,6 +32,7 @@ import { FormsModule } from '@angular/forms';
   `
 })
 export class ChangePasswordComponent {
+  private readonly api = inject(ApiService);
   currentPassword = '';
   newPassword = '';
   confirmPassword = '';
@@ -52,13 +54,11 @@ export class ChangePasswordComponent {
       return;
     }
 
+    if (this.newPassword.length < 10 || this.newPassword.length > 72) { this.error = 'Use entre 10 y 72 caracteres.'; return; }
     this.saving = true;
-    setTimeout(() => {
-      this.saving = false;
-      this.success = 'Contraseña actualizada con éxito.';
-      this.currentPassword = '';
-      this.newPassword = '';
-      this.confirmPassword = '';
-    }, 1000);
+    this.api.cambiarPassword(this.currentPassword, this.newPassword).subscribe({
+      next: () => { this.saving=false; this.success='Contraseña guardada en el servidor.'; this.currentPassword=''; this.newPassword=''; this.confirmPassword=''; },
+      error: e => { this.saving=false; this.error=e.error?.message || 'No se pudo cambiar la contraseña.'; }
+    });
   }
 }

@@ -1,12 +1,7 @@
 {
-  "/api": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug",
-    "pathRewrite": {
-      "^/api": ""
-    }
+  "/correo-pruebas-api": {
+    "target": "http://127.0.0.1:8025",
+    "changeOrigin": true
   },
   "/external/dni": {
     "target": "https://api.apis.net.pe/v1",
