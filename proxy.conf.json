@@ -2,5 +2,23 @@
   "/correo-pruebas-api": {
     "target": "http://127.0.0.1:8025",
     "changeOrigin": true
+  },
+  "/external/dni": {
+    "target": "https://api.apis.net.pe/v1",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/external/dni": "/dni"
+    }
+  },
+  "/external/ruc": {
+    "target": "https://api.apis.net.pe/v1",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/external/ruc": "/ruc"
+    }
   }
 }

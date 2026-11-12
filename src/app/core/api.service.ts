@@ -118,10 +118,10 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/ventas/${id}`);
   }
 
-  /** Consulta de DNI en el microservicio de clientes (proveedor Decolecta). */
-  buscarDni(dni: string): Observable<DocumentoConsulta> {
-    return this.http.get<DocumentoConsulta>(
-      `${this.base}/clientes/documentos/dni/${encodeURIComponent(dni)}`
+  /** Consulta de DNI (proxy externo de desarrollo, como feature/integracion-sunat-huiza). */
+  buscarDni(dni: string): Observable<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }> {
+    return this.http.get<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }>(
+      `/external/dni?numero=${encodeURIComponent(dni)}`
     );
   }
 

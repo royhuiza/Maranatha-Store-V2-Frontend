@@ -1,4 +1,4 @@
-    .venta-dialog { width: min(94vw, 920px); max-width: 920px; max-height: 92vh; overflow-y: auto; box-sizing: border-box; padding: 24px; }
+﻿    .venta-dialog { width: min(94vw, 920px); max-width: 920px; max-height: 92vh; overflow-y: auto; box-sizing: border-box; padding: 24px; }
     .venta-header, .venta-carrito-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
     .venta-header h3, .venta-card h3 { margin: 0 0 6px; }
     .venta-header p, .venta-carrito-header p { margin: 0; color: #64748b; font-size: 13px; }

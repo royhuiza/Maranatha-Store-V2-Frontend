@@ -31,5 +31,17 @@ module.exports = {
     bypass(req) {
       return soloLecturaLocal(req) ? undefined : '/correo-pruebas-api/denegado';
     }
+  },
+  '/external/dni': {
+    target: 'https://api.apis.net.pe/v1',
+    changeOrigin: true,
+    secure: true,
+    rewrite: path => path.replace(/^\/external\/dni/, '/dni')
+  },
+  '/external/ruc': {
+    target: 'https://api.apis.net.pe/v1',
+    changeOrigin: true,
+    secure: true,
+    rewrite: path => path.replace(/^\/external\/ruc/, '/ruc')
   }
 };
