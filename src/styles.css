@@ -1,6 +1,7 @@
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#f3f6f8;color:#203040;min-height:100vh}
-button,input,select{font:inherit}
+:root{--ui-font:"Segoe UI Variable","Segoe UI",system-ui,Arial,sans-serif}
+body{margin:0;font-family:var(--ui-font);background:#f3f6f8;color:#203040;min-height:100vh}
+button,input,select,textarea{font:inherit}
 button{background:#173b57;color:#fff;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;transition:transform .2s,background .2s}
 button:hover{background:#244f6d}
 button:disabled{opacity:.5;cursor:not-allowed}
@@ -145,3 +146,17 @@ body.print-ticket .comprobante-ticket{display:block}
 	body.print-ticket { -webkit-print-color-adjust: exact; }
 	@page { size: auto; margin: 6mm; }
 }
+
+/* Accessible controls and document rendering independent of app theme. */
+.maranatha-app input::placeholder,.maranatha-app textarea::placeholder{color:#59646b;opacity:1}
+.maranatha-app.is-dark input::placeholder,.maranatha-app.is-dark textarea::placeholder{color:#c6d4d1;opacity:1}
+.maranatha-app.is-dark input,.maranatha-app.is-dark select{color:#f4f8f6}
+.suggestion.disabled{opacity:1;color:#9c302c;background:#fff1ed;cursor:pointer}
+.suggestion:focus{outline:3px solid #377d77}.stock-warning{animation:stock-enter .25s ease-out}
+.stock-warning .secondary{display:block;margin:8px 0}.receipt-logo{width:120px;height:80px;object-fit:contain}
+.download-menu{display:inline-block;position:relative}.download-menu button{display:block;margin:5px}
+.download-menu summary{cursor:pointer;padding:8px}.download-menu[open]{background:#fff;color:#163e3a;box-shadow:0 8px 28px #0002;z-index:2}
+.receipt,.receipt *{color:#171717!important;background-color:#fff!important}.receipt th{border-bottom:1px solid #777}
+.mini input[type=number]{width:80px}.stat-bar{height:18px;background:#377d77;border-radius:5px;min-width:2px;transition:width .25s}
+@keyframes stock-enter{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.stock-warning,.stat-bar{animation:none;transition:none}}

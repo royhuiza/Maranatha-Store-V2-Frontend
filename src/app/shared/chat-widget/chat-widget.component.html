@@ -1,0 +1,34 @@
+<div class="chat-widget" [class.open]="open">
+  <!-- Botón flotante -->
+  <button type="button" class="chat-toggle" (click)="toggle()" [attr.aria-label]="open ? 'Cerrar chat' : 'Abrir chat'">
+    <span class="chat-toggle__icon" [class.hidden]="open">💬</span>
+    <span class="chat-toggle__icon" [class.hidden]="!open">✕</span>
+    <span class="chat-toggle__badge">AI</span>
+  </button>
+
+  <!-- Ventana del chat -->
+  <div class="chat-window" *ngIf="open" role="dialog" aria-label="Asistente Maranata AI">
+    <header class="chat-header">
+      <div class="chat-avatar">M</div>
+      <div>
+        <div class="chat-title">Asistente Maranata AI</div>
+        <div class="chat-status">En línea</div>
+      </div>
+    </header>
+
+    <section class="chat-messages" #msgList aria-live="polite">
+      <div *ngFor="let m of messages" class="chat-bubble" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'" [class.error]="m.role === 'error'" [class.typing]="m.role === 'typing'">
+        <span *ngIf="m.role !== 'typing'" [innerHTML]="format(m.content)"></span>
+        <ng-container *ngIf="m.role === 'typing'">
+          <span>Escribiendo</span>
+          <span class="typing-dots"><i></i><i></i><i></i></span>
+        </ng-container>
+      </div>
+    </section>
+
+    <footer class="chat-input">
+      <input type="text" [(ngModel)]="input" (keydown)="onKey($event)" placeholder="Escribe tu pregunta..." autocomplete="off" />
+      <button type="button" (click)="send()" [disabled]="!input.trim() || isLoading" aria-label="Enviar mensaje">➤</button>
+    </footer>
+  </div>
+</div>
