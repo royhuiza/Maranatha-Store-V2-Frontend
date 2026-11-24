@@ -299,15 +299,27 @@ export class ProductosComponent implements OnInit {
 
   editar(producto: Producto): void {
     this.productoOriginal = { ...producto };
-    this.form = { ...producto };
+    this.form = { ...producto, afectacionIgv: producto.afectacionIgv ?? null };
     this.nombreOriginal = producto.nombre;
     this.errorFormulario = '';
     this.abierto = true;
     this.cargarCatalogoCompleto();
   }
 
+  esAfectacionIgvValida(): boolean {
+    return this.form.afectacionIgv === 'GRAVADO' ||
+      this.form.afectacionIgv === 'EXONERADO' ||
+      this.form.afectacionIgv === 'INAFECTO';
+  }
+
   guardar(): void {
+    if (this.procesando) return;
     this.errorFormulario = '';
+
+    if (!this.esAfectacionIgvValida()) {
+      this.errorFormulario = 'Seleccione el tipo de afectación del IGV.';
+      return;
+    }
 
     if (!this.form.nombre.trim()) {
       this.errorFormulario = 'Ingrese el nombre del producto.';
@@ -329,7 +341,7 @@ export class ProductosComponent implements OnInit {
       this.errorFormulario = 'El precio admite hasta dos decimales.';
       return;
     }
-    
+
     if (!this.form.id && !this.esStockValido()) {
       this.errorFormulario = 'El stock debe ser un número entero no negativo.';
       return;

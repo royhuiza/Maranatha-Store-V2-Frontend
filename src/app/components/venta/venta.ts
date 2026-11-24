@@ -12,6 +12,7 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
 })
 export class VentasComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private idempotencyKey = crypto.randomUUID();
   productos: Producto[] = [];
   clientes: Cliente[] = [];
   ventas: Venta[] = [];
@@ -153,7 +154,6 @@ export class VentasComponent implements OnInit {
     if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET' | 'A4';
   }
   cambiarTipo(tipo: TipoComprobante): void { this.tipo = tipo; this.onTipoChange(); }
-
   onTipoChange(): void {
     this.consultaDocumentoId++;
     this.documentoBuscando = false;
@@ -318,6 +318,10 @@ export class VentasComponent implements OnInit {
     this.procesando = true;
     this.mensaje = '';
     this.api.crearVenta({
+      idempotencyKey: this.idempotencyKey,
+      tipoDocumento: this.tipo === 'FACTURA' ? 'RUC' : this.tipo === 'BOLETA' ? 'DNI' : undefined,
+      numeroDocumento: this.tipo === 'NOTA_PEDIDO' ? undefined : this.documento.trim() || undefined,
+      clienteNombre: this.tipo === 'NOTA_PEDIDO' ? undefined : [this.documentoNombre, this.tipo === 'BOLETA' ? this.documentoApellidos : ''].join(' ').trim() || undefined,
       documento: this.documento.trim() || undefined,
       compradorNombre: [this.documentoNombre, this.tipo === 'BOLETA' ? this.documentoApellidos : ''].join(' ').trim() || undefined,
       metodoPago: this.metodoPago,
@@ -325,6 +329,7 @@ export class VentasComponent implements OnInit {
       detalles: this.detalles.map(item => ({ productoId: item.productoId, cantidad: item.cantidad }))
     }).subscribe({
       next: venta => {
+        this.idempotencyKey = crypto.randomUUID();
         this.procesando = false;
         this.ventaEmitida = venta;
         this.detalles = [];
@@ -363,6 +368,8 @@ export class VentasComponent implements OnInit {
     this.mostrarDialogoImpresion = true;
   }
   nuevoComprobante(): void {
+    if (this.procesando) return;
+    this.idempotencyKey = crypto.randomUUID();
     this.consultaDocumentoId++;
     this.documentoBuscando = false;
     this.mostrarFormularioVenta = true;

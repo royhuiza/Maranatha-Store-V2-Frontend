@@ -1180,3 +1180,69 @@ textarea.venta-nombre.combo-razon-social:focus {
 .envio-final button {
   transition: background-color .18s ease, color .18s ease, border-color .18s ease;
 }
+
+/* Vista previa ampliada: no modifica las reglas de impresión. */
+@media screen {
+  .venta-modal .venta-dialog.receipt-preview {
+    width: min(920px, calc(100vw - 32px)) !important;
+    max-width: 920px !important;
+    max-height: 94vh !important;
+  }
+
+  .receipt-preview #comprobante {
+    padding: 28px;
+    font-size: 15px;
+    line-height: 1.5;
+    box-sizing: border-box;
+  }
+
+  .receipt-preview #comprobante .comprobante-a4 {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .receipt-preview #comprobante .comprobante-a4 p {
+    margin: 16px 0;
+  }
+
+  .receipt-preview #comprobante .comprobante-a4 th,
+  .receipt-preview #comprobante .comprobante-a4 td {
+    padding: 10px 6px;
+  }
+
+  .receipt-preview #comprobante .comprobante-a4 hr {
+    margin: 16px 0;
+  }
+
+  .receipt-preview #comprobante .company h2 {
+    font-size: 22px;
+  }
+
+  .receipt-preview #comprobante .qr-img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .receipt-preview #comprobante .receipt-legend {
+    margin-top: 16px;
+  }
+}
+
+@media screen and (max-width: 560px) {
+  .venta-modal .venta-dialog.receipt-preview {
+    width: calc(100vw - 16px) !important;
+  }
+
+  .receipt-preview #comprobante {
+    padding: 14px;
+  }
+
+  .receipt-preview #comprobante .comprobante-a4 {
+    font-size: 12px;
+  }
+
+  .receipt-preview #comprobante .comprobante-a4 th,
+  .receipt-preview #comprobante .comprobante-a4 td {
+    padding: 6px 3px;
+  }
+}

@@ -261,15 +261,16 @@
       </div>
       <p class="product-field-hint">El precio debe ser mayor que cero y el stock debe ser un número entero no negativo.
       </p>
-      <label>Tipo de afectación del IGV
-        <select [(ngModel)]="form.afectacionIgv" name="afectacionIgv">
+      <label>Tipo de afectación del IGV <span class="required-star">*</span>
+        <select [(ngModel)]="form.afectacionIgv" name="afectacionIgv" required
+          (ngModelChange)="limpiarError()">
           <option [ngValue]="null">Sin clasificar</option>
           <option value="GRAVADO">Gravado - Código SUNAT 10</option>
           <option value="EXONERADO">Exonerado - Código SUNAT 20</option>
           <option value="INAFECTO">Inafecto - Código SUNAT 30</option>
         </select>
       </label>
-      <small>Selecciona la clasificación tributaria correspondiente al producto.</small>
+      <small>Selecciona obligatoriamente la clasificación tributaria correspondiente al producto.</small>
       <p class="product-field-hint">El precio debe ser mayor que cero. El stock se modifica mediante movimientos de
         inventario.</p>
       <div class="product-form-error" *ngIf="errorFormulario" role="alert"><span aria-hidden="true">!</span>{{
@@ -277,7 +278,7 @@
     </div>
     <div class="actions product-dialog-actions">
       <button type="button" class="secondary" (click)="cerrarModal()" [disabled]="procesando">Cancelar</button>
-      <button type="submit" class="workspace-primary" [disabled]="procesando || !!duplicado">{{ procesando ?
+      <button type="submit" class="workspace-primary" [disabled]="procesando || !!duplicado || !esAfectacionIgvValida()">{{ procesando ?
         'Guardando...' : (form.id ? 'Guardar cambios' : 'Registrar artículo') }}</button>
     </div>
   </form>
