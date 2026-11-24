@@ -162,7 +162,7 @@
               <h2>MARANATHA STORE</h2>
               <div class="company-sub">Librería escolar</div>
               <div class="company-small">Tacna, Perú</div>
-              <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">20XXXXXXXXX</span></div>
+              <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de configuración</span></div>
             </div>
             <div class="comprobante-block">
               <div class="comprobante-type">{{ comprobanteTipo }}</div>
@@ -170,13 +170,13 @@
                   }}</span><span *ngIf="!ventaEmitida">(BORRADOR)</span></div>
             </div>
             <div class="qr-block" *ngIf="ventaEmitida">
-              <img [src]="qrDataUrl(ventaEmitida)" alt="QR" class="qr-img" crossOrigin="anonymous">
+              <small>QR fiscal no disponible</small>
             </div>
           </div>
           <hr>
           <p>
             Fecha: {{ comprobanteFecha | date:'dd/MM/yyyy HH:mm' }}<br>
-            Estado: {{ ventaEmitida.estado || 'BORRADOR' }}
+            Estado SUNAT: {{ estadoFiscal(ventaEmitida) }}<br>Estado: {{ ventaEmitida.estado || 'BORRADOR' }}
           </p>
           <p>Cliente: {{ comprobanteCliente }}<br><small *ngIf="comprobanteDocumento">{{ comprobanteDocumento }}</small>
           </p>
@@ -225,7 +225,7 @@
           <div class="ticket-head">
             <h3>MARANATHA STORE</h3>
             <div class="company-sub">Librería escolar</div>
-            <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">20XXXXXXXXX</span></div>
+            <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de configuración</span></div>
             <div class="ticket-meta">
               <span class="comprobante-type small">{{ comprobanteTipo }}</span>
               <span class="serie-number small"><span *ngIf="ventaEmitida">{{ ventaEmitida.serie }}-{{
@@ -247,7 +247,7 @@
               <div class="total"><span><strong>TOTAL</strong></span><span class="right"><strong>S/ {{
                     comprobanteTotalConIgv | number:'1.2-2' }}</strong></span></div>
             </div>
-            <div class="ticket-qr" *ngIf="ventaEmitida"><img [src]="qrDataUrl(ventaEmitida)" alt="QR"></div>
+            <div class="ticket-qr" *ngIf="ventaEmitida"><small>QR fiscal no disponible</small></div>
             <div class="receipt-legend small">Representación impresa. No validado por SUNAT.</div>
           </div>
         </div>
@@ -269,7 +269,7 @@
       </div>
       <div class="pago-metodos">
         <button type="button" class="pago-metodo" *ngFor="let metodo of metodosPago"
-          [class.seleccionado]="metodoPago === metodo" (click)="seleccionarMetodoPago(metodo)">
+          [disabled]="procesando" [class.seleccionado]="metodoPago === metodo" (click)="seleccionarMetodoPago(metodo)">
           {{ metodo | titlecase }}
         </button>
       </div>
@@ -282,16 +282,21 @@
       </div>
       <div *ngIf="metodoPago === 'YAPE'" class="pago-pendiente"><img src="/pagos/yape-prueba.png"
           alt="QR Yape de pruebas" style="width:220px;max-width:100%">
-        <p>QR personal de pruebas. No habilitado para registrar cobros.</p>
+        <p>Escanea el QR y paga el importe exacto.</p>
+        <p role="status" *ngIf="!pagoYape && !errorYape">Esperando un pago coincidente (consulta automática cada 2 segundos). Si hay varios pagos iguales, revisa manualmente.</p>
+        <p class="documento-ok" *ngIf="pagoYape">✓ Pago coincidente detectado: S/ {{ pagoYape.monto | number:'1.2-2' }}. Verifica en Yape antes de confirmar.</p>
+        <p *ngIf="errorYape">{{ errorYape }}</p>
+        <p *ngIf="!eventosYape.length && !errorYape">Sin eventos detectados.</p>
+        <div *ngFor="let evento of eventosYape">S/ {{ evento.monto | number:'1.2-2' }} · {{ evento.fecha | date:'short' }} — Detectado, no verificado</div>
       </div>
-      <div *ngIf="metodoPago !== 'EFECTIVO'" class="pago-pendiente">
+      <div *ngIf="metodoPago === 'PLIN'" class="pago-pendiente">
         La integración de {{ metodoPago }} está pendiente. No se puede registrar este método como pagado todavía.
       </div>
       <div class="venta-actions pago-actions">
-        <button type="button" class="secondary" [disabled]="procesando" (click)="pasoVenta = 'carrito'">← Volver al
+        <button type="button" class="secondary" [disabled]="procesando" (click)="volverAlCarrito()">← Volver al
           carrito</button>
         <button type="button" class="primary-wide"
-          [disabled]="procesando || !pagoConfirmado || metodoPago !== 'EFECTIVO' || !detalles.length"
+          [disabled]="!puedeRegistrar"
           (click)="registrar()">
           {{ procesando ? 'Registrando...' : 'Confirmar pago y registrar venta' }}
         </button>
@@ -330,6 +335,7 @@
           <th>Cliente</th>
           <th>Total</th>
           <th>Estado</th>
+<th>Estado SUNAT</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -339,7 +345,7 @@
           <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>{{ v.clienteNombre }}</td>
           <td>S/ {{ v.total | number:'1.2-2' }}</td>
-          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td>
+          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td><td>{{ estadoFiscal(v) }}</td>
           <td>
             <div class="comprobante-acciones">
               <!-- Ver comprobante -->
@@ -397,7 +403,7 @@
           </td>
         </tr>
         <tr *ngIf="!ventasFiltradas.length">
-          <td colspan="6" class="empty">{{ ventas.length ? 'No hay comprobantes que coincidan con los filtros.' :
+          <td colspan="7" class="empty">{{ ventas.length ? 'No hay comprobantes que coincidan con los filtros.' :
             'Todavía no hay ventas registradas.' }}</td>
         </tr>
       </tbody>

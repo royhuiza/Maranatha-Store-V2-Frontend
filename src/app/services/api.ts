@@ -21,20 +21,24 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl;
+  private readonly base = environment.apiUrl.replace(/\/+$/, "");
+
+  eventosYape(): Observable<Array<{ id: string; monto: number; fecha: number }>> {
+    return this.http.get<Array<{ id: string; monto: number; fecha: number }>>(`${this.base}/ventas/yape/eventos`);
+  }
 
   productos(consulta = ''): Observable<Producto[]> {
-    return this.http.get<Producto[]>(`${this.base}/productos`, {
+    return this.http.get<Producto[]>(`${this.base}/api/productos`, {
       params: consulta ? { q: consulta } : {}
     });
   }
 
   crearProducto(producto: Producto): Observable<Producto> {
-    return this.http.post<Producto>(`${this.base}/productos`, producto);
+    return this.http.post<Producto>(`${this.base}/api/productos`, producto);
   }
 
   actualizarProducto(producto: Producto): Observable<Producto> {
-    return this.http.put<Producto>(`${this.base}/productos/${producto.id}`, producto);
+    return this.http.put<Producto>(`${this.base}/api/productos/${producto.id}`, producto);
   }
 
 
@@ -43,7 +47,7 @@ export class ApiService {
     afectacionIgv: TipoAfectacionIgv
   ): Observable<Producto> {
     return this.http.patch<Producto>(
-      `${this.base}/productos/${id}/afectacion-igv`,
+      `${this.base}/api/productos/${id}/afectacion-igv`,
       { afectacionIgv }
     );
   }
@@ -51,21 +55,21 @@ export class ApiService {
 
 
   eliminarProducto(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/productos/${id}`);
+    return this.http.delete<void>(`${this.base}/api/productos/${id}`);
   }
 
   ajustarStock(id: number, tipo: AjusteInventario['tipo'], cantidad: number, motivo: string): Observable<Producto> {
-    return this.http.post<Producto>(`${this.base}/productos/${id}/ajustes`, { tipo, cantidad, motivo });
+    return this.http.post<Producto>(`${this.base}/api/productos/${id}/ajustes`, { tipo, cantidad, motivo });
   }
 
   historialAjustes(id: number): Observable<AjusteInventario[]> {
-    return this.http.get<AjusteInventario[]>(`${this.base}/productos/${id}/ajustes`);
+    return this.http.get<AjusteInventario[]>(`${this.base}/api/productos/${id}/ajustes`);
   }
 
   importarProductos(archivo: File): Observable<ResultadoImportacion> {
     const datos = new FormData();
     datos.append('archivo', archivo);
-    return this.http.post<ResultadoImportacion>(`${this.base}/productos/importar`, datos);
+    return this.http.post<ResultadoImportacion>(`${this.base}/api/productos/importar`, datos);
   }
 
   clientes(): Observable<Cliente[]> {
@@ -84,17 +88,17 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/clientes/${id}`);
   }
 
-  crearEnlaceComprobante(id: number, archivo: File): Observable<{url: string}> {
+  crearEnlaceComprobante(id: number, archivo: File): Observable<{ url: string }> {
     const datos = new FormData(); datos.append('archivo', archivo);
-    return this.http.post<{url: string}>(`${this.base}/ventas/${id}/enlace`, datos);
+    return this.http.post<{ url: string }>(`${this.base}/api/ventas/${id}/enlace`, datos);
   }
   enviarCorreo(id: number, correo: string, archivo: File): Observable<void> {
     const datos = new FormData(); datos.append("correo", correo); datos.append("archivo", archivo);
-    return this.http.post<void>(`${this.base}/ventas/${id}/correo`, datos);
+    return this.http.post<void>(`${this.base}/api/ventas/${id}/correo`, datos);
   }
 
   ventas(): Observable<Venta[]> {
-    return this.http.get<Venta[]>(`${this.base}/ventas`);
+    return this.http.get<Venta[]>(`${this.base}/api/ventas`);
   }
 
   /** T67/T69: el backend filtra por fechas y número, y devuelve una sola página. */
@@ -103,36 +107,52 @@ export class ApiService {
     if (filtros.desde) params = params.set('desde', filtros.desde);
     if (filtros.hasta) params = params.set('hasta', filtros.hasta);
     if (filtros.numero?.trim()) params = params.set('numero', filtros.numero.trim());
-    return this.http.get<HistorialVentas>(`${this.base}/ventas/historial`, { params });
+    return this.http.get<HistorialVentas>(`${this.base}/api/ventas/historial`, { params });
   }
 
   /** T39: artículos activos con stock menor o igual a su stock mínimo. */
   productosStockBajo(): Observable<Producto[]> {
-    return this.http.get<Producto[]>(`${this.base}/productos/stock-bajo`);
+    return this.http.get<Producto[]>(`${this.base}/api/productos/stock-bajo`);
   }
 
   obtenerVenta(id: number): Observable<Venta> {
-    return this.http.get<Venta>(`${this.base}/ventas/${id}`);
+    return this.http.get<Venta>(`${this.base}/api/ventas/${id}`);
   }
 
-  crearVenta(venta: CrearVentaRequest): Observable<Venta> {
-    return this.http.post<Venta>(`${this.base}/ventas`, venta);
+  crearVenta(venta: CrearVentaRequest, claveIdempotencia: string): Observable<Venta> {
+    return this.http.post<Venta>(
+      `${this.base}/api/ventas`,
+      { ...venta, idempotencyKey: claveIdempotencia },
+      { headers: { 'Idempotency-Key': claveIdempotencia } }
+    );
   }
 
   anularVenta(id: number): Observable<Venta> {
-    return this.http.put<Venta>(`${this.base}/ventas/${id}/anular`, {});
+    return this.http.put<Venta>(`${this.base}/api/ventas/${id}/anular`, {});
   }
 
   eliminarVenta(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/ventas/${id}`);
+    return this.http.delete<void>(`${this.base}/api/ventas/${id}`);
   }
 
   /** Consulta de DNI (proxy externo de desarrollo, como feature/integracion-sunat-huiza). */
-  buscarDni(dni: string): Observable<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }> {
-    return this.http.get<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }>(
-      `/external/dni?numero=${encodeURIComponent(dni)}`
-    );
-  }
+  buscarDni(dni: string): Observable<{
+  numeroDocumento: string;
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  estado?: string;
+}> {
+  return this.http.get<{
+    numeroDocumento: string;
+    nombres: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string;
+    estado?: string;
+  }>(
+    `${this.base}/clientes/documentos/dni/${encodeURIComponent(dni)}`
+  );
+}
 
   /** Consulta RUC oficial (SUNAT) en el microservicio de facturacion. */
   buscarRuc(ruc: string): Observable<ConsultaRucResponse> {
@@ -142,9 +162,9 @@ export class ApiService {
   }
   sesion() { return this.http.get<{ username: string; rol: string }>(this.base + '/auth/me'); }
 
-  usuarios() { return this.http.get<Array<{id: number; username: string; email: string; rol: string; activo: boolean}>>(this.base + '/auth/usuarios'); }
-  crearUsuario(usuario: {username: string; email: string; password: string; rol: string}) { return this.http.post(this.base + '/auth/usuarios', usuario); }
-  actualizarUsuario(id: number, datos: {username:string; email:string; rol:string; password?:string}) { return this.http.put(`${this.base}/auth/usuarios/${id}`, datos); }
+  usuarios() { return this.http.get<Array<{ id: number; username: string; email: string; rol: string; activo: boolean }>>(this.base + '/auth/usuarios'); }
+  crearUsuario(usuario: { username: string; email: string; password: string; rol: string }) { return this.http.post(this.base + '/auth/usuarios', usuario); }
+  actualizarUsuario(id: number, datos: { username: string; email: string; rol: string; password?: string }) { return this.http.put(`${this.base}/auth/usuarios/${id}`, datos); }
   eliminarUsuario(id: number) { return this.http.delete<void>(`${this.base}/auth/usuarios/${id}`); }
   reactivarUsuario(id: number) { return this.http.patch(`${this.base}/auth/usuarios/${id}/reactivar`, {}); }
   cambiarPassword(currentPassword: string, newPassword: string) { return this.http.post(this.base + '/auth/password', { currentPassword, newPassword }); }
