@@ -12,13 +12,12 @@ export function receiptQrText(venta: Venta): string {
     `Cliente: ${venta.clienteNombre.slice(0, 100)}`,
     `Estado: ${venta.estado}`,
     `Base: PEN ${money(base)} | IGV: PEN ${money(total - base)}`,
-    `TOTAL: PEN ${money(total)}`,
-    `Metodo previsto: ${venta.metodoPago || 'NO ELEGIDO'} · Pago: ${venta.estadoPago || 'PENDIENTE'}`
+    `TOTAL: PEN ${money(total)}`
   ];
   const details = venta.detalles.map(d => `${d.cantidad} x ${d.productoNombre || 'Producto ' + d.productoId}: PEN ${money(Number(d.subtotal))}`);
-  const full = [...header, ...details, 'No valida pago ni emision SUNAT.'].join('\n');
+  const full = [...header, ...details, 'Comprobante interno.'].join('\n');
   return new TextEncoder().encode(full).length <= 1500 ? full
-    : [...header, `${venta.detalles.length} articulos; detalle completo en el comprobante.`, 'No valida pago ni emision SUNAT.'].join('\n');
+    : [...header, `${venta.detalles.length} articulos; detalle completo en el comprobante.`, 'Comprobante interno.'].join('\n');
 }
 
 export async function createReceiptQr(venta: Venta): Promise<string> {

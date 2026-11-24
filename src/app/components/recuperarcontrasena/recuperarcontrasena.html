@@ -1,0 +1,31 @@
+
+<main class="login-page login-experience authkit-login authkit-recovery" [class.login-dark]="theme.dark()">
+  <section class="login-stage" aria-label="Recuperación de acceso">
+    <app-originkit-scene effect="reactive" />
+    <div class="login-stage-pattern" aria-hidden="true"></div>
+    <div class="stage-top"><img class="maranatha-brand-image stage-brand-image" src="/maranatha-logo.png" alt="Librería Maranatha"></div>
+    <div class="stage-copy">
+      <span class="stage-kicker"><span class="live-dot"></span> ACCESO SEGURO</span>
+      <h1>Tu librería,<br><em>a un paso.</em></h1>
+      <p>Recupera el acceso a tu espacio de trabajo.</p>
+    </div>
+    <div class="authkit-caption" aria-hidden="true"><span>02 / MARANATHA STORE</span><span>RECUPERACIÓN DE ACCESO</span></div>
+  </section>
+  <section class="login-panel">
+    <div class="login-panel-top recovery-top">
+      <a class="login-theme-toggle" routerLink="/login">← Volver al inicio de sesión</a>
+      <button type="button" class="login-theme-toggle theme-switch" (click)="theme.toggle($event, view)" [attr.aria-pressed]="theme.dark()"
+        [attr.aria-label]="theme.dark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">{{theme.dark() ? '☀ Claro' : '☾ Oscuro'}}</button>
+    </div>
+    <section class="login-card auth-reveal">
+      <div class="login-eyebrow recovery-status">TU CUENTA</div>
+      <h2>Recuperación de contraseña</h2>
+      <ol class="auth-steps">
+        <li [attr.aria-current]="!token ? 'step' : null">Solicita el enlace</li>
+        <li [attr.aria-current]="token ? 'step' : null">Crea tu contraseña</li>
+      </ol>
+<form class="auth-step-reveal" *ngIf="!token" #f="ngForm" (ngSubmit)="solicitar()"><p>Escribe el correo que el administrador registró al crear tu usuario. Te enviaremos un enlace de un solo uso para crear una nueva contraseña.</p><label>Correo electrónico<input type="email" name="email" [(ngModel)]="email" required email maxlength="120" autocomplete="email"></label><button class="login-submit" type="submit" [disabled]="f.invalid || ocupado">Enviar enlace</button></form>
+<form class="auth-step-reveal" *ngIf="token && !terminado" #r="ngForm" (ngSubmit)="restablecer()"><p>El enlace vence en 15 minutos y solo puede utilizarse una vez.</p><label>Nueva contraseña<input type="password" name="password" [(ngModel)]="password" required minlength="10" maxlength="72" autocomplete="new-password"></label><label>Confirmar contraseña<input type="password" name="confirm" [(ngModel)]="confirm" required autocomplete="new-password"></label><button class="login-submit" type="submit" [disabled]="r.invalid || ocupado">Guardar nueva contraseña</button></form>
+<div class="recovery-mailbox-link" *ngIf="mensaje && !token && buzonLocal"><p>¿Estás probando la recuperación en este equipo?</p><a routerLink="/buzon-pruebas" [state]="{ destinatario: correoSolicitado }">Abrir buzón de pruebas de Maranatha →</a></div><p class="recovery-countdown" *ngIf="terminado" role="status">Volviendo al login en <strong>{{cuenta}}</strong> segundos…</p><p class="recovery-success" role="status">{{mensaje}}</p><p class="error" role="alert">{{error}}</p></section>
+  </section>
+</main>

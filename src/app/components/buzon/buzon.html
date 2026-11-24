@@ -1,0 +1,58 @@
+
+    <main class="recovery-page mailbox-page" [class.mailbox-dark]="theme.dark()">
+      <app-originkit-scene effect="reactive" />
+      <div class="mailbox-shell">
+        <header class="recovery-header">
+          <img src="/maranatha-logo.png" alt="Librería Maranatha">
+          <div class="mailbox-actions">
+            <a class="login-theme-toggle" routerLink="/recuperar-contrasena">← Volver a recuperación</a>
+            <button type="button" class="login-theme-toggle theme-switch" (click)="theme.toggle($event, view)"
+              [attr.aria-pressed]="theme.dark()"
+              [attr.aria-label]="theme.dark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
+              {{ theme.dark() ? '☀ Claro' : '☾ Oscuro' }}
+            </button>
+          </div>
+        </header>
+
+        <section class="mailbox-intro">
+          <span class="recovery-eyebrow recovery-status">ENTORNO LOCAL DE PRUEBAS</span>
+          <h1>Buzón de Maranatha</h1>
+          <p>Abre el mensaje más reciente para crear tu nueva contraseña. Este buzón está disponible en el entorno local de desarrollo.</p>
+        </section>
+        <div class="mailbox-toolbar">
+          <span *ngIf="destinatario && !mostrarTodos">Mensajes para <strong>{{ destinatario }}</strong></span>
+          <span *ngIf="!destinatario || mostrarTodos">Todos los mensajes del buzón</span>
+          <div class="mailbox-actions">
+            <button *ngIf="destinatario" type="button" class="secondary" (click)="alternarDestinatario()">
+              {{ mostrarTodos ? 'Solo mi correo' : 'Ver todos' }}
+            </button>
+            <button type="button" (click)="cargar()" [disabled]="cargando">{{ cargando ? 'Actualizando…' : 'Actualizar' }}</button>
+          </div>
+        </div>
+        <p class="error" *ngIf="error" role="alert">{{ error }}</p>
+
+        <section class="mailbox-grid">
+          <div class="mailbox-list" aria-label="Mensajes del buzón">
+            <button type="button" *ngFor="let mensaje of visibles; trackBy: identificar" (click)="abrir(mensaje)"
+              [class.active]="seleccionado === mensaje.ID" [attr.aria-pressed]="seleccionado === mensaje.ID">
+              <b>{{ mensaje.Subject }}</b>
+              <span>{{ destinatarios(mensaje) }}</span>
+              <small>{{ mensaje.Created | date:'dd/MM/yyyy HH:mm:ss':'-0500' }}</small>
+            </button>
+            <p *ngIf="!visibles.length && !cargando && !error">Todavía no hay mensajes para mostrar. Solicita un enlace desde recuperación.</p>
+          </div>
+          <article class="mailbox-message" aria-live="polite">
+            <h2>{{ asunto || 'Enlace de recuperación' }}</h2>
+            <ng-container *ngIf="token; else mensajeCompleto">
+              <p>El enlace del mensaje vence en 15 minutos y solo se usa una vez.</p>
+              <a class="save-pdf-link" routerLink="/recuperar-contrasena" [queryParams]="{ token: token }">Crear nueva contraseña</a>
+            </ng-container>
+            <ng-template #mensajeCompleto>
+              <pre *ngIf="texto">{{ texto }}</pre>
+              <p *ngIf="!asunto">El contenido aparecerá aquí cuando llegue un mensaje.</p>
+            </ng-template>
+          </article>
+        </section>
+      </div>
+    </main>
+  

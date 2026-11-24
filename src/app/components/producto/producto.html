@@ -1,0 +1,284 @@
+<div class="page-title">
+  <div>
+    <h2>Productos e inventario</h2>
+    <p>Control de precios y stock en PostgreSQL</p>
+  </div>
+  <button class="workspace-primary" *ngIf="auth.isAdmin" (click)="nuevo()">+ Nuevo producto</button>
+</div>
+<div *ngIf="mensaje" class="notice inventory-notice" [class.error-notice]="esError"
+  [attr.role]="esError ? 'alert' : 'status'">
+  <span style="white-space:pre-line">{{ mensaje }}</span>
+  <button *ngIf="esError" type="button" class="link" (click)="mensaje=''">Cerrar</button>
+</div>
+<div class="catalog-controls">
+  <div class="stock-segments" role="group" aria-label="Filtro rápido de stock"><button type="button"
+      [class.active]="filtroStock==='todos'" (click)="filtroStock='todos'">Todos</button><button type="button"
+      [class.active]="filtroStock==='disponible'" (click)="filtroStock='disponible'">Disponibles</button><button
+      type="button" [class.active]="filtroStock==='bajo'" (click)="filtroStock='bajo'">Stock bajo</button><button
+      type="button" [class.active]="filtroStock==='agotado'" (click)="filtroStock='agotado'">Sin stock</button></div>
+  <div class="toolbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción..." [ngModel]="q"
+      (ngModelChange)="cambiarBusqueda($event)">
+
+    <form *ngIf="auth.isAdmin" [formGroup]="formImportacion">
+      <button class="secondary" type="button" (click)="archivoImportar.click()" [disabled]="importando">
+        {{ importando ? 'Importando Excel…' : 'Importar ingresos Excel' }}
+      </button>
+      <input #archivoImportar type="file" accept=".xlsx,.xls" hidden (change)="seleccionarExcel(archivoImportar)">
+    </form>
+    <button class="secondary" type="button" (click)="exportarVista()"
+      [disabled]="cargandoCatalogo || !!errorCatalogo">Exportar inventario mostrado</button>
+  </div>
+</div>
+<div *ngIf="errorCatalogo" class="notice inventory-notice error-notice" role="alert">
+  {{ errorCatalogo }}
+  <button type="button" class="link" (click)="cargar()">Reintentar</button>
+</div>
+<div class="search-result-feedback" *ngIf="!cargandoCatalogo && !errorCatalogo && (q.trim() || filtroStock !== 'todos')"
+  aria-live="polite">
+  <span aria-hidden="true">{{ filtrados.length ? '✦' : '⌕' }}</span>
+  {{ filtrados.length ? (filtrados.length + ' artículo(s) encontrado(s)') : mensajeSinResultados }}
+  <button type="button" class="link" (click)="filtroStock='todos'; cambiarBusqueda('')">Limpiar filtros</button>
+</div>
+<div class="table-wrap inventory-filter-results" [attr.data-stock-filter]="filtroStock">
+  <table>
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Descripción</th>
+        <th>Precio</th>
+        <th>IGV</th>
+        <th>Stock</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of filtrados; trackBy: trackById"
+        [class.inventory-row-removing]="eliminandoAnimacionId === p.id">
+        <td><b>{{ p.nombre }}</b><br><small>{{ p.codigo }}</small></td>
+        <td>{{ p.descripcion || '-' }}</td>
+        <td>S/ {{ p.precio | number:'1.2-2' }}</td>
+        <td>{{ p.afectacionIgv || 'Sin clasificar' }}</td>
+        <td>{{ p.stock }}</td>
+        <td><span [class.danger]="p.activo === false || estado(p) !== 'DISPONIBLE'" class="status">{{ p.activo === false
+            ? 'Inactivo' : textoEstado(p) }}</span></td>
+        <td>
+          <div class="producto-acciones">
+  <!-- Ver detalle -->
+  <button type="button" class="link accion-ver" (click)="verDetalle(p)" title="Ver" aria-label="Ver">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M2.5 12s3.7-7 9.5-7 9.5 7 9.5 7-3.7 7-9.5 7-9.5-7-9.5-7Z" />
+      <circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.18" />
+    </svg>
+  </button>
+
+  <!-- Editar -->
+  <button type="button" class="link accion-editar" *ngIf="auth.isAdmin" (click)="editar(p)" title="Editar"
+    aria-label="Editar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" fill="currentColor" fill-opacity="0.16" />
+    </svg>
+  </button>
+
+  <!-- Ingresar mercancía -->
+  <button type="button" class="link accion-mercancia" *ngIf="auth.isAdmin" (click)="abrirAjuste(p)"
+    title="Ingresar mercancía" aria-label="Ingresar mercancía">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"
+        fill="currentColor" fill-opacity="0.14" />
+      <path d="M12 9v6" />
+      <path d="M9 12h6" />
+    </svg>
+  </button>
+
+  <!-- Reactivar -->
+  <button type="button" class="link accion-reactivar" *ngIf="auth.isAdmin && p.activo === false" (click)="reactivar(p)"
+    [disabled]="procesandoEliminar" title="Reactivar" aria-label="Reactivar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="currentColor" fill-opacity="0.12" />
+      <path d="M3 3v5h5" />
+    </svg>
+  </button>
+
+  <!-- Eliminar (conserva tu papelera animada) -->
+  <button type="button" class="link danger-text trash-eat-button accion-eliminar"
+    [class.trash-eating]="eliminandoAnimacionId === p.id"
+    [disabled]="procesandoEliminar || eliminandoAnimacionId === p.id"
+    *ngIf="auth.isAdmin && p.activo !== false"
+    (click)="solicitarEliminar(p)"
+    aria-label="Eliminar artículo"
+    title="Eliminar">
+    <span class="trash-bin" aria-hidden="true">
+      <span class="trash-bin-lid"></span>
+      <span class="trash-bin-body"></span>
+    </span>
+  </button>
+</div>
+        </td>
+      </tr>
+      <tr *ngIf="cargandoCatalogo">
+        <td colspan="7" class="empty" role="status">Consultando catálogo…</td>
+      </tr>
+      <tr *ngIf="!cargandoCatalogo && !errorCatalogo && !filtrados.length">
+        <td colspan="7" class="empty">{{ q.trim() || filtroStock !== 'todos' ? mensajeSinResultados : 'No hay productos
+          registrados.' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="modal product-modal" *ngIf="detalle" role="presentation">
+  <section class="dialog inventory-dialog" role="dialog" aria-modal="true" aria-label="Detalle del producto">
+    <span class="product-dialog-eyebrow">FICHA DEL ARTÍCULO</span>
+    <h3>{{ detalle.nombre }}</h3>
+    <p>{{ detalle.descripcion || 'Sin descripción' }}</p>
+    <dl class="inventory-details">
+      <div>
+        <dt>Código del producto</dt>
+        <dd>{{ detalle.codigo }}</dd>
+      </div>
+      <div>
+        <dt>Precio</dt>
+        <dd>S/ {{ detalle.precio | number:'1.2-2' }}</dd>
+      </div>
+      <div>
+        <dt>Stock</dt>
+        <dd>{{ detalle.stock }}</dd>
+      </div>
+      <div>
+        <dt>Estado</dt>
+        <dd>{{ textoEstado(detalle) }}</dd>
+      </div>
+    </dl>
+    <section *ngIf="auth.isAdmin" aria-label="Kardex de inventario">
+      <h4>Kardex de inventario</h4>
+      <p *ngIf="cargandoHistorial" role="status">Cargando historial…</p>
+      <p *ngIf="errorHistorial" class="product-form-error" role="alert">{{ errorHistorial }}</p>
+      <ng-container *ngIf="!cargandoHistorial && !errorHistorial">
+        <p *ngIf="!historial.length">Todavía no hay ajustes registrados.</p>
+        <ol *ngIf="historial.length" style="max-height: 12rem; overflow: auto;">
+          <li *ngFor="let ajuste of historial">
+            <strong>{{ ajuste.tipo === 'REPONER' ? '+' : '−' }}{{ ajuste.cantidad }}</strong>
+            · {{ ajuste.stockAnterior }} → {{ ajuste.stockNuevo }}
+            · {{ ajuste.fecha | date:'dd/MM/yyyy HH:mm':'-0500' }}<br>
+            {{ ajuste.motivo }}
+          </li>
+        </ol>
+      </ng-container>
+    </section>
+    <div class="actions"><button type="button" (click)="detalle=null">Cerrar</button></div>
+  </section>
+</div>
+<div class="modal product-modal" *ngIf="ajusteProducto" role="presentation">
+  <form class="dialog inventory-dialog" role="dialog" aria-modal="true" aria-label="Ajustar stock"
+    (ngSubmit)="confirmarAjuste()">
+    <span class="product-dialog-eyebrow">CONTROL DE INVENTARIO</span>
+    <h3>Ingresar mercancía / ajuste excepcional</h3>
+    <p>{{ ajusteProducto.nombre }}</p>
+    <p>Stock actual: <strong>{{ ajusteProducto.stock }}</strong></p>
+    <label>Operación
+      <select name="tipoAjuste" [(ngModel)]="tipoAjuste">
+        <option value="reponer">Reponer (sumar)</option>
+        <option value="descontar">Descontar (restar)</option>
+      </select>
+    </label>
+    <label>Cantidad
+      <input name="cantidadAjuste" type="number" min="1" step="1" [(ngModel)]="cantidadAjuste" required>
+    </label>
+    <div class="inventory-preview">Stock estimado: <strong>{{ stockEstimado }}</strong></div>
+    <label>Motivo del ajuste <span class="required-star">*</span>
+      <textarea name="motivoAjuste" [(ngModel)]="motivoAjuste" maxlength="250" rows="2"
+        placeholder="Ej. Conteo físico o producto dañado" required></textarea>
+    </label>
+    <div *ngIf="errorAjuste" role="alert" class="product-form-error">{{ errorAjuste }}</div>
+    <div class="actions"><button type="button" class="secondary" (click)="ajusteProducto=null"
+        [disabled]="procesandoAjuste">Cancelar</button><button type="submit" [disabled]="procesandoAjuste">{{
+        procesandoAjuste ? 'Aplicando...' : 'Confirmar ajuste' }}</button></div>
+  </form>
+</div>
+<div class="modal product-modal" *ngIf="productoEliminar" role="presentation">
+  <section class="dialog inventory-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
+    <span class="product-dialog-eyebrow">CONFIRMAR ACCIÓN</span>
+    <h3 id="delete-title">¿Eliminar artículo?</h3>
+    <p>Confirma si deseas eliminar <strong>{{ productoEliminar.nombre }}</strong> del catálogo.</p>
+    <p>Solo se pueden eliminar productos con stock 0. El artículo no se borra: pasa a <b>INACTIVO</b>, se mantiene en el
+      catálogo con su historial y ya no aparece para vender. Puedes reactivarlo cuando quieras.</p>
+    <p *ngIf="errorEliminar" class="product-form-error" role="alert">{{ errorEliminar }}</p>
+    <div class="actions"><button type="button" class="secondary" (click)="productoEliminar=null"
+        [disabled]="procesandoEliminar">Cancelar</button><button type="button" class="danger-button"
+        (click)="confirmarEliminar()" [disabled]="procesandoEliminar">{{ procesandoEliminar ? 'Eliminando...' : 'Sí,
+        eliminar' }}</button></div>
+  </section>
+</div>
+<div class="modal product-modal" *ngIf="abierto" role="presentation">
+  <form class="dialog product-dialog" (ngSubmit)="guardar()" role="dialog" aria-modal="true"
+    aria-labelledby="titulo-producto" novalidate>
+    <div class="product-dialog-head">
+      <div>
+        <span class="product-dialog-eyebrow">MARANATHA · CATÁLOGO</span>
+        <h3 id="titulo-producto">{{ form.id ? 'Editar artículo' : 'Registrar nuevo artículo' }}</h3>
+        <p>Completa la información para mantener actualizado tu inventario.</p>
+      </div>
+      <button class="product-dialog-close" type="button" (click)="cerrarModal()"
+        aria-label="Cerrar formulario">×</button>
+    </div>
+    <div class="product-dialog-fields">
+      <label>Nombre del artículo <span class="required-star">*</span>
+        <input [(ngModel)]="form.nombre" name="nombre" required maxlength="150"
+          placeholder="Ej. Cuaderno cuadriculado A4"
+          [class.field-invalid]="(errorFormulario && !form.nombre.trim()) || !!duplicado" (input)="limpiarError()"
+          autofocus>
+      </label>
+      <div class="nombre-duplicado" *ngIf="duplicado as d" role="alert">
+        <p><span aria-hidden="true">!</span><b>Ya existe un artículo llamado “{{ d.nombre }}”</b> ({{ d.codigo }}{{
+          d.activo === false ? ', inactivo' : '' }}, stock {{ d.stock }}). Usa otro nombre o edita el existente.</p>
+        <div class="nombre-sugerencias">
+          <small *ngIf="sugerenciasNombre.length">Prueba con:</small>
+          <button type="button" *ngFor="let s of sugerenciasNombre" (click)="usarNombre(s)">{{ s }}</button>
+          <button type="button" class="nombre-editar" (click)="editar(d)">Editar el existente</button>
+        </div>
+      </div>
+      <label>Descripción <span class="required-star">*</span>
+        <input [(ngModel)]="form.descripcion" name="descripcion" required maxlength="500"
+          placeholder="Características del artículo"
+          [class.field-invalid]="errorFormulario && !form.descripcion?.trim()" (input)="limpiarError()">
+      </label>
+      <div class="row">
+        <label>Precio (S/) <span class="required-star">*</span>
+          <input type="number" min="0.01" step="0.01" [(ngModel)]="form.precio" name="precio" required
+            [class.field-invalid]="errorFormulario && (!form.precio || form.precio <= 0)" (input)="limpiarError()">
+        </label>
+        <label *ngIf="!form.id">Stock inicial <span class="required-star">*</span>
+          <input type="number" min="0" step="1" [(ngModel)]="form.stock" [readonly]="!!form.id" name="stock" required
+            [class.field-invalid]="errorFormulario && (!esStockValido())" (input)="limpiarError()">
+        </label>
+      </div>
+      <p class="product-field-hint">El precio debe ser mayor que cero y el stock debe ser un número entero no negativo.
+      </p>
+      <label>Tipo de afectación del IGV
+        <select [(ngModel)]="form.afectacionIgv" name="afectacionIgv">
+          <option [ngValue]="null">Sin clasificar</option>
+          <option value="GRAVADO">Gravado - Código SUNAT 10</option>
+          <option value="EXONERADO">Exonerado - Código SUNAT 20</option>
+          <option value="INAFECTO">Inafecto - Código SUNAT 30</option>
+        </select>
+      </label>
+      <small>Selecciona la clasificación tributaria correspondiente al producto.</small>
+      <p class="product-field-hint">El precio debe ser mayor que cero. El stock se modifica mediante movimientos de
+        inventario.</p>
+      <div class="product-form-error" *ngIf="errorFormulario" role="alert"><span aria-hidden="true">!</span>{{
+        errorFormulario }}</div>
+    </div>
+    <div class="actions product-dialog-actions">
+      <button type="button" class="secondary" (click)="cerrarModal()" [disabled]="procesando">Cancelar</button>
+      <button type="submit" class="workspace-primary" [disabled]="procesando || !!duplicado">{{ procesando ?
+        'Guardando...' : (form.id ? 'Guardar cambios' : 'Registrar artículo') }}</button>
+    </div>
+  </form>
+</div>

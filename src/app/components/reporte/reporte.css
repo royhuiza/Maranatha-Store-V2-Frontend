@@ -1,0 +1,14 @@
+/* Distribución de reportes; conserva los colores globales del sistema. */
+.report-nav {display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:16px 0 22px;}
+.report-tabs {display:flex;gap:6px;flex-wrap:wrap;}
+.report-tabs button:not(.selected) {background:transparent;color:inherit;border:1px solid currentColor;}
+.report-tabs button.selected {font-weight:700;box-shadow:inset 0 -3px 0 currentColor;}
+.report-workspace .report-filter-layout {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.report-filter-layout .period-full {grid-column:1/-1;}
+.report-filter-layout label {min-width:0;display:flex;flex-direction:column;gap:6px;}
+.report-filter-layout input,.report-filter-layout select {width:100%;box-sizing:border-box;}
+.report-actions {display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:20px;}
+@media(max-width:600px){.report-workspace .report-filter-layout{grid-template-columns:1fr;}.report-nav{align-items:stretch;}.report-tabs button{flex:1;}}
+
+.report-export-actions {display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-left:auto;}
+@media(max-width:600px){.report-export-actions{width:100%;margin-left:0;}.report-export-actions button{flex:1 1 auto;}}

@@ -1,0 +1,1 @@
+export interface DocumentoConsulta { tipoDocumento: 'DNI' | 'RUC'; numeroDocumento: string; nombre: string; nombres?: string; apellidoPaterno?: string; apellidoMaterno?: string; direccion?: string; estado?: string; condicion?: string; proveedor: string; }
