@@ -1,0 +1,24 @@
+
+    <div class="page-title">
+      <div>
+        <h2>Cambiar contraseña</h2>
+        <p>Actualiza tu contraseña de acceso.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <form class="profile-form" (ngSubmit)="guardar()">
+        <label>Contraseña actual
+          <input type="password" [(ngModel)]="currentPassword" name="currentPassword" required>
+        </label>
+        <label>Nueva contraseña
+          <input type="password" [(ngModel)]="newPassword" name="newPassword" required>
+        </label>
+        <label>Confirmar contraseña
+          <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required>
+        </label>
+        <button [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar cambios' }}</button>
+        <small class="error" *ngIf="error">{{ error }}</small>
+        <small class="success" *ngIf="success">{{ success }}</small>
+      </form>
+    </div>
+  

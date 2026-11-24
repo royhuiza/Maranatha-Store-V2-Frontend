@@ -69,6 +69,7 @@ export interface Cliente {
 }
 
 export interface DetalleVenta {
+  afectacionIgv?: TipoAfectacionIgv | null;
   id?: number;
   productoId: number;
   productoNombre?: string;
@@ -80,6 +81,12 @@ export interface DetalleVenta {
 export type TipoComprobante = 'BOLETA' | 'FACTURA' | 'NOTA_PEDIDO';
 
 export interface CrearVentaRequest {
+  metodoPago?: string;
+  compradorNombre?: string;
+  idempotencyKey?: string;
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  clienteNombre?: string;
   clienteId?: number;
   tipoComprobante: TipoComprobante;
   /** DNI/RUC escrito a mano cuando no hay cliente registrado; solo se guarda en la venta. */
@@ -88,6 +95,9 @@ export interface CrearVentaRequest {
 }
 
 export interface Venta {
+  estadoSunat?: string;
+  estadoPago?: string;
+  metodoPago?: string;
   id: number;
   clienteId?: number;
   clienteNombre: string;

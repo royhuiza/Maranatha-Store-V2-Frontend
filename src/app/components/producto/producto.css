@@ -1,0 +1,112 @@
+.acciones-fila {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Mismo espacio entre todos */
+  vertical-align: middle;
+}
+
+/* Mismo tamaño de botón y mismo fondo/hover para TODOS */
+.acciones-fila .link,
+.acciones-fila .trash-eat-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  margin: 0;
+  border-radius: 8px; /* Mismo redondeado en todos */
+  line-height: 1;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Mismo tamaño visual para todos los íconos (SVGs y papelera) */
+.acciones-fila .link svg,
+.acciones-fila .trash-bin {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+.producto-acciones {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.producto-acciones .link,
+.producto-acciones .trash-eat-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  margin: 0;
+  border-radius: 9px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.producto-acciones .link:hover:not(:disabled),
+.producto-acciones .trash-eat-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.producto-acciones .link svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.producto-acciones .trash-bin {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  position: relative;
+}
+
+/* Colores por acción */
+.producto-acciones .accion-ver {
+  color: #0284c7;
+}
+.producto-acciones .accion-ver:hover {
+  background-color: rgba(2, 132, 199, 0.12);
+}
+
+.producto-acciones .accion-editar {
+  color: #2563eb;
+}
+.producto-acciones .accion-editar:hover {
+  background-color: rgba(37, 99, 235, 0.12);
+}
+
+.producto-acciones .accion-mercancia {
+  color: #0d9488;
+}
+.producto-acciones .accion-mercancia:hover {
+  background-color: rgba(13, 148, 136, 0.12);
+}
+
+.producto-acciones .accion-reactivar {
+  color: #16a34a;
+}
+.producto-acciones .accion-reactivar:hover:not(:disabled) {
+  background-color: rgba(22, 163, 74, 0.12);
+}
+
+.producto-acciones .accion-eliminar {
+  color: #dc2626;
+}
+.producto-acciones .accion-eliminar:hover:not(:disabled) {
+  background-color: rgba(220, 38, 38, 0.12);
+}

@@ -1,35 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../core/api.service';
+import { ApiService } from '../../services/api';
 
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="page-title">
-      <div>
-        <h2>Cambiar contraseña</h2>
-        <p>Actualiza tu contraseña de acceso.</p>
-      </div>
-    </div>
-    <div class="panel">
-      <form class="profile-form" (ngSubmit)="guardar()">
-        <label>Contraseña actual
-          <input type="password" [(ngModel)]="currentPassword" name="currentPassword" required>
-        </label>
-        <label>Nueva contraseña
-          <input type="password" [(ngModel)]="newPassword" name="newPassword" required>
-        </label>
-        <label>Confirmar contraseña
-          <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required>
-        </label>
-        <button [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar cambios' }}</button>
-        <small class="error" *ngIf="error">{{ error }}</small>
-        <small class="success" *ngIf="success">{{ success }}</small>
-      </form>
-    </div>
-  `
+  styleUrls: ['./cambiarcontrasena.css'], templateUrl: './cambiarcontrasena.html'
 })
 export class ChangePasswordComponent {
   private readonly api = inject(ApiService);

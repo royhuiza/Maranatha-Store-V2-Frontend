@@ -1,0 +1,32 @@
+
+    <section class="business-overview">
+      <div class="overview-heading"><div><span class="eyebrow">RESUMEN OPERATIVO</span><h2>Tu negocio en cifras.</h2><p>Consulta la actividad comercial y la disponibilidad del catálogo.</p></div></div>
+      <div *ngIf="error" class="notice error-notice" role="alert">{{error}}</div>
+      <div *ngIf="!cargado && cargando" class="loading-overview" role="status">Consultando los datos del negocio…</div>
+      <ng-container *ngIf="cargado">
+        <div class="overview-metrics">
+          <article class="overview-metric metric-feature"><span class="metric-icon" aria-hidden="true">↗</span><span>Ventas emitidas</span><strong>{{ventas}}</strong><small>Historial sin anuladas</small></article>
+          <article class="overview-metric"><span class="metric-icon" aria-hidden="true">▤</span><span>Productos activos</span><strong>{{productos}}</strong><small>Artículos en el catálogo</small></article>
+          <article class="overview-metric metric-warning"><span class="metric-icon" aria-hidden="true">!</span><span>Por reponer</span><strong>{{stockBajo}}</strong><small>En o bajo su stock mínimo</small></article>
+          <article class="overview-metric"><span class="metric-icon" aria-hidden="true">♙</span><span>Sin stock</span><strong>{{sinStock}}</strong><small>Productos agotados</small></article>
+        </div>
+        <div class="overview-metrics"><article class="overview-metric"><span>Ventas de hoy</span><strong>S/ {{totalHoy | number:'1.2-2'}}</strong></article><article class="overview-metric"><span>Ventas del mes</span><strong>S/ {{totalMes | number:'1.2-2'}}</strong></article></div><div class="overview-charts">
+          <article class="overview-glass sales-activity">
+            <span class="eyebrow">ACTIVIDAD COMERCIAL</span><h3>Evolución de ventas</h3>
+            <div class="period-tabs" role="group" aria-label="Período de ventas"><button type="button" *ngFor="let p of ['7','15','30']" [class.selected]="periodo===p" [attr.aria-pressed]="periodo===p" (click)="cambiarPeriodo(p)">{{p}} días</button></div>
+            <p class="period-range">{{desde | date:'dd/MM/yyyy'}} — {{hasta | date:'dd/MM/yyyy'}} <span *ngIf="cargando"> · Actualizando…</span></p>
+            <div class="sales-amount"><strong>S/ {{totalSemana | number:'1.2-2'}}</strong><span>Total registrado<br><small>{{unidadesSemana}} unidades vendidas</small></span></div>
+            <svg class="sales-line" viewBox="0 0 760 250" role="img" aria-label="Evolución de ventas diarias">
+              <g *ngFor="let m of marcas"><line x1="80" x2="730" [attr.y1]="m.y" [attr.y2]="m.y" class="chart-grid"/><text x="72" [attr.y]="m.y+4" text-anchor="end">{{m.total | number:'1.0-2'}}</text></g>
+              <g *ngFor="let p of puntos"><line [attr.x1]="p.x" [attr.x2]="p.x" y1="30" y2="210" class="chart-grid chart-grid-vertical"/></g>
+              <polygon [attr.points]="area" class="line-area"/><polyline [attr.points]="linea" class="line-stroke"/>
+              <g *ngFor="let p of puntos; let i=index"><circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" class="line-point"><title>{{p.fecha}}: S/ {{p.total | number:'1.2-2'}}</title></circle><text *ngIf="mostrarFecha(i)" [attr.x]="p.x" y="235" text-anchor="middle">{{p.fecha | date:'dd/MM'}}</text></g>
+            </svg>
+            <p class="chart-footnote">Ventas emitidas, sin anulaciones. Los importes no acreditan un cobro confirmado.</p>
+          </article>
+          <article class="overview-glass inventory-health"><span class="eyebrow">SALUD DEL INVENTARIO</span><h3>Listos para vender</h3><div class="stock-ring" [style.background]="anillo" role="img" [attr.aria-label]="(productos-stockBajo) + ' productos disponibles de ' + productos"><div><strong>{{porcentajeDisponible | number:'1.0-0'}}<span>%</span></strong><small>del catálogo activo</small></div></div><div class="stock-legend"><span><i class="legend-available"></i>Stock disponible<b>{{productos-stockBajo}}</b></span><span><i class="legend-low"></i>Requieren reposición<b>{{stockBajo}}</b></span></div><a routerLink="/productos" class="overview-action inventory-button">Revisar inventario <span aria-hidden="true">→</span></a></article>
+        </div>
+        <article class="overview-glass ranking-card"><span class="eyebrow">RENDIMIENTO COMERCIAL</span><h3>Top 5 productos más vendidos</h3><p>Clasificación por unidades vendidas · {{periodo}} días</p><p *ngIf="!topProductos.length">Sin ventas en el período.</p><ol class="ranking-list"><li *ngFor="let p of topProductos; let i=index"><span class="ranking-position" [class.first]="i===0">{{i+1}}</span><div class="ranking-body"><div class="ranking-label"><strong>{{p.nombre}}</strong><b>{{p.cantidad}} {{p.cantidad===1?'unidad':'unidades'}}</b></div><div class="ranking-track"><div [class.first]="i===0" [style.width.%]="p.cantidad/maxRanking*100"></div></div></div></li></ol></article><div class="overview-bottom"><span><i></i>Actualizado {{actualizado | date:'HH:mm:ss'}} · Cada 30 segundos</span><a routerLink="/ventas" class="sales-button"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 3h3l3 13h11l3-9H6"/><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/></svg> Ir a ventas <span aria-hidden="true">→</span></a></div>
+      </ng-container>
+    </section>
+  

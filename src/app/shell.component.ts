@@ -5,8 +5,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
-import { AuthService } from './core/auth.service';
-import { ChatWidgetComponent } from './shared/chat-widget/chat-widget.component';
+import { AuthService } from './services/auth';
 
 type SectionId = 'inicio' | 'productos' | 'clientes' | 'ventas' | 'reportes' | 'cuenta';
 
@@ -28,11 +27,11 @@ const SECTIONS: Record<string, SectionVisual> = {
   'cambiar-contrasena': { id: 'cuenta', eyebrow: 'CUENTA / SEGURIDAD', title: 'Tu acceso, protegido.', description: 'Gestiona la seguridad de tu cuenta.' },
   'chatbot': { id: 'reportes', eyebrow: 'ASISTENCIA / ACTIVIDAD', title: 'Conversaciones del asistente.', description: 'Consulta la actividad reciente del chatbot.' }
 };
-const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARANATHA STORE', title: 'El pulso de tu librería.', description: 'Ventas, inventario y clientes en una sola vista.' };
+const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARANATHA STORE', title: 'El pulso de tu librería.', description: 'Ventas e inventario en una sola vista.' };
 
 @Component({
   standalone: true,
-  imports: [OriginkitSceneComponent, AmbientSceneComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ChatWidgetComponent],
+  imports: [OriginkitSceneComponent, AmbientSceneComponent, CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="layout maranatha-app" [class.is-dark]="theme.dark()" [class.steep-home]="section.id === 'inicio'"
       [class.workspace-data]="section.id === 'productos' || section.id === 'clientes' || section.id === 'cuenta'"
@@ -42,7 +41,6 @@ const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARAN
         <nav aria-label="Navegación principal">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Inicio</span></a>
           <a routerLink="/productos" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Productos y stock</span></a>
-          <a routerLink="/clientes" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-label">Clientes</span></a>
           <a routerLink="/ventas" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">◇</span><span class="nav-label">Ventas y facturación</span></a>
           <a *ngIf="auth.isAdmin" routerLink="/usuarios" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-label">Usuarios y roles</span></a>
           <a *ngIf="auth.isAdmin" routerLink="/reportes" routerLinkActive="active"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-label">Reportes Excel</span></a>
@@ -52,7 +50,7 @@ const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARAN
       </aside>
       <main class="app-main">
         <header class="app-topbar">
-          <div><h1>{{auth.isAdmin ? 'Panel de administración' : 'Mi espacio de ventas'}}</h1><p>{{auth.isAdmin ? 'Inventario, clientes, ventas y usuarios' : 'Consulta productos y registra tus ventas'}}</p></div>
+          <div><h1>{{auth.isAdmin ? 'Panel de administración' : 'Mi espacio de ventas'}}</h1><p>{{auth.isAdmin ? 'Inventario, ventas y usuarios' : 'Consulta productos y registra tus ventas'}}</p></div>
           <div class="topbar-actions">
             <button type="button" class="theme-toggle theme-switch" (click)="theme.toggle($event, view)"
               [attr.aria-label]="theme.dark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
@@ -131,7 +129,7 @@ const HOME_SECTION: SectionVisual = { id: 'inicio', eyebrow: 'BIENVENIDO / MARAN
         </section>
       </main>
     </div>
-    <app-chat-widget></app-chat-widget>
+    
   `
 })
 export class ShellComponent implements OnDestroy {

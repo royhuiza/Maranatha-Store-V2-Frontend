@@ -1,0 +1,209 @@
+.field-title {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.required-mark,
+.field-error {
+    color: #dc2626;
+}
+
+.field-valid {
+    color: #16803c;
+}
+
+.password-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.password-row input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+.password-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    color: inherit;
+    background: transparent;
+    border: 1px solid currentColor;
+}
+
+:host .team-create .field-title {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 4px;
+}
+
+:host .team-create .required-mark {
+    display: inline;
+}
+
+:host .team-create .field-error {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+:host .team-create .field-valid {
+    color: #16803c;
+    font-weight: 600;
+}
+
+:host .team-create input.input-error {
+    border: 1px solid #dc2626;
+}
+
+:host .team-create input.input-valid {
+    border: 1px solid #16803c;
+}
+
+.validation-summary {
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    padding: 12px;
+    color: inherit;
+    font-size: .875rem;
+}
+
+.validation-summary ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+:host .team-create button:disabled {
+    cursor: not-allowed;
+    opacity: .6;
+}
+
+@media (prefers-color-scheme: dark) {
+    :host .team-create .field-error {
+        color: #f87171;
+    }
+
+    :host .team-create .field-valid {
+        color: #4ade80;
+    }
+}
+
+.user-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.user-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.user-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.user-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.user-actions button svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+/* Colores por acción */
+.user-actions .accion-ver {
+  color: #0284c7;
+}
+.user-actions .accion-ver:hover:not(:disabled) {
+  background-color: rgba(2, 132, 199, 0.12);
+}
+
+.user-actions .accion-editar {
+  color: #2563eb;
+}
+.user-actions .accion-editar:hover:not(:disabled) {
+  background-color: rgba(37, 99, 235, 0.12);
+}
+
+.user-actions .accion-desactivar,
+.user-actions .danger-action {
+  color: #dc2626;
+}
+.user-actions .accion-desactivar:hover:not(:disabled),
+.user-actions .danger-action:hover:not(:disabled) {
+  background-color: rgba(220, 38, 38, 0.12);
+}
+
+.user-actions .accion-reactivar {
+  color: #16a34a;
+}
+.user-actions .accion-reactivar:hover:not(:disabled) {
+  background-color: rgba(22, 163, 74, 0.12);
+}
+
+.team-create .password-row {
+    display: flex
+}
+
+.team-create .password-toggle {
+    flex: 0 0 auto
+}
+
+:host .team-create .password-row {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+:host .team-create .password-row input {
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 48px;
+}
+
+:host .team-create .password-row .password-toggle {
+    position: absolute;
+    inset: auto;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:host .team-create .password-row .password-toggle:focus-visible {
+    outline: 2px solid currentColor;
+}

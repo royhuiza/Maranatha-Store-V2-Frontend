@@ -1,0 +1,23 @@
+
+<div class="page-title"><h2>Reportes estadísticos</h2></div>
+<div class="report-nav"><div class="report-tabs" role="group" aria-label="Tipo de reporte"><button type="button" [class.selected]="pestana==='ventas'" [attr.aria-pressed]="pestana==='ventas'" (click)="pestana='ventas'">Ventas</button><button type="button" [class.selected]="pestana==='productos'" [attr.aria-pressed]="pestana==='productos'" (click)="pestana='productos'">Productos e inventario</button></div><div class="report-export-actions"><button *ngIf="pestana==='ventas'" class="workspace-primary" [disabled]="!valido" (click)="exportarVentas()">Exportar Excel de ventas</button><button *ngIf="pestana==='productos'" class="workspace-primary" [disabled]="!inventarioListo" (click)="inventario()">Exportar Excel de productos</button><button class="secondary" [disabled]="!valido" (click)="integral()">Exportar informe integral</button></div></div>
+<p class="error" role="alert">{{error}}</p><section class="panel report-workspace"><div class="report-filters report-filter-layout">
+<label class="period-full">Período<select [(ngModel)]="periodo" (ngModelChange)="cambiarPeriodo()"><option value="1">Hoy</option><option value="7">Últimos 7 días</option><option value="15">Últimos 15 días</option><option value="30">Últimos 30 días</option><option value="mes">Este mes</option><option value="personalizado">Personalizado</option></select></label><label>Fecha inicial<input type="date" [(ngModel)]="desde" [max]="hasta || hoy" (ngModelChange)="periodo='personalizado'"></label><label>Fecha final<input type="date" [(ngModel)]="hasta" [min]="desde" [max]="hoy" (ngModelChange)="periodo='personalizado'"></label></div><p *ngIf="valido">Desde {{desde | date:'dd/MM/yyyy'}} hasta {{hasta | date:'dd/MM/yyyy'}}. Se excluyen ventas anuladas.</p><p class="error" *ngIf="!valido">Seleccione un rango válido de hasta 366 días, sin fechas futuras.</p>
+</section><section class="panel report-workspace" *ngIf="pestana==='ventas'"><div class="report-section-title"><span class="module-kicker">ACTIVIDAD COMERCIAL</span><h3>Ventas del período</h3></div><div class="cards report-metrics"><article><span>Ventas</span><strong>{{filtradas.length}}</strong></article><article class="report-feature"><span>Total registrado</span><strong>S/ {{total | number:'1.2-2'}}</strong></article><article><span>Promedio por venta</span><strong>S/ {{promedio | number:'1.2-2'}}</strong></article></div>
+<div class="report-chart" *ngIf="filtradas.length">
+  <div class="report-chart-row" *ngFor="let grupo of grupos">
+    <span>{{grupo.nombre}}</span>
+    <div class="report-track" aria-hidden="true"><div class="stat-bar" [style.width.%]="grupo.total / maximo * 100"></div></div>
+    <strong>S/ {{grupo.total | number:'1.2-2'}}</strong>
+  </div>
+</div><p *ngIf="!filtradas.length">No hay ventas emitidas para este período.</p>
+<h3>Productos más vendidos</h3><div class="table-wrap"><table><thead><tr><th>Producto</th><th>Unidades</th><th>Importe</th></tr></thead><tbody><tr *ngFor="let p of ranking"><td>{{p.nombre}}</td><td>{{p.cantidad}}</td><td>S/ {{p.total | number:'1.2-2'}}</td></tr></tbody></table></div></section>
+<section class="panel report-workspace" *ngIf="pestana==='productos'">
+<div class="report-section-title"><span class="module-kicker">CONTROL DE INVENTARIO</span><h3>Productos e inventario actual</h3></div>
+<p>Existencias actuales. El período de ventas no modifica el stock actual.</p>
+<p *ngIf="!inventarioListo">Cargando inventario...</p>
+<div *ngIf="inventarioListo">
+<div class="cards report-metrics"><article><span>Productos activos</span><strong>{{activos.length}}</strong></article><article><span>Unidades disponibles</span><strong>{{unidades}}</strong></article><article><span>Stock bajo</span><strong>{{bajos}}</strong></article><article><span>Sin stock</span><strong>{{agotados}}</strong></article></div>
+<div class="table-wrap"><table><thead><tr><th>Código</th><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th></tr></thead><tbody><tr *ngFor="let p of productos"><td>{{p.codigo || '—'}}</td><td>{{p.nombre}}</td><td>S/ {{p.precio | number:'1.2-2'}}</td><td>{{p.stock}}</td><td>{{estado(p)}}</td></tr></tbody></table></div>
+<p *ngIf="!productos.length">No hay productos registrados.</p>
+</div></section>
