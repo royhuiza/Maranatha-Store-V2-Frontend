@@ -1,3 +1,4 @@
+import type { EstadoWeb, LocalWeb, BetaWeb } from '../core/facturacion-web';
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -134,7 +135,7 @@ export class ApiService {
   /** Consulta de DNI (proxy externo de desarrollo, como feature/integracion-sunat-huiza). */
   buscarDni(dni: string): Observable<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }> {
     return this.http.get<{ numeroDocumento: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; estado?: string }>(
-      `/external/dni?numero=${encodeURIComponent(dni)}`
+      this.base.endsWith(':18080') ? `${this.base}/api/facturacion/dni/${encodeURIComponent(dni)}` : `/external/dni?numero=${encodeURIComponent(dni)}`
     );
   }
 
@@ -159,4 +160,10 @@ export class ApiService {
       { username, password }
     );
   }
+
+  estadoFiscalWeb(id: number) { return this.http.get<EstadoWeb>(`${this.base}/api/ventas/${id}/estado-sunat`); }
+  comprobanteLocalWeb(id: number) { return this.http.get<LocalWeb>(`${this.base}/api/ventas/${id}/comprobante-local`); }
+  emitirLaboratorioWeb(operacion: string) { return this.http.post<{serie:string;numero:string;estadoSunat:string;codigo:string|null;ambiente:string;validezFiscal:boolean}>(`${this.base}/api/ventas/laboratorio/emision-beta/${encodeURIComponent(operacion)}`, {}); }
+  evidenciaVentaBetaWeb(serie: string, numero: string) { return this.http.get<BetaWeb>(`${this.base}/api/facturacion/laboratorio/comprobantes/${encodeURIComponent(serie)}/${encodeURIComponent(numero)}`); }
+  evidenciaBetaWeb(numero: string) { return this.http.get<BetaWeb>(`${this.base}/api/facturacion/laboratorio/comprobantes/${encodeURIComponent(numero)}`); }
 }

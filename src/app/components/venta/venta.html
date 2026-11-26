@@ -156,6 +156,7 @@
         </div>
       </section>
       <section class="panel receipt" id="comprobante" *ngIf="ventaEmitida">
+<div class="fiscal-web-summary"><strong>Estado SUNAT: {{ estadoFiscalWeb(ventaEmitida) }}</strong><span>Op. exonerada: {{ monedaFiscalWeb('exonerado') }}</span><span>Op. inafecta: {{ monedaFiscalWeb('inafecto') }}</span><small>Representación sin confirmación de validez fiscal.</small><div *ngIf="qrInternoWeb(ventaEmitida) as qr"><img [src]="qr" width="100" height="100" alt="QR interno"><small>{{ ventaEmitida.serie === 'B9B1' || ventaEmitida.serie === 'F9B1' ? 'QR del XML de prueba (sin validez fiscal)' : 'QR de referencia interna, no fiscal' }}</small></div><div class="fiscal-web-actions"><button type="button" (click)="exportarVentaWeb(ventaEmitida,'TICKET',true)">Guardar Ticket 80 mm</button><button type="button" (click)="exportarVentaWeb(ventaEmitida,'A4',true)">Guardar PDF A4</button></div></div>
         <div class="comprobante-a4">
           <div class="receipt-head receipt-head-grid">
             <div class="company">
@@ -176,7 +177,7 @@
           <hr>
           <p>
             Fecha: {{ comprobanteFecha | date:'dd/MM/yyyy HH:mm' }}<br>
-            Estado SUNAT: {{ estadoFiscal(ventaEmitida) }}<br>Estado: {{ ventaEmitida.estado || 'BORRADOR' }}
+            Estado SUNAT: {{ estadoFiscalWeb(ventaEmitida) }}<br>Estado: {{ ventaEmitida.estado || 'BORRADOR' }}
           </p>
           <p>Cliente: {{ comprobanteCliente }}<br><small *ngIf="comprobanteDocumento">{{ comprobanteDocumento }}</small>
           </p>
@@ -204,11 +205,11 @@
           <table class="tax-summary">
             <tr>
               <td class="label">Op. Gravada</td>
-              <td class="value">S/ {{ comprobanteBase | number:'1.2-2' }}</td>
+              <td class="value">{{ monedaFiscalWeb('gravado') }}</td>
             </tr>
             <tr>
               <td class="label">IGV ({{ (igvRate*100) | number:'1.0-0' }}%)</td>
-              <td class="value">S/ {{ comprobanteIgv | number:'1.2-2' }}</td>
+              <td class="value">{{ monedaFiscalWeb('igv') }}</td>
             </tr>
             <tr class="total">
               <td class="label"><strong>TOTAL</strong></td>
@@ -242,8 +243,8 @@
               </div>
             </div>
             <div class="ticket-totals">
-              <div><span>SUBTOTAL</span><span class="right">S/ {{ comprobanteBase | number:'1.2-2' }}</span></div>
-              <div><span>IGV</span><span class="right">S/ {{ comprobanteIgv | number:'1.2-2' }}</span></div>
+              <div><span>SUBTOTAL</span><span class="right">{{ monedaFiscalWeb('gravado') }}</span></div>
+              <div><span>IGV</span><span class="right">{{ monedaFiscalWeb('igv') }}</span></div>
               <div class="total"><span><strong>TOTAL</strong></span><span class="right"><strong>S/ {{
                     comprobanteTotalConIgv | number:'1.2-2' }}</strong></span></div>
             </div>
@@ -280,10 +281,7 @@
           Confirmo que recibí el pago en efectivo
         </label>
       </div>
-      <div *ngIf="metodoPago === 'YAPE'" class="pago-pendiente"><img src="/pagos/yape-prueba.png"
-          alt="QR Yape de pruebas" style="width:220px;max-width:100%">
-        <p>QR personal de pruebas. No habilitado para registrar cobros.</p>
-      </div>
+      <div *ngIf="metodoPago === 'YAPE'" class="pago-pendiente">Pago digital no habilitado para cobros.</div>
       <div *ngIf="metodoPago !== 'EFECTIVO'" class="pago-pendiente">
         La integración de {{ metodoPago }} está pendiente. No se puede registrar este método como pagado todavía.
       </div>
@@ -338,9 +336,9 @@
         <tr *ngFor="let v of ventasFiltradas">
           <td><b>{{ v.serie }}-{{ v.numero }}</b><br><small>{{ textoTipo(v.tipoComprobante) }}</small></td>
           <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-          <td>{{ v.clienteNombre }}</td>
+          <td>{{ v.compradorLocalNombre || v.clienteNombre }}<small *ngIf="v.compradorLocalNombre"> · Comprador local {{ v.compradorLocalDocumento }}</small></td>
           <td>S/ {{ v.total | number:'1.2-2' }}</td>
-          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td><td>{{ estadoFiscal(v) }}</td>
+          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td><td>{{ estadoFiscalWeb(v) }} <button *ngIf="adminWeb &amp;&amp; v.tipoComprobante!=='NOTA_PEDIDO'" type="button" class="link" (click)="refrescarEstadoWeb(v)">Consultar SUNAT</button></td>
           <td>
             <div class="comprobante-acciones">
               <!-- Ver comprobante -->
@@ -421,7 +419,8 @@
       <div><small>Fecha de emisión</small><strong>{{comprobanteFecha | date:'dd/MM/yyyy HH:mm'}}</strong></div>
       <div><small>Total de la venta</small><strong class="confirm-total">S/ {{v.total | number:'1.2-2'}}</strong></div>
     </div>
-    <h3 class="confirm-heading">Compartir comprobante</h3>
+    <h3 class="confirm-heading">Formato del comprobante</h3><div class="fiscal-web-actions"><button [disabled]="envioOcupado" (click)="exportarVentaWeb(v,'TICKET',true)">Guardar Ticket 80 mm</button><button [disabled]="envioOcupado" (click)="exportarVentaWeb(v,'A4',true)">Guardar PDF A4</button></div>
+<h3 class="confirm-heading">Compartir comprobante</h3>
     <div class="envio-opciones compartir-grid">
       <button [disabled]="envioOcupado" (click)="seleccionarCanal('whatsapp')"><span>☎</span>WhatsApp</button><button
         [disabled]="envioOcupado" (click)="seleccionarCanal('correo')"><span>✉</span>Correo</button>

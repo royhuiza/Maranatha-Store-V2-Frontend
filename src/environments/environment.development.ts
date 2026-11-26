@@ -9,5 +9,5 @@ export const environment = {
   production: false,
 
   /** API Gateway (Spring Cloud Gateway) que expone los microservicios. */
-  apiUrl: 'http://localhost:8080',
+  apiUrl: 'http://localhost:18080',
 };

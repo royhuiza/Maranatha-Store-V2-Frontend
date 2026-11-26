@@ -95,6 +95,8 @@ export interface CrearVentaRequest {
 }
 
 export interface Venta {
+  compradorLocalNombre?: string;
+  compradorLocalDocumento?: string;
   estadoSunat?: string;
   estadoPago?: string;
   metodoPago?: string;

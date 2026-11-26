@@ -1,3 +1,5 @@
+import { firstValueFrom, timeout } from 'rxjs';
+import { BetaWeb, EstadoWeb, LocalWeb, FormatoWeb, betaCoincide, localCoincide, qrWeb, pdfVentaWeb, pdfBetaWeb, descargarWeb, vistaWeb, monedaWeb, etiquetaEstadoWeb, referenciaQrWeb } from '../../core/facturacion-web';
 import { getCountries, getCountryCallingCode, parsePhoneNumberFromString, CountryCode } from 'libphonenumber-js';
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
@@ -47,6 +49,8 @@ export class VentasComponent implements OnInit {
           venta.serie,
           venta.numero,
           `${venta.serie}-${venta.numero}`,
+          venta.compradorLocalNombre,
+          venta.compradorLocalDocumento,
           venta.clienteNombre,
           this.textoTipo(venta.tipoComprobante)
         ].join(' ').toLowerCase();
@@ -106,9 +110,10 @@ export class VentasComponent implements OnInit {
     return this.ventaEmitida?.total ?? this.totalBorrador;
   }
   get comprobanteCliente(): string {
-    return this.ventaEmitida?.clienteNombre || this.documentoNombre.trim() || this.clienteSeleccionado;
+    return this.ventaEmitida?.compradorLocalNombre ? this.ventaEmitida.compradorLocalNombre + " (comprador local)" : this.ventaEmitida?.clienteNombre || this.documentoNombre.trim() || this.clienteSeleccionado;
   }
   get comprobanteDocumento(): string {
+    if (this.ventaEmitida?.compradorLocalDocumento) return this.ventaEmitida.compradorLocalDocumento;
     if (this.ventaEmitida?.clienteDocumento) return this.ventaEmitida.clienteDocumento;
     const cliente = this.clientes.find(item => item.id === this.clienteId);
     if (cliente?.numeroDocumento) return `${cliente.tipoDocumento} ${cliente.numeroDocumento}`;
@@ -160,9 +165,10 @@ export class VentasComponent implements OnInit {
   get comprobanteInafecto(): number | null { return this.resumenFiscal?.inafecto ?? null; }
   get comprobanteTotalConIgv(): number { return this.comprobanteTotal; }
   estadoFiscal(v?: Venta): string {
+    if (v?.estado === 'ANULADA') return 'Anulado interno';
     if (v?.tipoComprobante === 'NOTA_PEDIDO') return 'No aplica';
     const estado = (v as (Venta & { estadoSunat?: string }) | undefined)?.estadoSunat;
-    const etiquetas: Record<string,string> = {"NO_APLICA": "No aplica", "PENDIENTE": "Pendiente", "EN_PROCESO": "En proceso", "ACEPTADO_BETA": "Aceptado en Beta", "OBSERVADO_BETA": "Observado en Beta", "RECHAZADO_BETA": "Rechazado en Beta", "ERROR_COMUNICACION": "Error de comunicación", "REQUIERE_REVISION": "Requiere revisión", "ACEPTADO": "Aceptado registrado (sin confirmación)", "OBSERVADO": "Observado registrado", "RECHAZADO": "Rechazado registrado"};
+    const etiquetas: Record<string,string> = {"NO_APLICA": "No aplica", "PENDIENTE": "Pendiente", "EN_PROCESO": "En proceso", "ACEPTADO_BETA": "Activo · Beta", "OBSERVADO_BETA": "Observado en Beta", "RECHAZADO_BETA": "Rechazado en Beta", "ERROR_COMUNICACION": "Error de comunicación", "REQUIERE_REVISION": "Requiere revisión", "ACEPTADO": "Aceptado registrado (sin confirmación)", "OBSERVADO": "Observado registrado", "RECHAZADO": "Rechazado registrado"};
     return etiquetas[estado ?? ''] ?? 'Sin registro fiscal';
   }
 
@@ -171,6 +177,8 @@ export class VentasComponent implements OnInit {
     this.cargarVentas();
     const pref = localStorage.getItem('maranatha.imprimir.formato');
     if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET' | 'A4';
+
+    this.api.sesion().subscribe({next:r=>{this.adminWeb=['ADMIN','ROLE_ADMIN'].includes(String(r.rol).toUpperCase());},error:()=>{this.adminWeb=false;}});
   }
   cambiarTipo(tipo: TipoComprobante): void { this.tipo = tipo; this.onTipoChange(); }
 
@@ -330,38 +338,30 @@ export class VentasComponent implements OnInit {
   }
   registrar(): void {
     if (this.procesando || this.requiereRevision || !this.detalles.length) return;
-    if (this.pasoVenta !== 'pago' || this.metodoPago !== 'EFECTIVO' || !this.pagoConfirmado) {
-      this.mostrarErrorSimple('Confirma el pago en efectivo antes de registrar la venta.');
-      return;
+    if (!this.datosComprobanteCompletos || this.pasoVenta !== 'pago' || this.metodoPago !== 'EFECTIVO' || !this.pagoConfirmado) {
+      this.mostrarErrorSimple('Completa los datos y confirma el pago en efectivo.'); return;
     }
-    // El cobro digital permanece bloqueado hasta integrar la conciliación.
-    this.procesando = true;
-    this.mensaje = '';
-    this.claveVentaActual ??= crypto.randomUUID();
-    this.claveVentaActual ??= crypto.randomUUID();
-    this.api.crearVenta({
-      documento: this.documento.trim() || undefined,
-      compradorNombre: [this.documentoNombre, this.tipo === 'BOLETA' ? this.documentoApellidos : ''].join(' ').trim() || undefined,
-      metodoPago: this.metodoPago,
-      tipoComprobante: this.tipo,
-      detalles: this.detalles.map(item => ({ productoId: item.productoId, cantidad: item.cantidad }))
-    }, this.claveVentaActual).subscribe({
-      next: venta => {
-        this.procesando = false;
-        this.ventaEmitida = venta;
-        this.detalles = [];
-        this.mensaje = `Venta registrada: ${venta.serie}-${venta.numero}. El stock fue actualizado.`;
-        this.esError = false;
-        this.cargarCatalogos();
-        this.cargarVentas();
-        void this.compartirComprobante(venta, true);
-      },
-      error: error => {
-        this.procesando = false;
-        this.requiereRevision = true;
-        this.mostrarError(error, 'Registro sin confirmar. Revisa el historial antes de continuar.');
+    const numero = this.tipo === 'NOTA_PEDIDO' ? undefined : this.documento.trim();
+    const nombre = this.tipo === 'NOTA_PEDIDO' ? undefined : [this.documentoNombre, this.tipo === 'BOLETA' ? this.documentoApellidos : ''].join(' ').trim();
+    const tipoDocumento = this.tipo === 'FACTURA' ? 'RUC' as const : this.tipo === 'BOLETA' ? 'DNI' as const : undefined;
+    const bytes = crypto.getRandomValues(new Uint8Array(16)); bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+    const h = Array.from(bytes, b => b.toString(16).padStart(2,'0')).join('');
+    this.claveVentaActual ??= h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+    const clave = this.claveVentaActual;
+    const solicitud = { idempotencyKey: clave, metodoPago: this.metodoPago, tipoComprobante: this.tipo,
+      documento: numero, compradorNombre: nombre, tipoDocumento, numeroDocumento: numero, clienteNombre: nombre,
+      detalles: this.detalles.map(item => ({productoId:item.productoId,cantidad:item.cantidad})) };
+    this.procesando=true; this.mensaje='';
+    this.api.crearVenta(solicitud,clave).subscribe({next: async venta => {
+      if(['B9B1','F9B1'].includes(venta.serie)) {
+        try { await this.evidenciaPropia(venta); }
+        catch { this.procesando=false; this.requiereRevision=true; this.cargarVentas(); this.mostrarErrorSimple('Venta registrada; resultado fiscal no verificado. Revisa el historial y no vuelvas a cobrar.'); return; }
       }
-    });
+      this.procesando=false; this.claveVentaActual=undefined; this.ventaEmitida=venta; this.detalles=[];
+      this.mensaje='Venta registrada: '+venta.serie+'-'+venta.numero; this.esError=false;
+      this.cargarCatalogos(); this.cargarVentas(); void this.compartirComprobante(venta,true);
+    },error: error => { this.procesando=false; this.requiereRevision=true;
+      this.mostrarError(error,'Registro sin confirmar. Revisa el historial antes de volver a registrar.'); } });
   }
   anular(venta: Venta): void {
     if (!confirm(`¿Anular ${venta.serie}-${venta.numero}? El stock será repuesto.`)) return;
@@ -378,14 +378,20 @@ export class VentasComponent implements OnInit {
   }
   verComprobante(venta: Venta): void {
     this.ventaEmitida = venta; this.mostrarFormularioVenta = true; this.pasoVenta = 'carrito';
+
+    void this.consultarFiscalWeb(venta);
   }
   reimprimir(venta: Venta): void {
     this.ventaEmitida = venta;
     this.mostrarFormularioVenta = true;
     this.pasoVenta = 'carrito';
     this.mostrarDialogoImpresion = true;
+
+    void this.consultarFiscalWeb(venta);
   }
   nuevoComprobante(): void {
+    if (this.procesando || this.requiereRevision) { this.mostrarErrorSimple('Revisa el registro anterior antes de iniciar otra venta.'); return; }
+
     if (this.requiereRevision) { this.mostrarErrorSimple('Revisa el historial antes de repetir la operacion.'); return; }
     this.claveVentaActual = undefined;
     if (this.requiereRevision) { this.mostrarErrorSimple('Revisa el historial antes de repetir la operacion.'); return; }
@@ -418,25 +424,13 @@ export class VentasComponent implements OnInit {
     this.mostrarFormularioVenta = false;
     this.mostrarDialogoImpresion = false;
   }
-  abrirDialogoImpresion(): void {
-    // Mostrar siempre las opciones: permite elegir Ticket o A4 en cada impresión.
-    this.usarSiempreImpresion = false;
-    this.mostrarDialogoImpresion = true;
-  }
+  abrirDialogoImpresion(): void { this.mostrarDialogoImpresion=true; }
 
-  seleccionarFormato(formato: 'TICKET' | 'A4'): void {
-    if (!this.ventaEmitida) {
-      this.mostrarErrorSimple('No existe una venta registrada para imprimir.');
-      return;
-    }
-
-    this.mostrarDialogoImpresion = false;
-    if (this.usarSiempreImpresion) {
-      localStorage.setItem('maranatha.imprimir.formato', formato);
-      this.preferenciaImpresion = formato;
-    }
-
-    this.imprimirComprobante(this.ventaEmitida, formato);
+  async seleccionarFormato(formato: FormatoWeb): Promise<void> {
+    const venta=this.ventaEmitida;
+    if(!venta) return;
+    this.mostrarDialogoImpresion=false;
+    await this.exportarVentaWeb(venta,formato,false);
   }
 
   private imprimirComprobante(venta: Venta, formato: 'TICKET' | 'A4'): void {
@@ -567,14 +561,16 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
       if(panel) { panel.style.backgroundColor='#fff'; panel.style.color='#111'; }
     }});
   }
+  private async evidenciaPropia(v: Venta): Promise<BetaWeb> {
+    if(v.estado==='ANULADA' || (v as Venta & {estadoSunat?:string}).estadoSunat!=='ACEPTADO_BETA' || !['B9B1','F9B1'].includes(v.serie)) throw Error('Comprobante no aceptado');
+    const b=await firstValueFrom(this.api.evidenciaVentaBetaWeb(v.serie,v.numero).pipe(timeout(15000)));
+    if(!betaCoincide(b,v.numero)||b.comprobante!==v.serie+'-'+v.numero||(v.serie==='B9B1'&&v.tipoComprobante!=='BOLETA')||(v.serie==='F9B1'&&v.tipoComprobante!=='FACTURA')||Math.round(Number(b.total)*100)!==Math.round(v.total*100)) throw Error('Evidencia no coincide');
+    return b;
+  }
   private async crearPdfComprobante(venta: Venta): Promise<File> {
-    const canvas = await this.capturarComprobante();
-    const {jsPDF} = await import('jspdf');
-    const pdf = new jsPDF({unit:'mm',format:'a4'});
-    const ratio = Math.min(190/canvas.width,277/canvas.height);
-    const w=canvas.width*ratio, h=canvas.height*ratio;
-    pdf.addImage(canvas.toDataURL('image/png'),'PNG',(210-w)/2,10,w,h);
-    return new File([pdf.output('blob')],`comprobante-${venta.serie}-${venta.numero}.pdf`,{type:'application/pdf'});
+    if(venta.estado!=='ANULADA' && ['B9B1','F9B1'].includes(venta.serie)){const b=await this.evidenciaPropia(venta);return pdfBetaWeb(b,await qrWeb(b.contenidoQr),'A4',venta);}
+    const datos=await this.consultarFiscalWeb(venta);
+    return pdfVentaWeb(venta,'A4',datos.estado,datos.local);
   }
   envioVenta?: Venta;
   envioArchivo?: File;
@@ -600,12 +596,14 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
     }catch(e){this.envioEstado='No se pudo preparar el PDF.';}finally{this.envioOcupado=false;}
   }
   enviarCorreoComprobante(): void {
+    if(this.envioVenta && ['B9B1','F9B1','NP9B'].includes(this.envioVenta.serie)){this.envioEstado='Demo: descarga y comparte el PDF manualmente con destinatarios autorizados.';return;}
     if(!this.envioVenta||!this.envioArchivo||this.envioOcupado)return;
     const correo=this.envioCorreo.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)){this.envioEstado='Ingresa un correo válido.';return;}
     this.envioOcupado=true;this.envioEstado='Enviando…';
     this.api.enviarCorreo(this.envioVenta.id,correo,this.envioArchivo).subscribe({next:()=>{this.envioEstado='Correo aceptado por el servidor SMTP.';this.envioOcupado=false;},error:()=>{this.envioEstado='No se pudo enviar. Revisa la configuración SMTP o la conexión.';this.envioOcupado=false;}});
   }
   abrirWhatsAppComprobante(): void {
+    if(this.envioVenta && ['B9B1','F9B1','NP9B'].includes(this.envioVenta.serie)){this.envioEstado='Demo: descarga y comparte el PDF manualmente con destinatarios autorizados.';return;}
     if(!this.envioArchivo)return;
     const telefono = parsePhoneNumberFromString(this.envioNumero.trim(), this.envioPais);
     if (!telefono || !telefono.isValid() || telefono.country !== this.envioPais) {this.envioEstado='Ingresa un número válido para el país seleccionado.';return;}
@@ -621,6 +619,7 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
     },error:()=>{popup.close();this.envioEstado='No se pudo generar el enlace.';this.envioOcupado=false;}});
   }
   generarEnlaceComprobante(): void {
+    if(this.envioVenta && ['B9B1','F9B1','NP9B'].includes(this.envioVenta.serie)){this.envioEstado='Demo: descarga y comparte el PDF manualmente.';return;}
     this.seleccionarCanal('enlace');
     if(this.envioEnlace)return;
     if(!this.envioVenta||!this.envioArchivo||this.envioOcupado)return;
@@ -648,18 +647,8 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
     this.mensaje = 'Preferencia de impresión eliminada.';
     this.esError = false;
   }
-  async descargarPdf(venta: Venta): Promise<void> {
-    this.verComprobante(venta);
-    try {
-      await new Promise(res=>setTimeout(res,150));
-      const archivo=await this.crearPdfComprobante(venta);
-      const url=URL.createObjectURL(archivo); const a=document.createElement('a'); a.href=url; a.download=archivo.name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),60000);
-    } catch { this.mensaje='No se pudo generar el PDF.'; this.esError=true; }
-  }
-  qrDataUrl(venta: Venta): string {
-    const payload = `TIPO:${venta.tipoComprobante}|SERIE:${venta.serie}-${venta.numero}|TOTAL:${venta.total}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payload)}`;
-  }
+  async descargarPdf(venta: Venta): Promise<void> { this.verComprobante(venta); await this.exportarVentaWeb(venta,'A4',true); }
+  qrDataUrl(_venta: Venta): string { return ''; }
   textoTipo(tipo: TipoComprobante): string {
     return tipo.replace('_', ' ');
   }
@@ -672,4 +661,87 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
     this.mensaje = mensaje;
     this.esError = true;
   }
+
+  adminWeb=false;
+  labAbiertoWeb=false;
+  betaNumeroWeb='00000010';
+  betaDatoWeb?: BetaWeb;
+  betaQrWeb='';
+  betaErrorWeb='';
+  betaOcupadoWeb=false;
+  private qrInternosWeb = new Map<number,string>();
+  qrInternoWeb(v?: Venta): string { return v && v.estado !== 'ANULADA' ? this.qrInternosWeb.get(v.id) || '' : ''; }
+  private estadosWeb = new Map<number,EstadoWeb>();
+  private localesWeb = new Map<number,LocalWeb>();
+  estadoFiscalWeb(v?: Venta): string {
+    if (!v || v.estado==='ANULADA' || v.tipoComprobante==='NOTA_PEDIDO') return this.estadoFiscal(v);
+    const e=this.estadosWeb.get(v.id);
+    return e ? etiquetaEstadoWeb(e.estadoSunat) : etiquetaEstadoWeb((v as Venta & {estadoSunat?:string}).estadoSunat);
+  }
+  monedaFiscalWeb(campo: 'gravado'|'igv'|'exonerado'|'inafecto'): string {
+    const v=this.ventaEmitida;
+    if(!v || v.tipoComprobante==='NOTA_PEDIDO') return 'No aplica';
+    const l=this.localesWeb.get(v.id);
+    if(l && localCoincide(v,l)) return monedaWeb(l[campo]);
+    const valor=campo==='gravado'?this.comprobanteBase:campo==='igv'?this.comprobanteIgv:campo==='exonerado'?this.comprobanteExonerado:this.comprobanteInafecto;
+    return valor==null?'No disponible':monedaWeb(valor)+' (calculado)';
+  }
+  private async consultarFiscalWeb(v: Venta): Promise<{estado:string;local?:LocalWeb}> {
+    if(['B9B1','F9B1'].includes(v.serie)) {
+      this.qrInternosWeb.delete(v.id);
+      if(v.estado!=='ANULADA')try{const b=await this.evidenciaPropia(v);const qr=await qrWeb(b.contenidoQr);if(qr)this.qrInternosWeb.set(v.id,qr);}catch{/* No QR si evidencia no verificable */}
+    }else if(!this.qrInternosWeb.has(v.id)){const qr=await qrWeb(referenciaQrWeb(v)).catch(()=> '');if(qr)this.qrInternosWeb.set(v.id,qr);}
+    if(v.tipoComprobante==='NOTA_PEDIDO')return {estado:'No aplica'};
+    const [estado,local]=await Promise.all([
+      firstValueFrom(this.api.estadoFiscalWeb(v.id).pipe(timeout(6000))).catch(()=>undefined),
+      this.adminWeb ? firstValueFrom(this.api.comprobanteLocalWeb(v.id).pipe(timeout(6000))).catch(()=>undefined) : Promise.resolve(undefined)
+    ]);
+    this.estadosWeb.delete(v.id); this.localesWeb.delete(v.id);
+    if(estado && String(estado.ventaId)===String(v.id) && String(estado.serie)===String(v.serie) && String(estado.numero)===String(v.numero))this.estadosWeb.set(v.id,estado);
+    if(local && localCoincide(v,local))this.localesWeb.set(v.id,local);
+    return {estado:this.estadoFiscalWeb(v)+(this.estadosWeb.has(v.id)?'':' (registro de venta; consulta no confirmada)'),local:this.localesWeb.get(v.id)};
+  }
+  async exportarVentaWeb(v: Venta, formato: FormatoWeb, descargar: boolean): Promise<void> {
+    const popup=descargar?null:window.open('about:blank','_blank');
+    if(!descargar&&!popup){this.mostrarErrorSimple('Permite ventanas emergentes para abrir el PDF.');return;}
+    if(popup)popup.opener=null;
+    try{const datos=await this.consultarFiscalWeb(v);const archivo= v.estado!=='ANULADA' && ['B9B1','F9B1'].includes(v.serie) ? await this.evidenciaPropia(v).then(async b=>pdfBetaWeb(b,await qrWeb(b.contenidoQr),formato,v)) : await pdfVentaWeb(v,formato,datos.estado,datos.local);if(popup)vistaWeb(archivo,popup);else descargarWeb(archivo);}
+    catch{popup?.close();this.mostrarErrorSimple('No se pudo generar el PDF.');}
+  }
+  abrirLaboratorioWeb(): void {
+    this.labAbiertoWeb=!this.labAbiertoWeb;
+    if(this.labAbiertoWeb && !this.betaDatoWeb)void this.consultarBetaWeb();
+  }
+  async refrescarEstadoWeb(v: Venta): Promise<void> {
+    await this.consultarFiscalWeb(v);
+    if(!this.estadosWeb.has(v.id) && v.tipoComprobante!=='NOTA_PEDIDO')this.mostrarErrorSimple('No se pudo confirmar el estado SUNAT de esta venta. Revisa el acceso y el backend.');
+  }
+  async emitirLaboratorioWeb(): Promise<void> {
+    if(!this.adminWeb || this.betaOcupadoWeb)return;
+    if(!window.confirm('Generar factura sintetica SUNAT Beta (sin validez fiscal). No modifica ventas comerciales.'))return;
+    const key='maranatha-lab-operacion';
+    try {
+      const op=sessionStorage.getItem(key)||crypto.randomUUID(); sessionStorage.setItem(key,op);
+      this.betaOcupadoWeb=true;this.betaDatoWeb=undefined;this.betaQrWeb='';this.betaErrorWeb='';
+      const r=await firstValueFrom(this.api.emitirLaboratorioWeb(op).pipe(timeout(120000)));
+      if(r.ambiente!=='BETA'||r.validezFiscal||r.serie!=='F9B1'||!/^\d{8}$/.test(r.numero))throw Error('Respuesta inconsistente');
+      this.betaNumeroWeb=r.numero;
+      if(r.estadoSunat==='ACEPTADO_BETA'&&r.codigo==='0') {this.betaOcupadoWeb=false;await this.consultarBetaWeb();if(this.betaDatoWeb)sessionStorage.removeItem(key);}
+      else {this.betaErrorWeb='Resultado: '+r.serie+'-'+r.numero+' · '+r.estadoSunat+'. Revise antes de otra emision.';}
+    } catch {this.betaErrorWeb='Emision no confirmada. Comprueba el laboratorio; se conserva la misma operacion para consultar sin duplicar.';}
+    finally {this.betaOcupadoWeb=false;}
+  }
+  async consultarBetaWeb(): Promise<void> {
+    if(!this.adminWeb || this.betaOcupadoWeb || !/^\d{8}$/.test(this.betaNumeroWeb))return;
+    const numero=this.betaNumeroWeb;this.betaOcupadoWeb=true;this.betaDatoWeb=undefined;this.betaQrWeb='';this.betaErrorWeb='';
+    try{const b=await firstValueFrom(this.api.evidenciaBetaWeb(numero).pipe(timeout(10000)));if(!betaCoincide(b,numero))throw Error('Evidencia no confirmada');const qr=await qrWeb(b.contenidoQr);if(this.betaNumeroWeb===numero){this.betaDatoWeb=b;this.betaQrWeb=qr;}}
+    catch{this.betaErrorWeb='No se pudo confirmar la evidencia archivada. Revisa el correlativo y el acceso de administrador.';}
+    finally{this.betaOcupadoWeb=false;}
+  }
+  exportarBetaWeb(formato: FormatoWeb, descargar: boolean): void {
+    if(!this.adminWeb||!this.betaDatoWeb||!this.betaQrWeb||!betaCoincide(this.betaDatoWeb,this.betaNumeroWeb))return;
+    try{const archivo=pdfBetaWeb(this.betaDatoWeb,this.betaQrWeb,formato);if(descargar)descargarWeb(archivo);else{const popup=window.open('about:blank','_blank');if(!popup){this.betaErrorWeb='Permite ventanas emergentes.';return;}popup.opener=null;vistaWeb(archivo,popup);}}
+    catch{this.betaErrorWeb='No se pudo generar el PDF de evidencia.';}
+  }
+
 }
