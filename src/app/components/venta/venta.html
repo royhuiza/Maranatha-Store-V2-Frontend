@@ -62,7 +62,7 @@
             <input type="text" [ngModel]="documento" (ngModelChange)="documento=$event; onDocumentoChange()"
               [attr.maxlength]="tipo === 'FACTURA' ? 11 : 8" inputmode="numeric"
               [placeholder]="tipo === 'FACTURA' ? 'Ingresa 11 dígitos' : 'Ingresa 8 dígitos'">
-            
+
           </div>
         </div>
         <p class="venta-help" role="status" *ngIf="documentoBuscando">Consultando documento…</p>
@@ -162,7 +162,8 @@
               <h2>MARANATHA STORE</h2>
               <div class="company-sub">Librería escolar</div>
               <div class="company-small">Tacna, Perú</div>
-              <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de configuración</span></div>
+              <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de
+                  configuración</span></div>
             </div>
             <div class="comprobante-block">
               <div class="comprobante-type">{{ comprobanteTipo }}</div>
@@ -225,7 +226,8 @@
           <div class="ticket-head">
             <h3>MARANATHA STORE</h3>
             <div class="company-sub">Librería escolar</div>
-            <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de configuración</span></div>
+            <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de
+                configuración</span></div>
             <div class="ticket-meta">
               <span class="comprobante-type small">{{ comprobanteTipo }}</span>
               <span class="serie-number small"><span *ngIf="ventaEmitida">{{ ventaEmitida.serie }}-{{
@@ -257,49 +259,63 @@
           PDF</button><button (click)="compartirComprobante(comprobante)">Enviar</button></div>
     </div>
     <section class="venta-card pago-card no-print" *ngIf="pasoVenta === 'pago' && !ventaEmitida">
-      <div class="venta-carrito-header">
-        <div>
-          <h3>Método de pago</h3>
-          <p class="venta-help">Selecciona cómo pagará el cliente y confirma el cobro.</p>
+      <h3>Finalizar venta</h3>
+      <p class="venta-help">Selecciona el método de pago del cliente.</p>
+      <div class="cobro-total"><span>Total a cobrar</span><strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong></div>
+      <div class="pago-metodos" role="group" aria-label="Método de pago">
+        <button type="button" class="pago-metodo" *ngFor="let metodo of metodosPago"
+          [disabled]="procesando || requiereRevision" [class.seleccionado]="metodoPago === metodo"
+          [attr.aria-pressed]="metodoPago === metodo" (click)="seleccionarMetodoPago(metodo)">
+          <svg *ngIf="metodo === 'EFECTIVO'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+            aria-hidden="true">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M5 9h2m10 6h2" />
+          </svg>
+          <svg *ngIf="metodo === 'YAPE'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+            aria-hidden="true">
+            <rect x="6" y="2" width="12" height="20" rx="3" />
+            <path d="M9 12l2 2 4-4M10 18h4" />
+          </svg>
+          <strong>{{ metodo | titlecase }}</strong>
+          <small>{{ metodo === 'EFECTIVO' ? 'Pago presencial' : 'Billetera digital' }}</small>
+        </button>
+      </div>
+      <div *ngIf="metodoPago === 'EFECTIVO'" class="cobro-panel">
+        <h4>Cobro en efectivo</h4>
+        <p>Verifica el dinero recibido antes de registrar la venta.</p>
+        <label class="pago-check"><input type="checkbox" [(ngModel)]="pagoConfirmado"
+            [disabled]="procesando || requiereRevision"> Confirmo que recibí S/ {{ totalBorrador | number:'1.2-2'
+          }}</label>
+      </div>
+      <div *ngIf="metodoPago === 'YAPE'" class="cobro-panel cobro-yape">
+        <div class="cobro-qr"><img src="/pagos/yape-prueba.png" alt="Código QR de Yape"><small>Escanea desde
+            Yape</small></div>
+        <div class="cobro-info">
+          <span class="cobro-marca">Yape</span>
+          <h4>Paga el importe exacto</h4>
+          <strong class="cobro-importe">S/ {{ totalBorrador | number:'1.2-2' }}</strong>
+          <div class="cobro-estado" role="status" *ngIf="!pagoYape && !errorYape && !procesando && !requiereRevision">
+            <span class="cobro-spinner"></span> Esperando notificación de pago</div>
+          <div class="cobro-estado detectado" role="status" *ngIf="pagoYape">✓ Pago coincidente detectado</div>
+          <div class="cobro-estado alerta" role="alert" *ngIf="errorYape">{{ errorYape }}</div>
+          <p *ngIf="pagoYape">Verifica el pago en Yape antes de confirmar.</p>
+          <p *ngIf="!pagoYape && !procesando && !requiereRevision">Detección automática cada 2 segundos. Si existen
+            varios pagos iguales, revisa manualmente.</p>
+          <p *ngIf="procesando">Registrando venta…</p>
+          <details *ngIf="eventosYape.length">
+            <summary>Notificaciones detectadas ({{ eventosYape.length }})</summary>
+            <div *ngFor="let evento of eventosYape">S/ {{ evento.monto | number:'1.2-2' }} · {{ evento.fecha |
+              date:'short' }} — No verificado</div>
+          </details>
         </div>
       </div>
-      <div class="pago-resumen">
-        <span>Total a pagar</span>
-        <strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong>
-      </div>
-      <div class="pago-metodos">
-        <button type="button" class="pago-metodo" *ngFor="let metodo of metodosPago"
-          [disabled]="procesando" [class.seleccionado]="metodoPago === metodo" (click)="seleccionarMetodoPago(metodo)">
-          {{ metodo | titlecase }}
-        </button>
-      </div>
-      <div *ngIf="metodoPago === 'EFECTIVO'" class="pago-efectivo">
-        <p class="venta-help">Confirma que recibiste el dinero antes de registrar la compra.</p>
-        <label class="pago-check">
-          <input type="checkbox" [(ngModel)]="pagoConfirmado">
-          Confirmo que recibí el pago en efectivo
-        </label>
-      </div>
-      <div *ngIf="metodoPago === 'YAPE'" class="pago-pendiente"><img src="/pagos/yape-prueba.png"
-          alt="QR Yape de pruebas" style="width:220px;max-width:100%">
-        <p>Escanea el QR y paga el importe exacto.</p>
-        <p role="status" *ngIf="!pagoYape && !errorYape">Esperando un pago coincidente (consulta automática cada 2 segundos). Si hay varios pagos iguales, revisa manualmente.</p>
-        <p class="documento-ok" *ngIf="pagoYape">✓ Pago coincidente detectado: S/ {{ pagoYape.monto | number:'1.2-2' }}. Verifica en Yape antes de confirmar.</p>
-        <p *ngIf="errorYape">{{ errorYape }}</p>
-        <p *ngIf="!eventosYape.length && !errorYape">Sin eventos detectados.</p>
-        <div *ngFor="let evento of eventosYape">S/ {{ evento.monto | number:'1.2-2' }} · {{ evento.fecha | date:'short' }} — Detectado, no verificado</div>
-      </div>
-      <div *ngIf="metodoPago === 'PLIN'" class="pago-pendiente">
-        La integración de {{ metodoPago }} está pendiente. No se puede registrar este método como pagado todavía.
-      </div>
+      <p *ngIf="esError && mensaje" class="venta-error" role="alert">{{ mensaje }}</p>
       <div class="venta-actions pago-actions">
-        <button type="button" class="secondary" [disabled]="procesando" (click)="volverAlCarrito()">← Volver al
-          carrito</button>
-        <button type="button" class="primary-wide"
-          [disabled]="!puedeRegistrar"
-          (click)="registrar()">
-          {{ procesando ? 'Registrando...' : 'Confirmar pago y registrar venta' }}
-        </button>
+        <button type="button" class="secondary" [disabled]="procesando || requiereRevision"
+          (click)="volverAlCarrito()">← Volver al carrito</button>
+        <button type="button" class="primary-wide" [disabled]="!puedeRegistrar" (click)="registrar()">{{ procesando ?
+          'Registrando...' : 'Confirmar pago y registrar venta' }}</button>
       </div>
     </section>
   </div>
@@ -335,7 +351,7 @@
           <th>Cliente</th>
           <th>Total</th>
           <th>Estado</th>
-<th>Estado SUNAT</th>
+          <th>Estado SUNAT</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -345,7 +361,8 @@
           <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>{{ v.clienteNombre }}</td>
           <td>S/ {{ v.total | number:'1.2-2' }}</td>
-          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td><td>{{ estadoFiscal(v) }}</td>
+          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td>
+          <td>{{ estadoFiscal(v) }}</td>
           <td>
             <div class="comprobante-acciones">
               <!-- Ver comprobante -->

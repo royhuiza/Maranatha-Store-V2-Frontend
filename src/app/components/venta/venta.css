@@ -1246,3 +1246,211 @@ textarea.venta-nombre.combo-razon-social:focus {
     padding: 6px 3px;
   }
 }
+
+/* Rediseño de pagos - Maranatha Store */
+.venta-modal .pago-card {
+  --cobro-bg: #fff;
+  --cobro-text: #153b3e;
+  --cobro-line: #d5e2de;
+  color: var(--cobro-text);
+}
+
+.cobro-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px;
+  margin: 20px 0;
+  border-radius: 14px;
+  background: #235e55;
+  color: #fff;
+}
+
+.cobro-total strong {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+}
+
+.venta-modal .pago-card .pago-metodos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.venta-modal .pago-card .pago-metodo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 8px;
+  background: var(--cobro-bg);
+  color: var(--cobro-text);
+  border: 2px solid var(--cobro-line);
+  border-radius: 14px;
+  transition: background .2s, border-color .2s;
+}
+
+.venta-modal .pago-card .pago-metodo.seleccionado {
+  background: #e8f4ee;
+  color: #235e55;
+  border-color: #398378;
+}
+
+.pago-metodo svg {
+  width: 28px;
+  height: 28px;
+}
+
+.pago-metodo small {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.pago-metodo:focus-visible {
+  outline: 2px solid #398378;
+  outline-offset: 3px;
+}
+
+.cobro-panel {
+  padding: 20px;
+  border: 1px solid var(--cobro-line);
+  border-radius: 14px;
+  background: var(--cobro-bg);
+  margin-bottom: 16px;
+}
+
+.cobro-panel h4 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.cobro-panel p {
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: .85;
+}
+
+.cobro-yape {
+  display: grid;
+  grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.cobro-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.cobro-qr img {
+  display: block;
+  width: 100%;
+  max-width: 210px;
+  height: auto;
+  border-radius: 12px;
+}
+
+.cobro-qr small {
+  font-size: 12px;
+  opacity: .8;
+}
+
+.cobro-marca {
+  display: inline-block;
+  color: #742284;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.cobro-importe {
+  display: block;
+  font-size: 28px;
+  margin: 10px 0 16px;
+}
+
+.cobro-estado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #eef4f8;
+  color: #34516a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cobro-estado.detectado {
+  background: #e1f3e8;
+  color: #21613f;
+}
+
+.cobro-estado.alerta {
+  background: #fff1df;
+  color: #85420e;
+}
+
+.cobro-spinner {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 2px solid #b5c6d4;
+  border-top-color: #34516a;
+  border-radius: 50%;
+  animation: cobro-giro 1s linear infinite;
+}
+
+.cobro-info details {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.cobro-info summary {
+  cursor: pointer;
+}
+
+@keyframes cobro-giro {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .cobro-spinner {
+    animation: none;
+  }
+}
+
+:host-context(.is-dark) .venta-modal .pago-card {
+  --cobro-bg: #172e2c;
+  --cobro-text: #eef5f1;
+  --cobro-line: #52706a;
+}
+
+:host-context(.is-dark) .cobro-marca {
+  color: #e5b7ef;
+}
+
+@media(max-width:560px) {
+  .cobro-yape {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .cobro-info {
+    text-align: center;
+  }
+
+  .cobro-total strong {
+    font-size: 25px;
+  }
+
+  .venta-modal .pago-card .pago-actions button {
+    height: auto;
+    min-height: 46px;
+    white-space: normal;
+  }
+}

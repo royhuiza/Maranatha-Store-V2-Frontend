@@ -20,7 +20,7 @@ export class VentasComponent implements OnInit, OnDestroy {
   // Controla la vista de Ventas y Facturación
   mostrarFormularioVenta = false;
   pasoVenta: 'cliente' | 'carrito' | 'pago' = 'cliente';
-  readonly metodosPago = ['EFECTIVO', 'YAPE', 'PLIN'] as const;
+  readonly metodosPago = ['EFECTIVO', 'YAPE'] as const;
   metodoPago: typeof this.metodosPago[number] = 'EFECTIVO';
   eventosYape: Array<{ id: string; monto: number; fecha: number }> = [];
   errorYape = '';
@@ -732,3 +732,4 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
     this.esError = true;
   }
 }
+
