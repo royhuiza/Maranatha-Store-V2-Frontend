@@ -11,6 +11,7 @@
  */
 export const environment = {
   production: true,
+  demoFiscal: false,
 
   /** API Gateway (Spring Cloud Gateway) que expone los microservicios. */
   apiUrl: 'http://localhost:8080',

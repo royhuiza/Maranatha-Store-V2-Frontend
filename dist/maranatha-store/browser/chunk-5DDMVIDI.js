@@ -1,0 +1,1 @@
+function a(t=new Date){return`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`}function n(t){let e=new Date,r=a(e);return t==="mes"?e.setDate(1):e.setDate(e.getDate()-Number(t)+1),[a(e),r]}function o(t,e){return!!t&&!!e&&t<=e&&e<=a()&&(Date.parse(e)-Date.parse(t))/864e5<366}export{a,n as b,o as c};

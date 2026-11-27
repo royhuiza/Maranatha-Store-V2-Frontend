@@ -3,7 +3,7 @@
     <h2>Productos e inventario</h2>
     <p>Control de precios y stock en PostgreSQL</p>
   </div>
-  <button class="workspace-primary" *ngIf="auth.isAdmin" (click)="nuevo()">+ Nuevo producto</button>
+  <button class="workspace-primary" (click)="nuevo()">+ Nuevo producto</button>
 </div>
 <div *ngIf="mensaje" class="notice inventory-notice" [class.error-notice]="esError"
   [attr.role]="esError ? 'alert' : 'status'">
@@ -20,13 +20,13 @@
     <input aria-label="Buscar productos" placeholder="Buscar por nombre, descripción..." [ngModel]="q"
       (ngModelChange)="cambiarBusqueda($event)">
 
-    <form *ngIf="auth.isAdmin" [formGroup]="formImportacion">
+    <form [formGroup]="formImportacion">
       <button class="secondary" type="button" (click)="archivoImportar.click()" [disabled]="importando">
         {{ importando ? 'Importando Excel…' : 'Importar ingresos Excel' }}
       </button>
       <input #archivoImportar type="file" accept=".xlsx,.xls" hidden (change)="seleccionarExcel(archivoImportar)">
     </form>
-    <button class="secondary" type="button" (click)="exportarVista()"
+    <button *ngIf="auth.isAdmin" class="secondary" type="button" (click)="exportarVista()"
       [disabled]="cargandoCatalogo || !!errorCatalogo">Exportar inventario mostrado</button>
   </div>
 </div>
@@ -85,7 +85,7 @@
   </button>
 
   <!-- Ingresar mercancía -->
-  <button type="button" class="link accion-mercancia" *ngIf="auth.isAdmin" (click)="abrirAjuste(p)"
+  <button type="button" class="link accion-mercancia" (click)="abrirAjuste(p)"
     title="Ingresar mercancía" aria-label="Ingresar mercancía">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -185,7 +185,7 @@
     <label>Operación
       <select name="tipoAjuste" [(ngModel)]="tipoAjuste">
         <option value="reponer">Reponer (sumar)</option>
-        <option value="descontar">Descontar (restar)</option>
+        <option *ngIf="auth.isAdmin" value="descontar">Descontar (restar)</option>
       </select>
     </label>
     <label>Cantidad

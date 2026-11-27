@@ -1,0 +1,1062 @@
+diff --git a/src/app/components/venta/venta.css b/src/app/components/venta/venta.css
+index cce3b1c..64c53ac 100644
+--- a/src/app/components/venta/venta.css
++++ b/src/app/components/venta/venta.css
+@@ -1180,277 +1180,12 @@ textarea.venta-nombre.combo-razon-social:focus {
+ .envio-final button {
+   transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+ }
+-
+-/* Vista previa ampliada: no modifica las reglas de impresión. */
+-@media screen {
+-  .venta-modal .venta-dialog.receipt-preview {
+-    width: min(920px, calc(100vw - 32px)) !important;
+-    max-width: 920px !important;
+-    max-height: 94vh !important;
+-  }
+-
+-  .receipt-preview #comprobante {
+-    padding: 28px;
+-    font-size: 15px;
+-    line-height: 1.5;
+-    box-sizing: border-box;
+-  }
+-
+-  .receipt-preview #comprobante .comprobante-a4 {
+-    font-size: 15px;
+-    line-height: 1.5;
+-  }
+-
+-  .receipt-preview #comprobante .comprobante-a4 p {
+-    margin: 16px 0;
+-  }
+-
+-  .receipt-preview #comprobante .comprobante-a4 th,
+-  .receipt-preview #comprobante .comprobante-a4 td {
+-    padding: 10px 6px;
+-  }
+-
+-  .receipt-preview #comprobante .comprobante-a4 hr {
+-    margin: 16px 0;
+-  }
+-
+-  .receipt-preview #comprobante .company h2 {
+-    font-size: 22px;
+-  }
+-
+-  .receipt-preview #comprobante .qr-img {
+-    width: 100px;
+-    height: 100px;
+-  }
+-
+-  .receipt-preview #comprobante .receipt-legend {
+-    margin-top: 16px;
+-  }
+-}
+-
+-@media screen and (max-width: 560px) {
+-  .venta-modal .venta-dialog.receipt-preview {
+-    width: calc(100vw - 16px) !important;
+-  }
+-
+-  .receipt-preview #comprobante {
+-    padding: 14px;
+-  }
+-
+-  .receipt-preview #comprobante .comprobante-a4 {
+-    font-size: 12px;
+-  }
+-
+-  .receipt-preview #comprobante .comprobante-a4 th,
+-  .receipt-preview #comprobante .comprobante-a4 td {
+-    padding: 6px 3px;
+-  }
+-}
+-
+-/* Rediseño de pagos - Maranatha Store */
+-.venta-modal .pago-card {
+-  --cobro-bg: #fff;
+-  --cobro-text: #153b3e;
+-  --cobro-line: #d5e2de;
+-  color: var(--cobro-text);
+-}
+-
+-.cobro-total {
+-  display: flex;
+-  align-items: center;
+-  justify-content: space-between;
+-  gap: 12px;
+-  padding: 22px;
+-  margin: 20px 0;
+-  border-radius: 14px;
+-  background: #235e55;
+-  color: #fff;
+-}
+-
+-.cobro-total strong {
+-  font-size: 30px;
+-  font-variant-numeric: tabular-nums;
+-}
+-
+-.venta-modal .pago-card .pago-metodos {
+-  grid-template-columns: repeat(2, minmax(0, 1fr));
+-  gap: 14px;
+-}
+-
+-.venta-modal .pago-card .pago-metodo {
+-  display: flex;
+-  flex-direction: column;
+-  align-items: center;
+-  gap: 6px;
+-  padding: 18px 8px;
+-  background: var(--cobro-bg);
+-  color: var(--cobro-text);
+-  border: 2px solid var(--cobro-line);
+-  border-radius: 14px;
+-  transition: background .2s, border-color .2s;
+-}
+-
+-.venta-modal .pago-card .pago-metodo.seleccionado {
+-  background: #e8f4ee;
+-  color: #235e55;
+-  border-color: #398378;
+-}
+-
+-.pago-metodo svg {
+-  width: 28px;
+-  height: 28px;
+-}
+-
+-.pago-metodo small {
+-  font-size: 12px;
+-  font-weight: 400;
+-}
+-
+-.pago-metodo:focus-visible {
+-  outline: 2px solid #398378;
+-  outline-offset: 3px;
+-}
+-
+-.cobro-panel {
+-  padding: 20px;
+-  border: 1px solid var(--cobro-line);
+-  border-radius: 14px;
+-  background: var(--cobro-bg);
+-  margin-bottom: 16px;
+-}
+-
+-.cobro-panel h4 {
+-  margin: 0 0 10px;
+-  font-size: 17px;
+-}
+-
+-.cobro-panel p {
+-  font-size: 13px;
+-  line-height: 1.6;
+-  opacity: .85;
+-}
+-
+-.cobro-yape {
+-  display: grid;
+-  grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
+-  align-items: center;
+-  gap: 24px;
+-}
+-
+-.cobro-qr {
+-  display: flex;
+-  flex-direction: column;
+-  align-items: center;
+-  gap: 10px;
+-}
+-
+-.cobro-qr img {
+-  display: block;
+-  width: 100%;
+-  max-width: 210px;
+-  height: auto;
+-  border-radius: 12px;
+-}
+-
+-.cobro-qr small {
+-  font-size: 12px;
+-  opacity: .8;
+-}
+-
+-.cobro-marca {
+-  display: inline-block;
+-  color: #742284;
+-  font-size: 22px;
+-  font-weight: 800;
+-  margin-bottom: 10px;
+-}
+-
+-.cobro-importe {
+-  display: block;
+-  font-size: 28px;
+-  margin: 10px 0 16px;
+-}
+-
+-.cobro-estado {
+-  display: flex;
+-  align-items: center;
+-  gap: 10px;
+-  padding: 12px;
+-  border-radius: 10px;
+-  background: #eef4f8;
+-  color: #34516a;
+-  font-size: 13px;
+-  font-weight: 600;
+-}
+-
+-.cobro-estado.detectado {
+-  background: #e1f3e8;
+-  color: #21613f;
+-}
+-
+-.cobro-estado.alerta {
+-  background: #fff1df;
+-  color: #85420e;
+-}
+-
+-.cobro-spinner {
+-  width: 16px;
+-  height: 16px;
+-  flex: 0 0 16px;
+-  border: 2px solid #b5c6d4;
+-  border-top-color: #34516a;
+-  border-radius: 50%;
+-  animation: cobro-giro 1s linear infinite;
+-}
+-
+-.cobro-info details {
+-  font-size: 12px;
+-  line-height: 1.6;
+-}
+-
+-.cobro-info summary {
+-  cursor: pointer;
+-}
+-
+-@keyframes cobro-giro {
+-  to {
+-    transform: rotate(360deg);
+-  }
+-}
+-
+-@media (prefers-reduced-motion:reduce) {
+-  .cobro-spinner {
+-    animation: none;
+-  }
+-}
+-
+-:host-context(.is-dark) .venta-modal .pago-card {
+-  --cobro-bg: #172e2c;
+-  --cobro-text: #eef5f1;
+-  --cobro-line: #52706a;
+-}
+-
+-:host-context(.is-dark) .cobro-marca {
+-  color: #e5b7ef;
+-}
+-
+-@media(max-width:560px) {
+-  .cobro-yape {
+-    grid-template-columns: 1fr;
+-    gap: 16px;
+-  }
+-
+-  .cobro-info {
+-    text-align: center;
+-  }
+-
+-  .cobro-total strong {
+-    font-size: 25px;
+-  }
+-
+-  .venta-modal .pago-card .pago-actions button {
+-    height: auto;
+-    min-height: 46px;
+-    white-space: normal;
+-  }
+-}
+\ No newline at end of file
++/* Facturación web: extensión aislada del diseño de ventas integrado. */
++.fiscal-web-lab { margin: 16px 0; }
++.fiscal-web-summary { display: grid; gap: 9px; margin: 10px 0; padding: 14px; border: 1px solid #a8b0bb; border-radius: 10px; }
++.fiscal-web-summary input { max-width: 220px; }
++.fiscal-web-actions { display: flex; gap: 8px; flex-wrap: wrap; }
++.fiscal-web-actions button { padding: 8px 14px; border-radius: 8px; }
++.fiscal-web-evidence { min-width: 0; }
++.fiscal-web-evidence img { background: #fff; padding: 5px; max-width: 100%; height: auto; }
++@media print { .fiscal-web-actions,.fiscal-web-lab { display:none!important; } }
+diff --git a/src/app/components/venta/venta.html b/src/app/components/venta/venta.html
+index 53c74cc..793c4df 100644
+--- a/src/app/components/venta/venta.html
++++ b/src/app/components/venta/venta.html
+@@ -62,7 +62,7 @@
+             <input type="text" [ngModel]="documento" (ngModelChange)="documento=$event; onDocumentoChange()"
+               [attr.maxlength]="tipo === 'FACTURA' ? 11 : 8" inputmode="numeric"
+               [placeholder]="tipo === 'FACTURA' ? 'Ingresa 11 dígitos' : 'Ingresa 8 dígitos'">
+-
++            
+           </div>
+         </div>
+         <p class="venta-help" role="status" *ngIf="documentoBuscando">Consultando documento…</p>
+@@ -156,14 +156,14 @@
+         </div>
+       </section>
+       <section class="panel receipt" id="comprobante" *ngIf="ventaEmitida">
++<div class="fiscal-web-summary"><strong>Estado SUNAT: {{ estadoFiscalWeb(ventaEmitida) }}</strong><span>Op. exonerada: {{ monedaFiscalWeb('exonerado') }}</span><span>Op. inafecta: {{ monedaFiscalWeb('inafecto') }}</span><small>Representación sin confirmación de validez fiscal.</small><div *ngIf="qrInternoWeb(ventaEmitida) as qr"><img [src]="qr" width="100" height="100" alt="QR interno"><small>{{ ventaEmitida.serie === 'B9B1' || ventaEmitida.serie === 'F9B1' ? 'QR del XML de prueba (sin validez fiscal)' : 'QR de referencia interna, no fiscal' }}</small></div><div class="fiscal-web-actions"><button type="button" (click)="exportarVentaWeb(ventaEmitida,'TICKET',true)">Guardar Ticket 80 mm</button><button type="button" (click)="exportarVentaWeb(ventaEmitida,'A4',true)">Guardar PDF A4</button></div></div>
+         <div class="comprobante-a4">
+           <div class="receipt-head receipt-head-grid">
+             <div class="company">
+               <h2>MARANATHA STORE</h2>
+               <div class="company-sub">Librería escolar</div>
+               <div class="company-small">Tacna, Perú</div>
+-              <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de
+-                  configuración</span></div>
++              <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de configuración</span></div>
+             </div>
+             <div class="comprobante-block">
+               <div class="comprobante-type">{{ comprobanteTipo }}</div>
+@@ -177,7 +177,7 @@
+           <hr>
+           <p>
+             Fecha: {{ comprobanteFecha | date:'dd/MM/yyyy HH:mm' }}<br>
+-            Estado SUNAT: {{ estadoFiscal(ventaEmitida) }}<br>Estado: {{ ventaEmitida.estado || 'BORRADOR' }}
++            Estado SUNAT: {{ estadoFiscalWeb(ventaEmitida) }}<br>Estado: {{ ventaEmitida.estado || 'BORRADOR' }}
+           </p>
+           <p>Cliente: {{ comprobanteCliente }}<br><small *ngIf="comprobanteDocumento">{{ comprobanteDocumento }}</small>
+           </p>
+@@ -205,11 +205,11 @@
+           <table class="tax-summary">
+             <tr>
+               <td class="label">Op. Gravada</td>
+-              <td class="value">S/ {{ comprobanteBase | number:'1.2-2' }}</td>
++              <td class="value">{{ monedaFiscalWeb('gravado') }}</td>
+             </tr>
+             <tr>
+               <td class="label">IGV ({{ (igvRate*100) | number:'1.0-0' }}%)</td>
+-              <td class="value">S/ {{ comprobanteIgv | number:'1.2-2' }}</td>
++              <td class="value">{{ monedaFiscalWeb('igv') }}</td>
+             </tr>
+             <tr class="total">
+               <td class="label"><strong>TOTAL</strong></td>
+@@ -226,8 +226,7 @@
+           <div class="ticket-head">
+             <h3>MARANATHA STORE</h3>
+             <div class="company-sub">Librería escolar</div>
+-            <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de
+-                configuración</span></div>
++            <div class="ruc-line"><span class="ruc-label">RUC</span> <span class="ruc-number">Pendiente de configuración</span></div>
+             <div class="ticket-meta">
+               <span class="comprobante-type small">{{ comprobanteTipo }}</span>
+               <span class="serie-number small"><span *ngIf="ventaEmitida">{{ ventaEmitida.serie }}-{{
+@@ -244,8 +243,8 @@
+               </div>
+             </div>
+             <div class="ticket-totals">
+-              <div><span>SUBTOTAL</span><span class="right">S/ {{ comprobanteBase | number:'1.2-2' }}</span></div>
+-              <div><span>IGV</span><span class="right">S/ {{ comprobanteIgv | number:'1.2-2' }}</span></div>
++              <div><span>SUBTOTAL</span><span class="right">{{ monedaFiscalWeb('gravado') }}</span></div>
++              <div><span>IGV</span><span class="right">{{ monedaFiscalWeb('igv') }}</span></div>
+               <div class="total"><span><strong>TOTAL</strong></span><span class="right"><strong>S/ {{
+                     comprobanteTotalConIgv | number:'1.2-2' }}</strong></span></div>
+             </div>
+@@ -259,63 +258,41 @@
+           PDF</button><button (click)="compartirComprobante(comprobante)">Enviar</button></div>
+     </div>
+     <section class="venta-card pago-card no-print" *ngIf="pasoVenta === 'pago' && !ventaEmitida">
+-      <h3>Finalizar venta</h3>
+-      <p class="venta-help">Selecciona el método de pago del cliente.</p>
+-      <div class="cobro-total"><span>Total a cobrar</span><strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong></div>
+-      <div class="pago-metodos" role="group" aria-label="Método de pago">
++      <div class="venta-carrito-header">
++        <div>
++          <h3>Método de pago</h3>
++          <p class="venta-help">Selecciona cómo pagará el cliente y confirma el cobro.</p>
++        </div>
++      </div>
++      <div class="pago-resumen">
++        <span>Total a pagar</span>
++        <strong>S/ {{ totalBorrador | number:'1.2-2' }}</strong>
++      </div>
++      <div class="pago-metodos">
+         <button type="button" class="pago-metodo" *ngFor="let metodo of metodosPago"
+-          [disabled]="procesando || requiereRevision" [class.seleccionado]="metodoPago === metodo"
+-          [attr.aria-pressed]="metodoPago === metodo" (click)="seleccionarMetodoPago(metodo)">
+-          <svg *ngIf="metodo === 'EFECTIVO'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+-            aria-hidden="true">
+-            <rect x="2" y="5" width="20" height="14" rx="2" />
+-            <circle cx="12" cy="12" r="3" />
+-            <path d="M5 9h2m10 6h2" />
+-          </svg>
+-          <svg *ngIf="metodo === 'YAPE'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+-            aria-hidden="true">
+-            <rect x="6" y="2" width="12" height="20" rx="3" />
+-            <path d="M9 12l2 2 4-4M10 18h4" />
+-          </svg>
+-          <strong>{{ metodo | titlecase }}</strong>
+-          <small>{{ metodo === 'EFECTIVO' ? 'Pago presencial' : 'Billetera digital' }}</small>
++          [class.seleccionado]="metodoPago === metodo" (click)="seleccionarMetodoPago(metodo)">
++          {{ metodo | titlecase }}
+         </button>
+       </div>
+-      <div *ngIf="metodoPago === 'EFECTIVO'" class="cobro-panel">
+-        <h4>Cobro en efectivo</h4>
+-        <p>Verifica el dinero recibido antes de registrar la venta.</p>
+-        <label class="pago-check"><input type="checkbox" [(ngModel)]="pagoConfirmado"
+-            [disabled]="procesando || requiereRevision"> Confirmo que recibí S/ {{ totalBorrador | number:'1.2-2'
+-          }}</label>
++      <div *ngIf="metodoPago === 'EFECTIVO'" class="pago-efectivo">
++        <p class="venta-help">Confirma que recibiste el dinero antes de registrar la compra.</p>
++        <label class="pago-check">
++          <input type="checkbox" [(ngModel)]="pagoConfirmado">
++          Confirmo que recibí el pago en efectivo
++        </label>
+       </div>
+-      <div *ngIf="metodoPago === 'YAPE'" class="cobro-panel cobro-yape">
+-        <div class="cobro-qr"><img src="/pagos/yape-prueba.png" alt="Código QR de Yape"><small>Escanea desde
+-            Yape</small></div>
+-        <div class="cobro-info">
+-          <span class="cobro-marca">Yape</span>
+-          <h4>Paga el importe exacto</h4>
+-          <strong class="cobro-importe">S/ {{ totalBorrador | number:'1.2-2' }}</strong>
+-          <div class="cobro-estado" role="status" *ngIf="!pagoYape && !errorYape && !procesando && !requiereRevision">
+-            <span class="cobro-spinner"></span> Esperando notificación de pago</div>
+-          <div class="cobro-estado detectado" role="status" *ngIf="pagoYape">✓ Pago coincidente detectado</div>
+-          <div class="cobro-estado alerta" role="alert" *ngIf="errorYape">{{ errorYape }}</div>
+-          <p *ngIf="pagoYape">Verifica el pago en Yape antes de confirmar.</p>
+-          <p *ngIf="!pagoYape && !procesando && !requiereRevision">Detección automática cada 2 segundos. Si existen
+-            varios pagos iguales, revisa manualmente.</p>
+-          <p *ngIf="procesando">Registrando venta…</p>
+-          <details *ngIf="eventosYape.length">
+-            <summary>Notificaciones detectadas ({{ eventosYape.length }})</summary>
+-            <div *ngFor="let evento of eventosYape">S/ {{ evento.monto | number:'1.2-2' }} · {{ evento.fecha |
+-              date:'short' }} — No verificado</div>
+-          </details>
+-        </div>
++      <div *ngIf="metodoPago === 'YAPE'" class="pago-pendiente">Pago digital no habilitado para cobros.</div>
++      <div *ngIf="metodoPago !== 'EFECTIVO'" class="pago-pendiente">
++        La integración de {{ metodoPago }} está pendiente. No se puede registrar este método como pagado todavía.
+       </div>
+-      <p *ngIf="esError && mensaje" class="venta-error" role="alert">{{ mensaje }}</p>
+       <div class="venta-actions pago-actions">
+-        <button type="button" class="secondary" [disabled]="procesando || requiereRevision"
+-          (click)="volverAlCarrito()">← Volver al carrito</button>
+-        <button type="button" class="primary-wide" [disabled]="!puedeRegistrar" (click)="registrar()">{{ procesando ?
+-          'Registrando...' : 'Confirmar pago y registrar venta' }}</button>
++        <button type="button" class="secondary" [disabled]="procesando" (click)="pasoVenta = 'carrito'">← Volver al
++          carrito</button>
++        <button type="button" class="primary-wide"
++          [disabled]="procesando || requiereRevision || !pagoConfirmado || metodoPago !== 'EFECTIVO' || !detalles.length"
++          (click)="registrar()">
++          {{ procesando ? 'Registrando...' : 'Confirmar pago y registrar venta' }}
++        </button>
+       </div>
+     </section>
+   </div>
+@@ -351,7 +328,7 @@
+           <th>Cliente</th>
+           <th>Total</th>
+           <th>Estado</th>
+-          <th>Estado SUNAT</th>
++<th>Estado SUNAT</th>
+           <th>Acciones</th>
+         </tr>
+       </thead>
+@@ -359,10 +336,9 @@
+         <tr *ngFor="let v of ventasFiltradas">
+           <td><b>{{ v.serie }}-{{ v.numero }}</b><br><small>{{ textoTipo(v.tipoComprobante) }}</small></td>
+           <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+-          <td>{{ v.clienteNombre }}</td>
++          <td>{{ v.compradorLocalNombre || v.clienteNombre }}<small *ngIf="v.compradorLocalNombre"> · Comprador local {{ v.compradorLocalDocumento }}</small></td>
+           <td>S/ {{ v.total | number:'1.2-2' }}</td>
+-          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td>
+-          <td>{{ estadoFiscal(v) }}</td>
++          <td><span class="status" [class.danger]="v.estado==='ANULADA'">{{ v.estado }}</span></td><td>{{ estadoFiscalWeb(v) }} <button *ngIf="adminWeb &amp;&amp; v.tipoComprobante!=='NOTA_PEDIDO'" type="button" class="link" (click)="refrescarEstadoWeb(v)">Consultar SUNAT</button></td>
+           <td>
+             <div class="comprobante-acciones">
+               <!-- Ver comprobante -->
+@@ -443,7 +419,8 @@
+       <div><small>Fecha de emisión</small><strong>{{comprobanteFecha | date:'dd/MM/yyyy HH:mm'}}</strong></div>
+       <div><small>Total de la venta</small><strong class="confirm-total">S/ {{v.total | number:'1.2-2'}}</strong></div>
+     </div>
+-    <h3 class="confirm-heading">Compartir comprobante</h3>
++    <h3 class="confirm-heading">Formato del comprobante</h3><div class="fiscal-web-actions"><button [disabled]="envioOcupado" (click)="exportarVentaWeb(v,'TICKET',true)">Guardar Ticket 80 mm</button><button [disabled]="envioOcupado" (click)="exportarVentaWeb(v,'A4',true)">Guardar PDF A4</button></div>
++<h3 class="confirm-heading">Compartir comprobante</h3>
+     <div class="envio-opciones compartir-grid">
+       <button [disabled]="envioOcupado" (click)="seleccionarCanal('whatsapp')"><span>☎</span>WhatsApp</button><button
+         [disabled]="envioOcupado" (click)="seleccionarCanal('correo')"><span>✉</span>Correo</button>
+diff --git a/src/app/components/venta/venta.ts b/src/app/components/venta/venta.ts
+index 2036455..a73c029 100644
+--- a/src/app/components/venta/venta.ts
++++ b/src/app/components/venta/venta.ts
+@@ -1,6 +1,8 @@
++import { firstValueFrom, timeout } from 'rxjs';
++import { BetaWeb, EstadoWeb, LocalWeb, FormatoWeb, betaCoincide, localCoincide, qrWeb, pdfVentaWeb, pdfBetaWeb, descargarWeb, vistaWeb, monedaWeb, etiquetaEstadoWeb, referenciaQrWeb } from '../../core/facturacion-web';
+ import { getCountries, getCountryCallingCode, parsePhoneNumberFromString, CountryCode } from 'libphonenumber-js';
+ import { CommonModule } from '@angular/common';
+-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
++import { Component, inject, OnInit } from '@angular/core';
+ import { FormsModule } from '@angular/forms';
+ import { HttpErrorResponse } from '@angular/common/http';
+ import { ApiService } from '../../services/api';
+@@ -10,7 +12,7 @@ import { ApiError, Cliente, DetalleVenta, Producto, TipoComprobante, Venta } fro
+   imports: [CommonModule, FormsModule],
+   styleUrls: ['./venta.css'], templateUrl: './venta.html',
+ })
+-export class VentasComponent implements OnInit, OnDestroy {
++export class VentasComponent implements OnInit {
+   private readonly api = inject(ApiService);
+   private claveVentaActual?: string;
+   requiereRevision = false;
+@@ -18,93 +20,43 @@ export class VentasComponent implements OnInit, OnDestroy {
+   clientes: Cliente[] = [];
+   ventas: Venta[] = [];
+   // Controla la vista de Ventas y Facturación
+-  mostrarFormularioVenta = false;
+-  pasoVenta: 'cliente' | 'carrito' | 'pago' = 'cliente';
+-  readonly metodosPago = ['EFECTIVO', 'YAPE'] as const;
+-  metodoPago: typeof this.metodosPago[number] = 'EFECTIVO';
+-  eventosYape: Array<{ id: string; monto: number; fecha: number }> = [];
+-  errorYape = '';
+-  private inicioYape = 0;
+-  private consultaActiva = false;
+-  private cicloYape = 0;
+-  private relojYape?: ReturnType<typeof setInterval>;
+-  get pagoYape() {
+-    const candidatos = this.eventosYape.filter(e =>
+-      e.fecha >= this.inicioYape && e.fecha <= Date.now() + 300000 &&
+-      e.fecha >= Date.now() - 600000 &&
+-      Math.round(Number(e.monto) * 100) === Math.round(this.totalBorrador * 100));
+-    return candidatos.length === 1 && !this.errorYape ? candidatos[0] : undefined;
+-  }
+-  get puedeRegistrar(): boolean {
+-    return !this.procesando && !this.requiereRevision && !!this.detalles.length &&
+-      this.pasoVenta === 'pago' && (this.metodoPago === 'EFECTIVO' ? this.pagoConfirmado :
+-        this.metodoPago === 'YAPE' && !!this.pagoYape);
+-  }
+-  detenerYape(): void {
+-    clearInterval(this.relojYape);
+-    this.cicloYape++;
+-    this.consultaActiva = false;
+-    this.eventosYape = [];
+-    this.errorYape = '';
+-  }
+-  ngOnDestroy(): void { this.detenerYape(); }
+-  consultarYape(): void {
+-    if (this.consultaActiva || this.procesando || this.metodoPago !== 'YAPE' ||
+-      this.pasoVenta !== 'pago' || !this.mostrarFormularioVenta) return;
+-    const ciclo = this.cicloYape;
+-    this.consultaActiva = true;
+-    this.api.eventosYape().subscribe({
+-      next: eventos => {
+-        if (ciclo !== this.cicloYape) return;
+-        this.eventosYape = eventos; this.errorYape = ''; this.consultaActiva = false;
+-      },
+-      error: () => {
+-        if (ciclo !== this.cicloYape) return;
+-        this.eventosYape = []; this.errorYape = 'No se pudo consultar el receptor.'; this.consultaActiva = false;
+-      }
+-    });
+-  }
+-  pagoConfirmado = false;
+-  seleccionarMetodoPago(metodo: typeof this.metodosPago[number]): void {
+-    if (this.procesando || this.metodoPago === metodo) return;
+-    this.detenerYape();
+-    this.metodoPago = metodo;
+-    this.pagoConfirmado = false;
+-    if (metodo === 'YAPE') {
+-      if (this.inicioYape === 0) {
+-        this.inicioYape = Date.now();
+-      }
+-      this.consultarYape();
+-      this.relojYape = setInterval(() => this.consultarYape(), 2000);
++    mostrarFormularioVenta = false;
++    pasoVenta: 'cliente' | 'carrito' | 'pago' = 'cliente';
++    readonly metodosPago = ['EFECTIVO', 'YAPE', 'PLIN'] as const;
++    metodoPago: typeof this.metodosPago[number] = 'EFECTIVO';
++    pagoConfirmado = false;
++    seleccionarMetodoPago(metodo: typeof this.metodosPago[number]): void {
++      this.metodoPago = metodo;
++      this.pagoConfirmado = false;
++    }
++    irAPago(): void {
++      if (!this.detalles.length || this.procesando) return;
++      this.metodoPago = 'EFECTIVO';
++      this.pagoConfirmado = false;
++      this.pasoVenta = 'pago';
+     }
+-  }
+-  volverAlCarrito(): void { this.detenerYape(); this.pasoVenta = 'carrito'; }
+-  irAPago(): void {
+-    if (!this.detalles.length || this.procesando) return;
+-    this.metodoPago = 'EFECTIVO';
+-    this.pagoConfirmado = false;
+-    this.pasoVenta = 'pago';
+-  }
+   mostrarDatosCliente = false;
+   // Filtros para el historial de comprobantes
+-  busquedaComprobante = '';
+-  filtroTipoComprobante = 'TODOS';
+-  get ventasFiltradas(): Venta[] {
+-    const busqueda = this.busquedaComprobante.trim().toLowerCase();
+-    return this.ventas.filter(venta => {
+-      const coincideTipo =
+-        this.filtroTipoComprobante === 'TODOS' ||
+-        venta.tipoComprobante === this.filtroTipoComprobante;
+-      const textoBusqueda = [
+-        venta.serie,
+-        venta.numero,
+-        `${venta.serie}-${venta.numero}`,
+-        venta.clienteNombre,
+-        this.textoTipo(venta.tipoComprobante)
+-      ].join(' ').toLowerCase();
+-      return coincideTipo && textoBusqueda.includes(busqueda);
+-    });
+-  }
++    busquedaComprobante = '';
++    filtroTipoComprobante = 'TODOS';
++    get ventasFiltradas(): Venta[] {
++      const busqueda = this.busquedaComprobante.trim().toLowerCase();
++      return this.ventas.filter(venta => {
++        const coincideTipo =
++          this.filtroTipoComprobante === 'TODOS' ||
++          venta.tipoComprobante === this.filtroTipoComprobante;
++        const textoBusqueda = [
++          venta.serie,
++          venta.numero,
++          `${venta.serie}-${venta.numero}`,
++          venta.compradorLocalNombre,
++          venta.compradorLocalDocumento,
++          venta.clienteNombre,
++          this.textoTipo(venta.tipoComprobante)
++        ].join(' ').toLowerCase();
++        return coincideTipo && textoBusqueda.includes(busqueda);
++      });
++    }
+   get datosComprobanteCompletos(): boolean {
+     if (this.tipo === 'NOTA_PEDIDO') return true;
+     if (this.documentoBuscando) return false;
+@@ -158,9 +110,10 @@ export class VentasComponent implements OnInit, OnDestroy {
+     return this.ventaEmitida?.total ?? this.totalBorrador;
+   }
+   get comprobanteCliente(): string {
+-    return this.ventaEmitida?.clienteNombre || this.documentoNombre.trim() || this.clienteSeleccionado;
++    return this.ventaEmitida?.compradorLocalNombre ? this.ventaEmitida.compradorLocalNombre + " (comprador local)" : this.ventaEmitida?.clienteNombre || this.documentoNombre.trim() || this.clienteSeleccionado;
+   }
+   get comprobanteDocumento(): string {
++    if (this.ventaEmitida?.compradorLocalDocumento) return this.ventaEmitida.compradorLocalDocumento;
+     if (this.ventaEmitida?.clienteDocumento) return this.ventaEmitida.clienteDocumento;
+     const cliente = this.clientes.find(item => item.id === this.clienteId);
+     if (cliente?.numeroDocumento) return `${cliente.tipoDocumento} ${cliente.numeroDocumento}`;
+@@ -212,9 +165,10 @@ export class VentasComponent implements OnInit, OnDestroy {
+   get comprobanteInafecto(): number | null { return this.resumenFiscal?.inafecto ?? null; }
+   get comprobanteTotalConIgv(): number { return this.comprobanteTotal; }
+   estadoFiscal(v?: Venta): string {
++    if (v?.estado === 'ANULADA') return 'Anulado interno';
+     if (v?.tipoComprobante === 'NOTA_PEDIDO') return 'No aplica';
+     const estado = (v as (Venta & { estadoSunat?: string }) | undefined)?.estadoSunat;
+-    const etiquetas: Record<string, string> = { "NO_APLICA": "No aplica", "PENDIENTE": "Pendiente", "EN_PROCESO": "En proceso", "ACEPTADO_BETA": "Aceptado en Beta", "OBSERVADO_BETA": "Observado en Beta", "RECHAZADO_BETA": "Rechazado en Beta", "ERROR_COMUNICACION": "Error de comunicación", "REQUIERE_REVISION": "Requiere revisión", "ACEPTADO": "Aceptado registrado (sin confirmación)", "OBSERVADO": "Observado registrado", "RECHAZADO": "Rechazado registrado" };
++    const etiquetas: Record<string,string> = {"NO_APLICA": "No aplica", "PENDIENTE": "Pendiente", "EN_PROCESO": "En proceso", "ACEPTADO_BETA": "Activo · Beta", "OBSERVADO_BETA": "Observado en Beta", "RECHAZADO_BETA": "Rechazado en Beta", "ERROR_COMUNICACION": "Error de comunicación", "REQUIERE_REVISION": "Requiere revisión", "ACEPTADO": "Aceptado registrado (sin confirmación)", "OBSERVADO": "Observado registrado", "RECHAZADO": "Rechazado registrado"};
+     return etiquetas[estado ?? ''] ?? 'Sin registro fiscal';
+   }
+ 
+@@ -223,6 +177,8 @@ export class VentasComponent implements OnInit, OnDestroy {
+     this.cargarVentas();
+     const pref = localStorage.getItem('maranatha.imprimir.formato');
+     if (pref === 'TICKET' || pref === 'A4') this.preferenciaImpresion = pref as 'TICKET' | 'A4';
++
++    this.api.sesion().subscribe({next:r=>{this.adminWeb=['ADMIN','ROLE_ADMIN'].includes(String(r.rol).toUpperCase());},error:()=>{this.adminWeb=false;}});
+   }
+   cambiarTipo(tipo: TipoComprobante): void { this.tipo = tipo; this.onTipoChange(); }
+ 
+@@ -382,39 +338,30 @@ export class VentasComponent implements OnInit, OnDestroy {
+   }
+   registrar(): void {
+     if (this.procesando || this.requiereRevision || !this.detalles.length) return;
+-    if (!this.puedeRegistrar) {
+-      this.mostrarErrorSimple('Confirma el pago antes de registrar la venta.');
+-      return;
++    if (!this.datosComprobanteCompletos || this.pasoVenta !== 'pago' || this.metodoPago !== 'EFECTIVO' || !this.pagoConfirmado) {
++      this.mostrarErrorSimple('Completa los datos y confirma el pago en efectivo.'); return;
+     }
+-    if (this.metodoPago === 'YAPE') this.claveVentaActual = `YAPE-${this.pagoYape!.id}`;
+-    this.detenerYape();
+-    this.procesando = true;
+-    this.mensaje = '';
+-    this.claveVentaActual ??= crypto.randomUUID();
+-    this.api.crearVenta({
+-      idempotencyKey: this.claveVentaActual,
+-      documento: this.documento.trim() || undefined,
+-      compradorNombre: [this.documentoNombre, this.tipo === 'BOLETA' ? this.documentoApellidos : ''].join(' ').trim() || undefined,
+-      metodoPago: this.metodoPago,
+-      tipoComprobante: this.tipo,
+-      detalles: this.detalles.map(item => ({ productoId: item.productoId, cantidad: item.cantidad }))
+-    }, this.claveVentaActual).subscribe({
+-      next: venta => {
+-        this.procesando = false;
+-        this.ventaEmitida = venta;
+-        this.detalles = [];
+-        this.mensaje = `Venta registrada: ${venta.serie}-${venta.numero}. El stock fue actualizado.`;
+-        this.esError = false;
+-        this.cargarCatalogos();
+-        this.cargarVentas();
+-        void this.compartirComprobante(venta, true);
+-      },
+-      error: error => {
+-        this.procesando = false;
+-        this.requiereRevision = true;
+-        this.mostrarError(error, 'Registro sin confirmar. Revisa el historial antes de continuar.');
++    const numero = this.tipo === 'NOTA_PEDIDO' ? undefined : this.documento.trim();
++    const nombre = this.tipo === 'NOTA_PEDIDO' ? undefined : [this.documentoNombre, this.tipo === 'BOLETA' ? this.documentoApellidos : ''].join(' ').trim();
++    const tipoDocumento = this.tipo === 'FACTURA' ? 'RUC' as const : this.tipo === 'BOLETA' ? 'DNI' as const : undefined;
++    const bytes = crypto.getRandomValues(new Uint8Array(16)); bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
++    const h = Array.from(bytes, b => b.toString(16).padStart(2,'0')).join('');
++    this.claveVentaActual ??= h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
++    const clave = this.claveVentaActual;
++    const solicitud = { idempotencyKey: clave, metodoPago: this.metodoPago, tipoComprobante: this.tipo,
++      documento: numero, compradorNombre: nombre, tipoDocumento, numeroDocumento: numero, clienteNombre: nombre,
++      detalles: this.detalles.map(item => ({productoId:item.productoId,cantidad:item.cantidad})) };
++    this.procesando=true; this.mensaje='';
++    this.api.crearVenta(solicitud,clave).subscribe({next: async venta => {
++      if(['B9B1','F9B1'].includes(venta.serie)) {
++        try { await this.evidenciaPropia(venta); }
++        catch { this.procesando=false; this.requiereRevision=true; this.cargarVentas(); this.mostrarErrorSimple('Venta registrada; resultado fiscal no verificado. Revisa el historial y no vuelvas a cobrar.'); return; }
+       }
+-    });
++      this.procesando=false; this.claveVentaActual=undefined; this.ventaEmitida=venta; this.detalles=[];
++      this.mensaje='Venta registrada: '+venta.serie+'-'+venta.numero; this.esError=false;
++      this.cargarCatalogos(); this.cargarVentas(); void this.compartirComprobante(venta,true);
++    },error: error => { this.procesando=false; this.requiereRevision=true;
++      this.mostrarError(error,'Registro sin confirmar. Revisa el historial antes de volver a registrar.'); } });
+   }
+   anular(venta: Venta): void {
+     if (!confirm(`¿Anular ${venta.serie}-${venta.numero}? El stock será repuesto.`)) return;
+@@ -431,19 +378,24 @@ export class VentasComponent implements OnInit, OnDestroy {
+   }
+   verComprobante(venta: Venta): void {
+     this.ventaEmitida = venta; this.mostrarFormularioVenta = true; this.pasoVenta = 'carrito';
++
++    void this.consultarFiscalWeb(venta);
+   }
+   reimprimir(venta: Venta): void {
+     this.ventaEmitida = venta;
+     this.mostrarFormularioVenta = true;
+     this.pasoVenta = 'carrito';
+     this.mostrarDialogoImpresion = true;
++
++    void this.consultarFiscalWeb(venta);
+   }
+   nuevoComprobante(): void {
+-    if (this.procesando) return;
+-    this.detenerYape();
++    if (this.procesando || this.requiereRevision) { this.mostrarErrorSimple('Revisa el registro anterior antes de iniciar otra venta.'); return; }
++
++    if (this.requiereRevision) { this.mostrarErrorSimple('Revisa el historial antes de repetir la operacion.'); return; }
++    this.claveVentaActual = undefined;
+     if (this.requiereRevision) { this.mostrarErrorSimple('Revisa el historial antes de repetir la operacion.'); return; }
+     this.claveVentaActual = undefined;
+-    this.inicioYape = 0;
+     this.consultaDocumentoId++;
+     this.documentoBuscando = false;
+     this.mostrarFormularioVenta = true;
+@@ -467,31 +419,18 @@ export class VentasComponent implements OnInit, OnDestroy {
+   }
+   cerrarFormularioVenta(): void {
+     if (this.procesando) return;
+-    this.detenerYape();
+     this.consultaDocumentoId++;
+     this.documentoBuscando = false;
+     this.mostrarFormularioVenta = false;
+     this.mostrarDialogoImpresion = false;
+   }
+-  abrirDialogoImpresion(): void {
+-    // Mostrar siempre las opciones: permite elegir Ticket o A4 en cada impresión.
+-    this.usarSiempreImpresion = false;
+-    this.mostrarDialogoImpresion = true;
+-  }
+-
+-  seleccionarFormato(formato: 'TICKET' | 'A4'): void {
+-    if (!this.ventaEmitida) {
+-      this.mostrarErrorSimple('No existe una venta registrada para imprimir.');
+-      return;
+-    }
+-
+-    this.mostrarDialogoImpresion = false;
+-    if (this.usarSiempreImpresion) {
+-      localStorage.setItem('maranatha.imprimir.formato', formato);
+-      this.preferenciaImpresion = formato;
+-    }
++  abrirDialogoImpresion(): void { this.mostrarDialogoImpresion=true; }
+ 
+-    this.imprimirComprobante(this.ventaEmitida, formato);
++  async seleccionarFormato(formato: FormatoWeb): Promise<void> {
++    const venta=this.ventaEmitida;
++    if(!venta) return;
++    this.mostrarDialogoImpresion=false;
++    await this.exportarVentaWeb(venta,formato,false);
+   }
+ 
+   private imprimirComprobante(venta: Venta, formato: 'TICKET' | 'A4'): void {
+@@ -614,24 +553,24 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
+     if (!el) throw new Error('Comprobante no disponible');
+     await document.fonts.ready;
+     await Promise.all(Array.from(el.querySelectorAll('img')).map(img => img.decode().catch(() => undefined)));
+-    const { default: html2canvas } = await import('html2canvas');
+-    return html2canvas(el, {
+-      scale: 2, backgroundColor: '#fff', useCORS: true, onclone: (doc: Document) => {
+-        const copia = doc.querySelector<HTMLElement>(selector);
+-        if (copia) { copia.style.display = 'block'; copia.style.transform = 'none'; copia.style.backgroundColor = '#fff'; copia.style.color = '#111'; if (formato === 'TICKET') copia.style.width = '52mm'; }
+-        const panel = doc.querySelector<HTMLElement>('#comprobante');
+-        if (panel) { panel.style.backgroundColor = '#fff'; panel.style.color = '#111'; }
+-      }
+-    });
++    const {default: html2canvas} = await import('html2canvas');
++    return html2canvas(el, {scale: 2, backgroundColor: '#fff', useCORS: true, onclone: (doc: Document) => {
++      const copia = doc.querySelector<HTMLElement>(selector);
++      if (copia) { copia.style.display='block'; copia.style.transform='none'; copia.style.backgroundColor='#fff'; copia.style.color='#111'; if(formato==='TICKET') copia.style.width='52mm'; }
++      const panel = doc.querySelector<HTMLElement>('#comprobante');
++      if(panel) { panel.style.backgroundColor='#fff'; panel.style.color='#111'; }
++    }});
++  }
++  private async evidenciaPropia(v: Venta): Promise<BetaWeb> {
++    if(v.estado==='ANULADA' || (v as Venta & {estadoSunat?:string}).estadoSunat!=='ACEPTADO_BETA' || !['B9B1','F9B1'].includes(v.serie)) throw Error('Comprobante no aceptado');
++    const b=await firstValueFrom(this.api.evidenciaVentaBetaWeb(v.serie,v.numero).pipe(timeout(15000)));
++    if(!betaCoincide(b,v.numero)||b.comprobante!==v.serie+'-'+v.numero||(v.serie==='B9B1'&&v.tipoComprobante!=='BOLETA')||(v.serie==='F9B1'&&v.tipoComprobante!=='FACTURA')||Math.round(Number(b.total)*100)!==Math.round(v.total*100)) throw Error('Evidencia no coincide');
++    return b;
+   }
+   private async crearPdfComprobante(venta: Venta): Promise<File> {
+-    const canvas = await this.capturarComprobante();
+-    const { jsPDF } = await import('jspdf');
+-    const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+-    const ratio = Math.min(190 / canvas.width, 277 / canvas.height);
+-    const w = canvas.width * ratio, h = canvas.height * ratio;
+-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (210 - w) / 2, 10, w, h);
+-    return new File([pdf.output('blob')], `comprobante-${venta.serie}-${venta.numero}.pdf`, { type: 'application/pdf' });
++    if(venta.estado!=='ANULADA' && ['B9B1','F9B1'].includes(venta.serie)){const b=await this.evidenciaPropia(venta);return pdfBetaWeb(b,await qrWeb(b.contenidoQr),'A4',venta);}
++    const datos=await this.consultarFiscalWeb(venta);
++    return pdfVentaWeb(venta,'A4',datos.estado,datos.local);
+   }
+   envioVenta?: Venta;
+   envioArchivo?: File;
+@@ -639,9 +578,9 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
+   envioEnlace = '';
+   envioNumero = '';
+   envioPais: CountryCode = 'PE';
+-  readonly paises = getCountries().map(codigo => ({ codigo, nombre: new Intl.DisplayNames(['es'], { type: 'region' }).of(codigo) || codigo, prefijo: '+' + getCountryCallingCode(codigo), bandera: Array.from(codigo).map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('') })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+-  get envioPrefijo(): string { return '+' + getCountryCallingCode(this.envioPais); }
+-  seleccionarCanal(canal: 'whatsapp' | 'correo' | 'enlace'): void { this.envioCanal = canal; this.envioEstado = ''; }
++  readonly paises = getCountries().map(codigo => ({codigo, nombre: new Intl.DisplayNames(['es'], {type:'region'}).of(codigo) || codigo, prefijo: '+'+getCountryCallingCode(codigo), bandera: Array.from(codigo).map(c=>String.fromCodePoint(127397+c.charCodeAt(0))).join('')})).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
++  get envioPrefijo(): string { return '+'+getCountryCallingCode(this.envioPais); }
++  seleccionarCanal(canal: 'whatsapp'|'correo'|'enlace'): void { this.envioCanal=canal; this.envioEstado=''; }
+   envioCorreo = '';
+   envioEstado = '';
+   envioOcupado = false;
+@@ -649,57 +588,58 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
+   async compartirComprobante(venta: Venta, recienRegistrada = false): Promise<void> {
+     this.ventaRecienRegistrada = recienRegistrada;
+     this.verComprobante(venta);
+-    this.envioVenta = venta; this.envioArchivo = undefined; this.envioEstado = 'Preparando PDF…'; this.envioOcupado = true;
+-    this.envioPais = 'PE'; this.envioNumero = ''; this.envioCorreo = ''; this.envioCanal = ''; this.envioEnlace = '';
++    this.envioVenta=venta; this.envioArchivo=undefined; this.envioEstado='Preparando PDF…'; this.envioOcupado=true;
++    this.envioPais='PE'; this.envioNumero=''; this.envioCorreo=''; this.envioCanal=''; this.envioEnlace='';
+     try {
+-      await new Promise(r => setTimeout(r, 150));
+-      this.envioArchivo = await this.crearPdfComprobante(venta); this.envioEstado = '';
+-    } catch (e) { this.envioEstado = 'No se pudo preparar el PDF.'; } finally { this.envioOcupado = false; }
++      await new Promise(r=>setTimeout(r,150));
++      this.envioArchivo=await this.crearPdfComprobante(venta); this.envioEstado='';
++    }catch(e){this.envioEstado='No se pudo preparar el PDF.';}finally{this.envioOcupado=false;}
+   }
+   enviarCorreoComprobante(): void {
+-    if (!this.envioVenta || !this.envioArchivo || this.envioOcupado) return;
+-    const correo = this.envioCorreo.trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) { this.envioEstado = 'Ingresa un correo válido.'; return; }
+-    this.envioOcupado = true; this.envioEstado = 'Enviando…';
+-    this.api.enviarCorreo(this.envioVenta.id, correo, this.envioArchivo).subscribe({ next: () => { this.envioEstado = 'Correo aceptado por el servidor SMTP.'; this.envioOcupado = false; }, error: () => { this.envioEstado = 'No se pudo enviar. Revisa la configuración SMTP o la conexión.'; this.envioOcupado = false; } });
++    if(this.envioVenta && ['B9B1','F9B1','NP9B'].includes(this.envioVenta.serie)){this.envioEstado='Demo: descarga y comparte el PDF manualmente con destinatarios autorizados.';return;}
++    if(!this.envioVenta||!this.envioArchivo||this.envioOcupado)return;
++    const correo=this.envioCorreo.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)){this.envioEstado='Ingresa un correo válido.';return;}
++    this.envioOcupado=true;this.envioEstado='Enviando…';
++    this.api.enviarCorreo(this.envioVenta.id,correo,this.envioArchivo).subscribe({next:()=>{this.envioEstado='Correo aceptado por el servidor SMTP.';this.envioOcupado=false;},error:()=>{this.envioEstado='No se pudo enviar. Revisa la configuración SMTP o la conexión.';this.envioOcupado=false;}});
+   }
+   abrirWhatsAppComprobante(): void {
+-    if (!this.envioArchivo) return;
++    if(this.envioVenta && ['B9B1','F9B1','NP9B'].includes(this.envioVenta.serie)){this.envioEstado='Demo: descarga y comparte el PDF manualmente con destinatarios autorizados.';return;}
++    if(!this.envioArchivo)return;
+     const telefono = parsePhoneNumberFromString(this.envioNumero.trim(), this.envioPais);
+-    if (!telefono || !telefono.isValid() || telefono.country !== this.envioPais) { this.envioEstado = 'Ingresa un número válido para el país seleccionado.'; return; }
+-    const numero = telefono.number.slice(1);
+-    if (!this.envioVenta || this.envioOcupado) return;
+-    const popup = window.open('about:blank', '_blank');
+-    if (!popup) { this.envioEstado = 'Permite ventanas emergentes para abrir WhatsApp.'; return; }
+-    popup.opener = null;
+-    this.envioOcupado = true;
+-    this.api.crearEnlaceComprobante(this.envioVenta.id, this.envioArchivo).subscribe({
+-      next: r => {
+-        popup.location.href = `https://wa.me/${numero}?text=${encodeURIComponent('Gracias por su compra en Maranatha Store. Descargue su comprobante: ' + r.url)}`;
+-        this.envioEstado = 'Confirma el envío en WhatsApp.'; this.envioOcupado = false;
+-      }, error: () => { popup.close(); this.envioEstado = 'No se pudo generar el enlace.'; this.envioOcupado = false; }
+-    });
++    if (!telefono || !telefono.isValid() || telefono.country !== this.envioPais) {this.envioEstado='Ingresa un número válido para el país seleccionado.';return;}
++    const numero=telefono.number.slice(1);
++    if(!this.envioVenta || this.envioOcupado)return;
++    const popup=window.open('about:blank','_blank');
++    if(!popup){this.envioEstado='Permite ventanas emergentes para abrir WhatsApp.';return;}
++    popup.opener=null;
++    this.envioOcupado=true;
++    this.api.crearEnlaceComprobante(this.envioVenta.id,this.envioArchivo).subscribe({next:r=>{
++      popup.location.href=`https://wa.me/${numero}?text=${encodeURIComponent('Gracias por su compra en Maranatha Store. Descargue su comprobante: '+r.url)}`;
++      this.envioEstado='Confirma el envío en WhatsApp.';this.envioOcupado=false;
++    },error:()=>{popup.close();this.envioEstado='No se pudo generar el enlace.';this.envioOcupado=false;}});
+   }
+   generarEnlaceComprobante(): void {
++    if(this.envioVenta && ['B9B1','F9B1','NP9B'].includes(this.envioVenta.serie)){this.envioEstado='Demo: descarga y comparte el PDF manualmente.';return;}
+     this.seleccionarCanal('enlace');
+-    if (this.envioEnlace) return;
+-    if (!this.envioVenta || !this.envioArchivo || this.envioOcupado) return;
+-    this.envioOcupado = true;
+-    this.api.crearEnlaceComprobante(this.envioVenta.id, this.envioArchivo).subscribe({ next: r => { this.envioEnlace = r.url; this.envioOcupado = false; this.envioEstado = 'Enlace listo. Puedes copiarlo.'; }, error: () => { this.envioOcupado = false; this.envioEstado = 'No se pudo generar el enlace.'; } });
++    if(this.envioEnlace)return;
++    if(!this.envioVenta||!this.envioArchivo||this.envioOcupado)return;
++    this.envioOcupado=true;
++    this.api.crearEnlaceComprobante(this.envioVenta.id,this.envioArchivo).subscribe({next:r=>{this.envioEnlace=r.url;this.envioOcupado=false;this.envioEstado='Enlace listo. Puedes copiarlo.';},error:()=>{this.envioOcupado=false;this.envioEstado='No se pudo generar el enlace.';}});
+   }
+   async copiarEnlaceComprobante(): Promise<void> {
+-    if (!this.envioEnlace) return;
+-    try { await navigator.clipboard.writeText(this.envioEnlace); this.envioEstado = 'Enlace copiado.'; }
+-    catch { this.envioEstado = 'No se pudo copiar automáticamente. Selecciona el enlace y presiona Ctrl+C.'; }
++    if(!this.envioEnlace)return;
++    try { await navigator.clipboard.writeText(this.envioEnlace); this.envioEstado='Enlace copiado.'; }
++    catch { this.envioEstado='No se pudo copiar automáticamente. Selecciona el enlace y presiona Ctrl+C.'; }
+   }
+   descargarArchivoEnvio(): void {
+-    if (!this.envioArchivo) return;
+-    const url = URL.createObjectURL(this.envioArchivo); const a = document.createElement('a'); a.href = url; a.download = this.envioArchivo.name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 60000);
++    if(!this.envioArchivo)return;
++    const url=URL.createObjectURL(this.envioArchivo);const a=document.createElement('a');a.href=url;a.download=this.envioArchivo.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+   }
+-  imprimirDesdeEnvio(formato: 'TICKET' | 'A4'): void { this.seleccionarFormato(formato); }
++  imprimirDesdeEnvio(formato: 'TICKET'|'A4'): void {this.seleccionarFormato(formato);}
+   async compartirArchivoMovil(): Promise<void> {
+-    if (!this.envioArchivo) return;
+-    if (!navigator.canShare?.({ files: [this.envioArchivo] })) { this.envioEstado = 'Este navegador no permite compartir archivos. Usa Abrir WhatsApp.'; return; }
+-    try { await navigator.share({ files: [this.envioArchivo], title: 'Comprobante Maranatha Store' }); this.envioEstado = 'Archivo compartido con la aplicación seleccionada.'; } catch { this.envioEstado = 'No se completó la acción de compartir.'; }
++    if(!this.envioArchivo)return;
++    if(!navigator.canShare?.({files:[this.envioArchivo]})){this.envioEstado='Este navegador no permite compartir archivos. Usa Abrir WhatsApp.';return;}
++    try{await navigator.share({files:[this.envioArchivo],title:'Comprobante Maranatha Store'});this.envioEstado='Archivo compartido con la aplicación seleccionada.';}catch{this.envioEstado='No se completó la acción de compartir.';}
+   }
+   limpiarPreferenciaImpresion(): void {
+     localStorage.removeItem('maranatha.imprimir.formato');
+@@ -707,18 +647,8 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
+     this.mensaje = 'Preferencia de impresión eliminada.';
+     this.esError = false;
+   }
+-  async descargarPdf(venta: Venta): Promise<void> {
+-    this.verComprobante(venta);
+-    try {
+-      await new Promise(res => setTimeout(res, 150));
+-      const archivo = await this.crearPdfComprobante(venta);
+-      const url = URL.createObjectURL(archivo); const a = document.createElement('a'); a.href = url; a.download = archivo.name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+-    } catch { this.mensaje = 'No se pudo generar el PDF.'; this.esError = true; }
+-  }
+-  qrDataUrl(venta: Venta): string {
+-    const payload = `TIPO:${venta.tipoComprobante}|SERIE:${venta.serie}-${venta.numero}|TOTAL:${venta.total}`;
+-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payload)}`;
+-  }
++  async descargarPdf(venta: Venta): Promise<void> { this.verComprobante(venta); await this.exportarVentaWeb(venta,'A4',true); }
++  qrDataUrl(_venta: Venta): string { return ''; }
+   textoTipo(tipo: TipoComprobante): string {
+     return tipo.replace('_', ' ');
+   }
+@@ -731,5 +661,87 @@ Los importes tributarios detallados se mostrarán cuando estén calculados y per
+     this.mensaje = mensaje;
+     this.esError = true;
+   }
+-}
+ 
++  adminWeb=false;
++  labAbiertoWeb=false;
++  betaNumeroWeb='00000010';
++  betaDatoWeb?: BetaWeb;
++  betaQrWeb='';
++  betaErrorWeb='';
++  betaOcupadoWeb=false;
++  private qrInternosWeb = new Map<number,string>();
++  qrInternoWeb(v?: Venta): string { return v && v.estado !== 'ANULADA' ? this.qrInternosWeb.get(v.id) || '' : ''; }
++  private estadosWeb = new Map<number,EstadoWeb>();
++  private localesWeb = new Map<number,LocalWeb>();
++  estadoFiscalWeb(v?: Venta): string {
++    if (!v || v.estado==='ANULADA' || v.tipoComprobante==='NOTA_PEDIDO') return this.estadoFiscal(v);
++    const e=this.estadosWeb.get(v.id);
++    return e ? etiquetaEstadoWeb(e.estadoSunat) : etiquetaEstadoWeb((v as Venta & {estadoSunat?:string}).estadoSunat);
++  }
++  monedaFiscalWeb(campo: 'gravado'|'igv'|'exonerado'|'inafecto'): string {
++    const v=this.ventaEmitida;
++    if(!v || v.tipoComprobante==='NOTA_PEDIDO') return 'No aplica';
++    const l=this.localesWeb.get(v.id);
++    if(l && localCoincide(v,l)) return monedaWeb(l[campo]);
++    const valor=campo==='gravado'?this.comprobanteBase:campo==='igv'?this.comprobanteIgv:campo==='exonerado'?this.comprobanteExonerado:this.comprobanteInafecto;
++    return valor==null?'No disponible':monedaWeb(valor)+' (calculado)';
++  }
++  private async consultarFiscalWeb(v: Venta): Promise<{estado:string;local?:LocalWeb}> {
++    if(['B9B1','F9B1'].includes(v.serie)) {
++      this.qrInternosWeb.delete(v.id);
++      if(v.estado!=='ANULADA')try{const b=await this.evidenciaPropia(v);const qr=await qrWeb(b.contenidoQr);if(qr)this.qrInternosWeb.set(v.id,qr);}catch{/* No QR si evidencia no verificable */}
++    }else if(!this.qrInternosWeb.has(v.id)){const qr=await qrWeb(referenciaQrWeb(v)).catch(()=> '');if(qr)this.qrInternosWeb.set(v.id,qr);}
++    if(v.tipoComprobante==='NOTA_PEDIDO')return {estado:'No aplica'};
++    const [estado,local]=await Promise.all([
++      firstValueFrom(this.api.estadoFiscalWeb(v.id).pipe(timeout(6000))).catch(()=>undefined),
++      this.adminWeb ? firstValueFrom(this.api.comprobanteLocalWeb(v.id).pipe(timeout(6000))).catch(()=>undefined) : Promise.resolve(undefined)
++    ]);
++    this.estadosWeb.delete(v.id); this.localesWeb.delete(v.id);
++    if(estado && String(estado.ventaId)===String(v.id) && String(estado.serie)===String(v.serie) && String(estado.numero)===String(v.numero))this.estadosWeb.set(v.id,estado);
++    if(local && localCoincide(v,local))this.localesWeb.set(v.id,local);
++    return {estado:this.estadoFiscalWeb(v)+(this.estadosWeb.has(v.id)?'':' (registro de venta; consulta no confirmada)'),local:this.localesWeb.get(v.id)};
++  }
++  async exportarVentaWeb(v: Venta, formato: FormatoWeb, descargar: boolean): Promise<void> {
++    const popup=descargar?null:window.open('about:blank','_blank');
++    if(!descargar&&!popup){this.mostrarErrorSimple('Permite ventanas emergentes para abrir el PDF.');return;}
++    if(popup)popup.opener=null;
++    try{const datos=await this.consultarFiscalWeb(v);const archivo= v.estado!=='ANULADA' && ['B9B1','F9B1'].includes(v.serie) ? await this.evidenciaPropia(v).then(async b=>pdfBetaWeb(b,await qrWeb(b.contenidoQr),formato,v)) : await pdfVentaWeb(v,formato,datos.estado,datos.local);if(popup)vistaWeb(archivo,popup);else descargarWeb(archivo);}
++    catch{popup?.close();this.mostrarErrorSimple('No se pudo generar el PDF.');}
++  }
++  abrirLaboratorioWeb(): void {
++    this.labAbiertoWeb=!this.labAbiertoWeb;
++    if(this.labAbiertoWeb && !this.betaDatoWeb)void this.consultarBetaWeb();
++  }
++  async refrescarEstadoWeb(v: Venta): Promise<void> {
++    await this.consultarFiscalWeb(v);
++    if(!this.estadosWeb.has(v.id) && v.tipoComprobante!=='NOTA_PEDIDO')this.mostrarErrorSimple('No se pudo confirmar el estado SUNAT de esta venta. Revisa el acceso y el backend.');
++  }
++  async emitirLaboratorioWeb(): Promise<void> {
++    if(!this.adminWeb || this.betaOcupadoWeb)return;
++    if(!window.confirm('Generar factura sintetica SUNAT Beta (sin validez fiscal). No modifica ventas comerciales.'))return;
++    const key='maranatha-lab-operacion';
++    try {
++      const op=sessionStorage.getItem(key)||crypto.randomUUID(); sessionStorage.setItem(key,op);
++      this.betaOcupadoWeb=true;this.betaDatoWeb=undefined;this.betaQrWeb='';this.betaErrorWeb='';
++      const r=await firstValueFrom(this.api.emitirLaboratorioWeb(op).pipe(timeout(120000)));
++      if(r.ambiente!=='BETA'||r.validezFiscal||r.serie!=='F9B1'||!/^\d{8}$/.test(r.numero))throw Error('Respuesta inconsistente');
++      this.betaNumeroWeb=r.numero;
++      if(r.estadoSunat==='ACEPTADO_BETA'&&r.codigo==='0') {this.betaOcupadoWeb=false;await this.consultarBetaWeb();if(this.betaDatoWeb)sessionStorage.removeItem(key);}
++      else {this.betaErrorWeb='Resultado: '+r.serie+'-'+r.numero+' · '+r.estadoSunat+'. Revise antes de otra emision.';}
++    } catch {this.betaErrorWeb='Emision no confirmada. Comprueba el laboratorio; se conserva la misma operacion para consultar sin duplicar.';}
++    finally {this.betaOcupadoWeb=false;}
++  }
++  async consultarBetaWeb(): Promise<void> {
++    if(!this.adminWeb || this.betaOcupadoWeb || !/^\d{8}$/.test(this.betaNumeroWeb))return;
++    const numero=this.betaNumeroWeb;this.betaOcupadoWeb=true;this.betaDatoWeb=undefined;this.betaQrWeb='';this.betaErrorWeb='';
++    try{const b=await firstValueFrom(this.api.evidenciaBetaWeb(numero).pipe(timeout(10000)));if(!betaCoincide(b,numero))throw Error('Evidencia no confirmada');const qr=await qrWeb(b.contenidoQr);if(this.betaNumeroWeb===numero){this.betaDatoWeb=b;this.betaQrWeb=qr;}}
++    catch{this.betaErrorWeb='No se pudo confirmar la evidencia archivada. Revisa el correlativo y el acceso de administrador.';}
++    finally{this.betaOcupadoWeb=false;}
++  }
++  exportarBetaWeb(formato: FormatoWeb, descargar: boolean): void {
++    if(!this.adminWeb||!this.betaDatoWeb||!this.betaQrWeb||!betaCoincide(this.betaDatoWeb,this.betaNumeroWeb))return;
++    try{const archivo=pdfBetaWeb(this.betaDatoWeb,this.betaQrWeb,formato);if(descargar)descargarWeb(archivo);else{const popup=window.open('about:blank','_blank');if(!popup){this.betaErrorWeb='Permite ventanas emergentes.';return;}popup.opener=null;vistaWeb(archivo,popup);}}
++    catch{this.betaErrorWeb='No se pudo generar el PDF de evidencia.';}
++  }
++
++}

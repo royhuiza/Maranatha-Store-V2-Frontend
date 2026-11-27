@@ -6,7 +6,6 @@
   box-sizing: border-box;
   padding: 24px;
 }
-
 .venta-header,
 .venta-carrito-header {
   display: flex;
@@ -14,26 +13,22 @@
   align-items: center;
   gap: 16px;
 }
-
 .venta-header h3,
 .venta-card h3 {
   margin: 0 0 6px;
 }
-
 .venta-header p,
 .venta-carrito-header p {
   margin: 0;
   color: #64748b;
   font-size: 13px;
 }
-
 .venta-steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 22px 0;
 }
-
 .venta-steps>div {
   padding: 12px;
   border: 1px solid #dbe4ee;
@@ -43,32 +38,27 @@
   font-weight: 600;
   font-size: 13px;
 }
-
 .venta-steps>div.active {
   background: #eaf3ff;
   border-color: #93b9ec;
   color: #154b83;
 }
-
 .venta-card {
   border: 1px solid #dbe4ee;
   border-radius: 14px;
   padding: 22px;
   background: #fff;
 }
-
 .venta-help {
   color: #64748b;
   font-size: 12px;
   margin: 4px 0 12px;
 }
-
 .venta-fields {
   display: grid;
   gap: 18px;
   margin: 20px 0;
 }
-
 .venta-field {
   display: flex;
   flex-direction: column;
@@ -77,7 +67,6 @@
   font-weight: 600;
   font-size: 13px;
 }
-
 .venta-field input,
 .venta-field select,
 .venta-field textarea,
@@ -91,37 +80,31 @@
   font: inherit;
   background: #fff;
 }
-
 .venta-nombre {
   min-height: 90px;
   resize: vertical;
   font-size: 15px !important;
 }
-
 .venta-lookup {
   display: flex;
   align-items: end;
   gap: 12px;
 }
-
 .venta-lookup>input,
 .venta-lookup>label {
   flex: 1;
   min-width: 0;
 }
-
 .venta-lookup>button {
   flex-shrink: 0;
   min-height: 42px;
 }
-
 .venta-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 20px;
 }
-
 .venta-error {
   color: #a51e32;
   background: #fff1f2;
@@ -129,43 +112,34 @@
   border-radius: 8px;
   margin: 0;
 }
-
 .venta-carrito {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
   gap: 14px;
   align-items: start;
 }
-
 .venta-carrito .receipt {
   min-width: 0;
 }
-
 .venta-carrito .venta-card {
   min-width: 0;
 }
-
 @media (max-width: 760px) {
   .venta-dialog {
     width: 98vw;
     padding: 14px;
   }
-
   .venta-carrito {
     grid-template-columns: 1fr;
   }
-
   .venta-lookup {
     flex-wrap: wrap;
   }
-
   .venta-header {
     align-items: flex-start;
   }
 }
-
 /* DISEÑO RESPONSIVE - NUEVA VENTA */
-
 .venta-modal .venta-dialog {
   width: min(760px, calc(100vw - 32px)) !important;
   max-width: 760px !important;
@@ -174,7 +148,6 @@
   padding: 24px !important;
   box-sizing: border-box !important;
 }
-
 .venta-modal .venta-header {
   display: flex;
   justify-content: space-between;
@@ -183,26 +156,22 @@
   padding-bottom: 16px;
   border-bottom: 1px solid #e2e8f0;
 }
-
 .venta-modal .venta-header button {
   width: auto !important;
   flex: none !important;
   white-space: nowrap;
 }
-
 .venta-modal .venta-card {
   padding: 24px;
   border-radius: 14px;
   background: #ffffff;
 }
-
 .venta-modal .venta-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   width: 100%;
 }
-
 .venta-modal .venta-field {
   display: flex;
   flex-direction: column;
@@ -210,7 +179,6 @@
   min-width: 0;
   width: 100%;
 }
-
 .venta-modal .venta-field input,
 .venta-modal .venta-field select,
 .venta-modal .venta-field textarea {
@@ -224,9 +192,7 @@
   font-size: 14px;
   background: #ffffff;
 }
-
 /* DNI / RUC + BOTÓN BUSCAR */
-
 .venta-modal .venta-lookup {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) 120px !important;
@@ -234,19 +200,16 @@
   gap: 12px;
   width: 100%;
 }
-
 .venta-modal .venta-lookup>input {
   width: 100% !important;
   min-width: 0 !important;
   height: 44px;
   box-sizing: border-box;
 }
-
 .venta-modal .venta-lookup>label {
   min-width: 0;
   width: 100%;
 }
-
 .venta-modal .venta-lookup>button {
   width: 120px !important;
   min-width: 0 !important;
@@ -257,9 +220,7 @@
   flex: none !important;
   white-space: nowrap;
 }
-
 /* NOMBRE COMPLETO / RAZÓN SOCIAL */
-
 .venta-modal .venta-nombre {
   width: 100% !important;
   min-height: 105px !important;
@@ -269,9 +230,7 @@
   resize: vertical;
   box-sizing: border-box;
 }
-
 /* BOTONES INFERIORES */
-
 .venta-modal .venta-actions {
   display: grid !important;
   grid-template-columns: 120px minmax(0, 1fr);
@@ -279,76 +238,60 @@
   margin-top: 24px;
   align-items: stretch;
 }
-
 .venta-modal .venta-actions button {
   min-width: 0 !important;
   height: 46px;
   margin: 0 !important;
 }
-
 .venta-modal .venta-actions .secondary {
   width: 120px !important;
 }
-
 .venta-modal .venta-actions .primary-wide {
   width: 100% !important;
 }
-
 /* CARRITO DE COMPRAS */
-
 .venta-modal .venta-carrito {
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
-
 .venta-modal .venta-carrito .venta-lookup {
   grid-template-columns: minmax(0, 1fr) 170px !important;
 }
-
 .venta-modal .venta-carrito .venta-lookup>button {
   width: 170px !important;
   max-width: 170px !important;
 }
-
 /* CELULARES */
-
 @media (max-width: 560px) {
   .venta-modal .venta-dialog {
     width: calc(100vw - 16px) !important;
     padding: 14px !important;
   }
-
   .venta-modal .venta-card {
     padding: 16px;
   }
-
   .venta-modal .venta-lookup,
   .venta-modal .venta-carrito .venta-lookup {
     grid-template-columns: minmax(0, 1fr) !important;
   }
-
   .venta-modal .venta-lookup>button,
   .venta-modal .venta-carrito .venta-lookup>button {
     width: 100% !important;
     max-width: none !important;
   }
-
   .venta-modal .venta-actions {
     grid-template-columns: 1fr;
   }
-
   .venta-modal .venta-actions .secondary {
     width: 100% !important;
   }
 }
-
 @media print {
   .venta-modal {
     position: static !important;
     background: transparent !important;
     padding: 0 !important;
   }
-
   .venta-dialog {
     width: 100% !important;
     max-width: none !important;
@@ -358,21 +301,17 @@
     box-shadow: none !important;
     border: 0 !important;
   }
-
   .venta-carrito {
     display: block !important;
   }
 }
-
 /* Paso 3: pago */
 .venta-modal .venta-carrito {
   grid-template-columns: minmax(0, 1fr) !important;
 }
-
 .venta-modal .pago-card {
   margin-top: 8px;
 }
-
 .venta-modal .pago-resumen {
   display: flex;
   align-items: center;
@@ -384,19 +323,16 @@
   background: #f8fafc;
   border-radius: 12px;
 }
-
 .venta-modal .pago-resumen strong {
   font-size: 24px;
   color: #0f4c81;
 }
-
 .venta-modal .pago-metodos {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 18px 0;
 }
-
 .venta-modal .pago-metodo {
   min-height: 58px;
   padding: 12px 8px;
@@ -407,13 +343,11 @@
   cursor: pointer;
   font-weight: 700;
 }
-
 .venta-modal .pago-metodo.seleccionado {
   background: #eaf3ff;
   border: 2px solid #2563eb;
   color: #154b83;
 }
-
 .venta-modal .pago-efectivo,
 .venta-modal .pago-pendiente {
   padding: 16px;
@@ -422,13 +356,11 @@
   border: 1px solid #dbe4ee;
   margin: 18px 0;
 }
-
 .venta-modal .pago-pendiente {
   background: #fff7ed;
   border-color: #fed7aa;
   color: #9a3412;
 }
-
 .venta-modal .pago-check {
   display: flex;
   align-items: center;
@@ -437,56 +369,45 @@
   font-weight: 600;
   cursor: pointer;
 }
-
 .venta-modal .pago-check input {
   width: 18px;
   height: 18px;
   flex: 0 0 18px;
 }
-
 .venta-modal .pago-actions {
   display: flex !important;
   justify-content: flex-end;
   gap: 12px;
 }
-
 .venta-modal .pago-actions .secondary {
   width: auto !important;
 }
-
 .venta-modal .pago-actions .primary-wide {
   width: auto !important;
 }
-
 .venta-modal .carrito-actions {
   display: flex !important;
   justify-content: flex-end;
 }
-
 .venta-modal .carrito-actions .primary-wide {
   width: min(100%, 240px) !important;
 }
-
 @media (max-width: 560px) {
   .venta-modal .venta-steps>div {
     font-size: 11px;
     padding: 10px 4px;
   }
-
   .venta-modal .pago-metodos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .venta-modal .pago-actions {
     flex-direction: column;
   }
-
   .venta-modal .pago-actions .secondary,
   .venta-modal .pago-actions .primary-wide {
     width: 100% !important;
   }
 }
-
 /* Fondo verde claro solamente para Razon social */
 textarea.venta-nombre.combo-razon-social {
   background-color: #e8f8ec !important;
@@ -494,14 +415,11 @@ textarea.venta-nombre.combo-razon-social {
   color: #173b25 !important;
   border-radius: 8px;
 }
-
 textarea.venta-nombre.combo-razon-social:focus {
   background-color: #e8f8ec !important;
   border-color: #78bd8d !important;
 }
-
 /* INICIO AJUSTES CARRITO MARANATHA */
-
 /* Lista de productos: 5 visibles y scroll */
 .suggestions-carrito {
   max-height: 220px !important;
@@ -511,7 +429,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   scrollbar-width: thin;
   z-index: 50;
 }
-
 /* Cada producto mantiene una altura uniforme */
 .suggestions-carrito .suggestion {
   min-height: 44px;
@@ -521,7 +438,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   padding: 8px 12px;
   cursor: pointer;
 }
-
 /* Alinear cantidad y boton */
 .venta-lookup-carrito {
   display: flex !important;
@@ -529,7 +445,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   gap: 12px;
   flex-wrap: wrap;
 }
-
 /* Campo cantidad */
 .venta-lookup-carrito .venta-field {
   display: flex;
@@ -537,13 +452,11 @@ textarea.venta-nombre.combo-razon-social:focus {
   gap: 6px;
   margin: 0;
 }
-
 /* Altura uniforme */
 .venta-lookup-carrito input[type="number"] {
   height: 42px;
   box-sizing: border-box;
 }
-
 /* Boton alineado con el input */
 .venta-lookup-carrito>button {
   height: 42px;
@@ -552,18 +465,14 @@ textarea.venta-nombre.combo-razon-social:focus {
   margin: 0 !important;
   align-self: flex-end;
 }
-
 /* FIN AJUSTES CARRITO MARANATHA */
-
 /* INICIO VERDE CARRITO */
-
 /* Buscador de productos */
 .product-search-row input {
   background-color: #e8f8ec !important;
   border: 1px solid #a8d5b5 !important;
   color: #173b25 !important;
 }
-
 /* Lista desplegable */
 .suggestions-carrito {
   background-color: #e8f8ec !important;
@@ -571,61 +480,49 @@ textarea.venta-nombre.combo-razon-social:focus {
   max-height: 220px !important;
   overflow-y: auto !important;
 }
-
 /* Opciones */
 .suggestions-carrito .suggestion {
   background-color: #e8f8ec;
   color: #173b25;
 }
-
 .suggestions-carrito .suggestion:hover {
   background-color: #c8edcf !important;
 }
-
 /* Cantidad */
 .venta-lookup-carrito input[type="number"] {
   background-color: #e8f8ec !important;
   border: 1px solid #a8d5b5 !important;
 }
-
 /* Boton Agregar al carrito */
 .venta-lookup-carrito>button {
   background-color: #2e7d32 !important;
   color: white !important;
   border: 1px solid #2e7d32 !important;
 }
-
 /* FIN VERDE CARRITO */
-
 .venta-modal .receipt-preview {
   width: min(760px, 96vw);
   max-height: 94vh;
   overflow: auto
 }
-
 .receipt-preview #comprobante {
   padding: 12px;
   font-size: 12px
 }
-
 .receipt-preview #comprobante td {
   padding: 3px
 }
-
 .receipt-preview .receipt-logo {
   height: 48px
 }
-
 .receipt-preview .venta-actions {
   position: sticky;
   bottom: 0;
   background: inherit
 }
-
 .receipt-preview .venta-header {
   margin-bottom: 6px
 }
-
 .envio-final {
   width: min(560px, 94vw);
   padding: 24px;
@@ -633,7 +530,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   overflow: auto;
   text-align: center
 }
-
 .envio-opciones {
   display: flex;
   flex-wrap: wrap;
@@ -641,23 +537,19 @@ textarea.venta-nombre.combo-razon-social:focus {
   justify-content: center;
   margin: 16px 0
 }
-
 .envio-final input {
   width: 100%;
   margin: 8px 0
 }
-
 .envio-final button {
   padding: 10px;
   margin: 3px
 }
-
 .envio-telefono label {
   display: block;
   text-align: left;
   margin: 8px 0
 }
-
 .envio-telefono select {
   width: 100%;
   padding: 12px;
@@ -667,25 +559,21 @@ textarea.venta-nombre.combo-razon-social:focus {
   color: inherit;
   font: inherit
 }
-
 .envio-numero {
   display: flex;
   align-items: center;
   gap: 10px
 }
-
 .envio-numero span {
   padding: 12px;
   border: 1px solid #aab9bb;
   border-radius: 10px;
   white-space: nowrap
 }
-
 .envio-numero input {
   flex: 1;
   min-width: 0
 }
-
 .comprobante-acciones {
   display: inline-flex;
   align-items: center;
@@ -693,7 +581,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   gap: 8px;
   vertical-align: middle;
 }
-
 .comprobante-acciones .link {
   display: inline-flex;
   align-items: center;
@@ -706,52 +593,40 @@ textarea.venta-nombre.combo-razon-social:focus {
   border-radius: 9px;
   transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
-
 .comprobante-acciones .link:hover {
   transform: translateY(-1px);
 }
-
 /* Colores distintivos suaves sin perder legibilidad */
 .comprobante-acciones .accion-ver {
   color: #0284c7;
 }
-
 .comprobante-acciones .accion-ver:hover {
   background-color: rgba(2, 132, 199, 0.12);
 }
-
 .comprobante-acciones .accion-imprimir {
   color: #2563eb;
 }
-
 .comprobante-acciones .accion-imprimir:hover {
   background-color: rgba(37, 99, 235, 0.12);
 }
-
 .comprobante-acciones .accion-enviar {
   color: #0d9488;
 }
-
 .comprobante-acciones .accion-enviar:hover {
   background-color: rgba(13, 148, 136, 0.12);
 }
-
 .comprobante-acciones .accion-pdf {
   color: #dc2626;
 }
-
 .comprobante-acciones .accion-pdf:hover {
   background-color: rgba(220, 38, 38, 0.12);
 }
-
 .comprobante-acciones .accion-anular {
   color: #b91c1c;
 }
-
 .comprobante-acciones .accion-anular:hover {
   background-color: rgba(185, 28, 28, 0.14);
 }
-
 /* Interfaz de venta y confirmación */
 .venta-modal .venta-steps>div {
   display: flex;
@@ -763,7 +638,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   color: inherit;
   padding: 10px 4px
 }
-
 .venta-steps span {
   display: grid;
   place-items: center;
@@ -773,24 +647,20 @@ textarea.venta-nombre.combo-razon-social:focus {
   border: 1px solid #9eb6b0;
   flex-shrink: 0
 }
-
 .venta-modal .venta-steps>div.active {
   background: rgba(57, 131, 120, .12);
   color: inherit
 }
-
 .venta-steps .active span {
   background: #235e55;
   color: white;
   border-color: #235e55
 }
-
 .tipo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px
 }
-
 .tipo-grid button {
   display: flex;
   flex-direction: column;
@@ -805,34 +675,28 @@ textarea.venta-nombre.combo-razon-social:focus {
   min-width: 0;
   white-space: normal
 }
-
 .tipo-grid button.elegido {
   border: 2px solid #398378 !important;
   background: rgba(57, 131, 120, .12) !important
 }
-
 .tipo-grid small {
   font-weight: 400;
   opacity: .8
 }
-
 .tipo-icon {
   font-size: 24px;
   color: #398378
 }
-
 .envio-final {
   width: min(620px, 94vw);
   box-sizing: border-box;
   padding: 24px;
   border-radius: 20px
 }
-
 .confirm-top {
   display: flex;
   justify-content: flex-end
 }
-
 .confirm-symbol {
   display: grid;
   place-items: center;
@@ -845,22 +709,18 @@ textarea.venta-nombre.combo-razon-social:focus {
   font-size: 36px;
   font-weight: 700
 }
-
 .confirm-symbol.anulada {
   background: #f4dfd5;
   color: #a54a25
 }
-
 .envio-final h2 {
   margin: 0;
   font-size: 24px
 }
-
 .confirm-muted {
   opacity: .75;
   margin: 8px 0 20px
 }
-
 .confirm-summary {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -871,38 +731,31 @@ textarea.venta-nombre.combo-razon-social:focus {
   padding: 18px;
   background: rgba(57, 131, 120, .06)
 }
-
 .confirm-summary div {
   display: flex;
   flex-direction: column;
   gap: 5px
 }
-
 .confirm-summary small {
   opacity: .8
 }
-
 .confirm-summary>span {
   text-align: right;
   font-size: 12px;
   font-weight: 700
 }
-
 .confirm-total {
   font-size: 25px
 }
-
 .confirm-heading {
   text-align: left;
   margin: 22px 0 8px
 }
-
 .envio-final .compartir-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px
 }
-
 .compartir-grid button {
   display: flex;
   flex-direction: column;
@@ -916,144 +769,116 @@ textarea.venta-nombre.combo-razon-social:focus {
   font-size: 12px;
   white-space: normal
 }
-
 .compartir-grid button span {
   font-size: 24px;
   color: #398378
 }
-
 .preview-action {
   display: flex;
   justify-content: space-between;
   width: 100%;
   box-sizing: border-box
 }
-
 .confirm-new {
   width: 100%;
   min-height: 46px;
   background: #235e55 !important;
   color: white !important
 }
-
 .confirm-status {
   padding: 10px;
   border: 1px solid #a9bdb8;
   border-radius: 8px
 }
-
 .envio-final button:disabled {
   opacity: .55;
   cursor: not-allowed
 }
-
 .envio-final button:focus-visible,
 .tipo-grid button:focus-visible {
   outline: 2px solid #d5a15d;
   outline-offset: 2px
 }
-
 @media(max-width:520px) {
   .tipo-grid {
     grid-template-columns: 1fr
   }
-
   .envio-final .compartir-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr))
   }
-
   .confirm-summary {
     gap: 10px
   }
-
   .envio-final {
     padding: 16px
   }
-
   .venta-modal .venta-steps>div {
     flex-direction: column
   }
 }
-
 :host-context(.is-dark) .venta-modal .venta-card {
   background: #203a38;
   color: #eef5f1
 }
-
 :host-context(.is-dark) .venta-modal .venta-field input,
 :host-context(.is-dark) .venta-modal .venta-field textarea,
 :host-context(.is-dark) .venta-modal .venta-field select {
   background: #172e2c;
   color: #eef5f1
 }
-
 :host-context(.is-dark) .venta-help,
 :host-context(.is-dark) .venta-header p {
   color: #c6d4d1
 }
-
 .venta-modal .receipt-actions {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   position: static !important
 }
-
 .venta-modal .receipt-actions button {
   width: 100% !important;
   white-space: normal;
   height: auto;
   min-height: 46px
 }
-
 .venta-modal .venta-header {
   background: transparent
 }
-
 .venta-modal .venta-lookup-carrito>button {
   border-radius: 9px
 }
-
 .envio-final .envio-opciones button {
   min-height: 44px
 }
-
 .envio-final .confirm-top button {
   min-width: 40px
 }
-
 .envio-final .confirm-summary strong {
   overflow-wrap: anywhere
 }
-
 .envio-final .preview-action {
   margin: 12px 0
 }
-
 .venta-modal .venta-actions button:disabled {
   opacity: .55
 }
-
 .venta-modal .venta-steps>div.active {
   border: 1px solid #398378
 }
-
 .venta-modal .pago-metodo.seleccionado {
   border-color: #398378;
   background: #e8f4ee;
   color: #235e55
 }
-
 @media(max-width:520px) {
   .venta-modal .receipt-actions {
     grid-template-columns: 1fr
   }
-
   .confirm-summary {
     grid-template-columns: 1fr 1fr
   }
 }
-
 /* Unificación visual de ventanas de venta */
 .venta-modal .venta-dialog,
 .envio-final {
@@ -1062,18 +887,15 @@ textarea.venta-nombre.combo-razon-social:focus {
   color: #153b3e;
   box-shadow: 0 18px 60px #153b3e26;
 }
-
 .venta-modal .venta-header {
   padding: 12px 0 20px;
   gap: 16px;
 }
-
 .venta-modal .venta-card {
   background: transparent;
   border: 1px solid #a9bdb8;
   border-radius: 14px;
 }
-
 .venta-modal .venta-field input,
 .venta-modal .venta-field select,
 .venta-modal .venta-field textarea {
@@ -1082,23 +904,19 @@ textarea.venta-nombre.combo-razon-social:focus {
   min-height: 44px;
   color: inherit;
 }
-
 .comprador-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
-
 .comprador-grid .venta-field {
   min-width: 0;
 }
-
 .documento-ok {
   color: #287c54;
   font-size: 13px;
   margin: 0;
 }
-
 .venta-modal .venta-header .venta-close,
 .envio-final .confirm-top .venta-close {
   display: grid;
@@ -1116,7 +934,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   line-height: 1;
   cursor: pointer;
 }
-
 .venta-modal .venta-actions .primary-wide,
 .venta-modal .documento-lookup button,
 .envio-final .envio-opciones:not(.compartir-grid) button,
@@ -1129,39 +946,32 @@ textarea.venta-nombre.combo-razon-social:focus {
   min-height: 44px;
   border-radius: 10px;
 }
-
 .venta-modal button:disabled,
 .envio-final button:disabled {
   opacity: .45 !important;
   cursor: not-allowed;
 }
-
 .envio-final .compartir-grid button {
   background: transparent;
   color: inherit;
 }
-
 .venta-modal .venta-header .venta-close:hover,
 .envio-final .confirm-top .venta-close:hover {
   background: #398378 !important;
 }
-
 :host-context(.is-dark) .venta-modal .venta-dialog,
 :host-context(.is-dark) .envio-final {
   background: #203a38;
   color: #eef5f1;
 }
-
 :host-context(.is-dark) .documento-ok {
   color: #9ee0bd;
 }
-
 @media(max-width:520px) {
   .comprador-grid {
     grid-template-columns: 1fr;
   }
 }
-
 /* Contraste de botones al pasar el cursor o navegar con teclado */
 .envio-final button:not(:disabled):hover,
 .envio-final button:not(:disabled):focus-visible {
@@ -1169,18 +979,15 @@ textarea.venta-nombre.combo-razon-social:focus {
   border-color: #235e55 !important;
   color: #fff !important;
 }
-
 .envio-final button:not(:disabled):hover span,
 .envio-final button:not(:disabled):focus-visible span,
 .envio-final button:not(:disabled):hover svg,
 .envio-final button:not(:disabled):focus-visible svg {
   color: #fff !important;
 }
-
 .envio-final button {
   transition: background-color .18s ease, color .18s ease, border-color .18s ease;
 }
-
 /* Vista previa ampliada: no modifica las reglas de impresión. */
 @media screen {
   .venta-modal .venta-dialog.receipt-preview {
@@ -1188,65 +995,52 @@ textarea.venta-nombre.combo-razon-social:focus {
     max-width: 920px !important;
     max-height: 94vh !important;
   }
-
   .receipt-preview #comprobante {
     padding: 28px;
     font-size: 15px;
     line-height: 1.5;
     box-sizing: border-box;
   }
-
   .receipt-preview #comprobante .comprobante-a4 {
     font-size: 15px;
     line-height: 1.5;
   }
-
   .receipt-preview #comprobante .comprobante-a4 p {
     margin: 16px 0;
   }
-
   .receipt-preview #comprobante .comprobante-a4 th,
   .receipt-preview #comprobante .comprobante-a4 td {
     padding: 10px 6px;
   }
-
   .receipt-preview #comprobante .comprobante-a4 hr {
     margin: 16px 0;
   }
-
   .receipt-preview #comprobante .company h2 {
     font-size: 22px;
   }
-
   .receipt-preview #comprobante .qr-img {
     width: 100px;
     height: 100px;
   }
-
   .receipt-preview #comprobante .receipt-legend {
     margin-top: 16px;
   }
 }
-
 @media screen and (max-width: 560px) {
   .venta-modal .venta-dialog.receipt-preview {
     width: calc(100vw - 16px) !important;
   }
-
   .receipt-preview #comprobante {
     padding: 14px;
   }
-
   .receipt-preview #comprobante .comprobante-a4 {
     font-size: 12px;
   }
-
   .receipt-preview #comprobante .comprobante-a4 th,
   .receipt-preview #comprobante .comprobante-a4 td {
     padding: 6px 3px;
   }
 }
-
 /* Rediseño de pagos - Maranatha Store */
 .venta-modal .pago-card {
   --cobro-bg: #fff;
@@ -1254,7 +1048,6 @@ textarea.venta-nombre.combo-razon-social:focus {
   --cobro-line: #d5e2de;
   color: var(--cobro-text);
 }
-
 .cobro-total {
   display: flex;
   align-items: center;
@@ -1266,17 +1059,14 @@ textarea.venta-nombre.combo-razon-social:focus {
   background: #235e55;
   color: #fff;
 }
-
 .cobro-total strong {
   font-size: 30px;
   font-variant-numeric: tabular-nums;
 }
-
 .venta-modal .pago-card .pago-metodos {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
-
 .venta-modal .pago-card .pago-metodo {
   display: flex;
   flex-direction: column;
@@ -1289,28 +1079,23 @@ textarea.venta-nombre.combo-razon-social:focus {
   border-radius: 14px;
   transition: background .2s, border-color .2s;
 }
-
 .venta-modal .pago-card .pago-metodo.seleccionado {
   background: #e8f4ee;
   color: #235e55;
   border-color: #398378;
 }
-
 .pago-metodo svg {
   width: 28px;
   height: 28px;
 }
-
 .pago-metodo small {
   font-size: 12px;
   font-weight: 400;
 }
-
 .pago-metodo:focus-visible {
   outline: 2px solid #398378;
   outline-offset: 3px;
 }
-
 .cobro-panel {
   padding: 20px;
   border: 1px solid var(--cobro-line);
@@ -1318,32 +1103,27 @@ textarea.venta-nombre.combo-razon-social:focus {
   background: var(--cobro-bg);
   margin-bottom: 16px;
 }
-
 .cobro-panel h4 {
   margin: 0 0 10px;
   font-size: 17px;
 }
-
 .cobro-panel p {
   font-size: 13px;
   line-height: 1.6;
   opacity: .85;
 }
-
 .cobro-yape {
   display: grid;
   grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
   align-items: center;
   gap: 24px;
 }
-
 .cobro-qr {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
 }
-
 .cobro-qr img {
   display: block;
   width: 100%;
@@ -1351,12 +1131,10 @@ textarea.venta-nombre.combo-razon-social:focus {
   height: auto;
   border-radius: 12px;
 }
-
 .cobro-qr small {
   font-size: 12px;
   opacity: .8;
 }
-
 .cobro-marca {
   display: inline-block;
   color: #742284;
@@ -1364,13 +1142,11 @@ textarea.venta-nombre.combo-razon-social:focus {
   font-weight: 800;
   margin-bottom: 10px;
 }
-
 .cobro-importe {
   display: block;
   font-size: 28px;
   margin: 10px 0 16px;
 }
-
 .cobro-estado {
   display: flex;
   align-items: center;
@@ -1382,17 +1158,14 @@ textarea.venta-nombre.combo-razon-social:focus {
   font-size: 13px;
   font-weight: 600;
 }
-
 .cobro-estado.detectado {
   background: #e1f3e8;
   color: #21613f;
 }
-
 .cobro-estado.alerta {
   background: #fff1df;
   color: #85420e;
 }
-
 .cobro-spinner {
   width: 16px;
   height: 16px;
@@ -1402,55 +1175,53 @@ textarea.venta-nombre.combo-razon-social:focus {
   border-radius: 50%;
   animation: cobro-giro 1s linear infinite;
 }
-
 .cobro-info details {
   font-size: 12px;
   line-height: 1.6;
 }
-
 .cobro-info summary {
   cursor: pointer;
 }
-
 @keyframes cobro-giro {
   to {
     transform: rotate(360deg);
   }
 }
-
 @media (prefers-reduced-motion:reduce) {
   .cobro-spinner {
     animation: none;
   }
 }
-
 :host-context(.is-dark) .venta-modal .pago-card {
   --cobro-bg: #172e2c;
   --cobro-text: #eef5f1;
   --cobro-line: #52706a;
 }
-
 :host-context(.is-dark) .cobro-marca {
   color: #e5b7ef;
 }
-
 @media(max-width:560px) {
   .cobro-yape {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-
   .cobro-info {
     text-align: center;
   }
-
   .cobro-total strong {
     font-size: 25px;
   }
-
   .venta-modal .pago-card .pago-actions button {
     height: auto;
     min-height: 46px;
     white-space: normal;
   }
 }
+
+/* Evidencia fiscal Beta: vista previa e impresión */
+#comprobante .beta-warning { padding: 8px 10px; margin-bottom: 12px; border: 1px solid #b58b42; border-radius: 6px; background: #fff8e8; color: #704c13; font-size: 11px; font-weight: 700; text-align: center; }
+#comprobante .qr-block, #comprobante .ticket-qr { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
+#comprobante .qr-block .qr-img { width: 104px; height: 104px; max-width: 100%; object-fit: contain; background: white; }
+#comprobante .ticket-qr .qr-img { width: 32mm; height: 32mm; max-width: 100%; object-fit: contain; background: white; }
+#comprobante .qr-block small, #comprobante .ticket-qr small { font-size: 10px; line-height: 1.3; }
+@media print { #comprobante .beta-warning { background: white; color: black; border-color: black; } }

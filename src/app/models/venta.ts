@@ -5,6 +5,8 @@ export interface Venta {
   clienteId?: number;
   clienteNombre: string;
   clienteDocumento?: string;
+  compradorLocalNombre?: string;
+  compradorLocalDocumento?: string;
   fecha: string;
   total: number;
   detalles: DetalleVenta[];

@@ -193,6 +193,7 @@ export class ProductosComponent implements OnInit {
     const p = this.ajusteProducto;
     const cantidad = Number(this.cantidadAjuste);
     if (!p?.id || this.procesandoAjuste) return;
+    if (!this.auth.isAdmin && this.tipoAjuste !== 'reponer') return;
     if (!Number.isInteger(cantidad) || cantidad < 1) {
       this.errorAjuste = 'Ingresa una cantidad entera mayor que cero.'; return;
     }
@@ -251,6 +252,7 @@ export class ProductosComponent implements OnInit {
   }
 
   async exportarVista(): Promise<void> {
+    if (!this.auth.isAdmin) return;
     const XLSX = await import('xlsx');
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(this.filtrados.map(p => ({ Codigo: p.codigo, Producto: p.nombre, Descripcion: p.descripcion, Precio: p.precio, Stock: p.stock, StockMinimo: p.stockMinimo ?? 5, Estado: p.activo === false ? 'INACTIVO' : 'ACTIVO' }))), 'Inventario');
